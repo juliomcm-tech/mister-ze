@@ -11821,18 +11821,18 @@ function diaryStats() {
 function diaryLessons(S) {
   const L = [];
   const judge = (name, r) => {
-    if (!r || r.n < 8) return;
+    if (!r || r.n < 15) return;                                 // com menos de 15 jogos ainda é sorte/azar
     const e = r.exp / r.n, h = r.hit / r.n, d = h - e;
     if (d <= -0.10) L.push({ bad: true, t: `«${name}»: prometo ${pct(e)} e acerto ${pct(h)} (${r.n} jogos) → estou otimista demais aqui. Já me corrijo a baixar.` });
     else if (d >= 0.10) L.push({ bad: false, t: `«${name}»: prometo ${pct(e)} e acerto ${pct(h)} (${r.n} jogos) → aqui sou prudente demais.` });
   };
   Object.entries(S.byFam).forEach(([k, r]) => judge(k, r));
-  Object.entries(S.byLeague).forEach(([k, r]) => { if (r.n >= 8 && r.hit / r.n - r.exp / r.n <= -0.12) L.push({ bad: true, t: `Na <b>${esc(k)}</b> falho mais do que devia (${pct(r.hit / r.n)} de acertos para ${pct(r.exp / r.n)} prometidos, ${r.n} jogos) — desconfia de mim nesta liga.` }); });
+  Object.entries(S.byLeague).forEach(([k, r]) => { if (r.n >= 15 && r.hit / r.n - r.exp / r.n <= -0.12) L.push({ bad: true, t: `Na <b>${esc(k)}</b> falho mais do que devia (${pct(r.hit / r.n)} de acertos para ${pct(r.exp / r.n)} prometidos, ${r.n} jogos) — desconfia de mim nesta liga.` }); });
   if (S.value.n >= 10) L.push({ bad: S.value.profit < 0, t: `Apostas com valor: ${S.value.n} · acertei ${S.value.hit} · saldo ${S.value.profit >= 0 ? '+' : ''}${S.value.profit.toFixed(2)} unidades (1 unidade por aposta) → ${S.value.profit >= 0 ? 'o método está a dar lucro' : 'por agora está a perder — normal em amostras pequenas, mas fico mais exigente'}.` });
-  if (!L.length) L.push({ bad: false, t: S.picks.n < 8 ? 'Ainda tenho poucos jogos corrigidos para tirar lições (preciso de 8 por mercado). Cada «Atualizar» depois dos jogos conta.' : 'Nada fora do normal: o que prometo bate certo com o que acerto.' });
+  if (!L.length) L.push({ bad: false, t: S.picks.n < 15 ? 'Ainda tenho poucos jogos corrigidos para tirar lições (preciso de 15 por mercado). Cada «Atualizar» depois dos jogos conta.' : 'Nada fora do normal: o que prometo bate certo com o que acerto.' });
   return L;
 }
-/* correção automática por mercado de golos (Mais/Menos e Ambas marcam): só com 10+ jogos e no máximo ±8 pontos */
+/* correção automática por mercado de golos (Mais/Menos e Ambas marcam): só com 25+ jogos e no máximo ±6 pontos */
 let DIARY_FIX_CACHE = null;
 function diaryFix() {
   if (DIARY_FIX_CACHE && Date.now() - DIARY_FIX_CACHE.t < 60e3) return DIARY_FIX_CACHE.f;
@@ -11841,11 +11841,11 @@ function diaryFix() {
   [['O1.5', (i, j) => i + j > 1.5], ['O2.5', (i, j) => i + j > 2.5], ['O3.5', (i, j) => i + j > 3.5], ['BTTS', (i, j) => i > 0 && j > 0]].forEach(([k, c]) => {
     const pr = x => (x.mkRaw && x.mkRaw[k] != null ? x.mkRaw[k] : x.mk[k]);
     const xs = all.filter(x => pr(x) != null);
-    if (xs.length < 10) return;
+    if (xs.length < 25) return;                                // com menos jogos é ruído, não lição
     const exp = xs.reduce((a, x) => a + pr(x), 0) / xs.length;
     const hit = xs.reduce((a, x) => { const [i, j] = x.res.split('-').map(Number); return a + (c(i, j) ? 1 : 0); }, 0) / xs.length;
-    const w = Math.min(1, xs.length / 40);                    // confia mais à medida que junta jogos
-    f[k] = clamp((hit - exp) * w, -0.08, 0.08);
+    const w = Math.min(1, xs.length / 100);                   // confia mais à medida que junta jogos (100 jogos = confiança total)
+    f[k] = clamp((hit - exp) * w, -0.06, 0.06);
   });
   DIARY_FIX_CACHE = { t: Date.now(), f };
   return f;
