@@ -11118,17 +11118,21 @@ function oddsHTML(m) {
     return `<div class="reason" style="margin-top:8px;"><div class="rz-head">💶 Odds</div><div class="muted">${st.oddsTried ? 'As casas ainda não publicaram odds para este jogo (ou a ESPN não as tem).' : 'Ainda não fui buscar odds.'}</div>
       <div class="acts" style="margin-top:6px;"><button class="btn btn-sm" onclick="oddsRetry(this)">🔎 Procurar odds outra vez</button></div></div>`;
   }
-  const keys = ODD_KEYS.filter(k => st.books.some(b => b.odds[k]));
+  const extra = [...new Set(st.books.flatMap(b => Object.keys(b.odds)))].filter(k => !ODD_KEYS.includes(k)).sort();
+  const keys = ODD_KEYS.concat(extra).filter(k => st.books.some(b => b.odds[k]));
   const table = `<div style="overflow-x:auto;"><table class="odds-t"><tr><th></th>${keys.map(k => `<th>${ODD_LBL(k)}</th>`).join('')}</tr>${st.books.map(b => `<tr><td><b>${esc(b.provider)}</b></td>${keys.map(k => `<td>${b.odds[k] ? b.odds[k].toFixed(2) : '–'}</td>`).join('')}</tr>`).join('')}</table></div>`;
   const val = oddsValue(m);
-  const good = val.filter(x => x.ev >= 0.03).slice(0, 3);
+  // as mesmas regras do Zé no duelo: odds altas exigem mais margem, nada acima de 6.00 nem abaixo de 20% de probabilidade
+  const good = val.filter(x => x.ev > zeEdgeFor(0.03, x.o) && x.o <= 6 && x.p >= 0.2).slice(0, 3);
+  const longs = val.filter(x => x.ev > 0.03 && !good.includes(x) && (x.o > 6 || x.p < 0.2)).slice(0, 2);
   const vtxt = good.length
     ? good.map(x => `✅ <b>${esc(marketName(x.k, m))}</b> @ ${x.o.toFixed(2)} (${esc(x.book)}) — eu dou ${pct(x.p)}, a odd justa seria ${(1 / x.p).toFixed(2)} → <b>+${Math.round(x.ev * 100)}%</b>`).join('<br>')
-    : `Nenhuma destas odds paga mais do que eu acho justo. ${val[0] ? `O mais perto: ${esc(marketName(val[0].k, m))} @ ${val[0].o.toFixed(2)} (${Math.round(val[0].ev * 100)}%).` : ''}`;
+    : `Nenhuma destas odds paga mais do que eu acho justo — aqui não aposto.`;
+  const ltxt = longs.length ? `<div class="muted" style="margin-top:4px;font-size:.8rem;">⚠️ ${longs.map(x => `${esc(marketName(x.k, m))} @ ${x.o.toFixed(2)}`).join(' · ')}: parece valor, mas é zebra (odd alta / pouca probabilidade) — as casas raramente erram tanto. Não conta como valor.</div>` : '';
   const sc = scorerValue(m).filter(x => x.status !== 'fora' && x.status !== 'lesão').slice(0, 8);
   const stxt = sc.length ? `<div style="margin-top:8px;"><b>⚽ Marcador a qualquer momento</b> <span class="muted">(${esc(st.scorerBook)})</span><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;">${sc.map(x => `<span class="spill ${x.ev != null && x.ev >= 0.05 ? 'win' : 'void'}" title="${x.p != null ? 'eu dou ' + pct(x.p) : 'sem dados do jogador'}">${esc(x.name)} ${x.odd.toFixed(2)}${x.p != null ? ` · ${pct(x.p)}` : ''}</span>`).join('')}</div><div class="muted" style="font-size:.74rem;margin-top:3px;">A verde: a odd paga mais do que a minha probabilidade de ele marcar.</div></div>` : '';
   return `<div class="reason" style="margin-top:8px;"><div class="rz-head">💶 Odds das casas <span class="muted" style="font-weight:400;font-size:.75rem;">antes do jogo · podem mudar</span></div>${table}
-    <div style="margin-top:6px;font-size:.86rem;line-height:1.45;">${vtxt}</div>${stxt}
+    <div style="margin-top:6px;font-size:.86rem;line-height:1.45;">${vtxt}</div>${ltxt}${stxt}
     <div class="acts" style="margin-top:6px;"><button class="btn btn-sm" onclick="oddsRetry(this)">🔄 Atualizar odds</button></div>
     <div class="muted" style="font-size:.72rem;margin-top:4px;">A tua casa (Betano, Placard…) pode ter odds diferentes — confirma antes de apostar.</div></div>`;
 }
@@ -11151,7 +11155,7 @@ async function oddsRetry(btn) {
 zeTalk = (function (prev) {
   return function (raw, opts) {
     const q = normTxt(raw);
-    if (/\b(odds?|cotac|quanto paga|marcadores?|quem marca)\b/.test(q) && !/^odds? [\d.,\s]+$/.test(q)) {
+    if (/\b(odds?|cotac\w*|quanto paga)\b/.test(q) && !(typeof parseThreeOdds === "function" && parseThreeOdds(String(raw)))) {
       const teams = teamsMentioned(expandAliases(q));
       const m = teams.length ? resolveFocus(expandAliases(q), teams) : (typeof zeLastMatch !== 'undefined' && zeLastMatch);
       if (m && m.espn) {
