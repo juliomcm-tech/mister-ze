@@ -11670,10 +11670,11 @@ zeDecidirUI = (function (prev) {
       // tabela: marcar o que não conta
       el.querySelectorAll('table.mtable tbody tr').forEach(tr => {
         const lab = (tr.cells[0] && tr.cells[0].textContent || '').trim(), x = d.rows.find(y => y.odd && y.label === lab);
-        if (!x || !(x.ev > 0)) return;
+        if (!x || !(x.ev > d.minEdge)) return;
         const tag = x.zebra ? '🦓 zebra' : x.doubt != null ? '🤔 discordo muito das casas' : (x.contra && x.ev < CONTRA_EDGE) ? '↩️ contra o favorito' : '';
         if (tag) { const c = tr.cells[3]; c.className = ''; c.style.color = 'var(--muted)'; c.innerHTML += `<br><span style="font-size:.68rem;">${tag}</span>`; }
       });
+      if (!d.pick && (d.contraSkip || d.doubtSkip)) el.querySelectorAll('.speech').forEach(sp => { sp.innerHTML = sp.innerHTML.replace(/Nenhuma destas odds tem valor ≥ [\d.]+%\./, 'Nenhuma destas odds tem valor seguro (vê o «Porquê?» em baixo).'); });
       // porquê
       const nm = k => marketName(k, m), fr = d.rows.find(x => x.k === d.favM);
       const favName = d.favM === 'X' ? 'o empate' : (d.favM === '1' ? m.home : m.away);
