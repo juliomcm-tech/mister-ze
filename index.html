@@ -90,6 +90,10 @@ a { color: var(--blue); }
 .hdr-title { min-width: 0; }
 .hdr-title .club { font-family: var(--cond); font-weight: 800; font-size: 1.2rem; letter-spacing: .02em; text-transform: uppercase; line-height: 1; white-space: nowrap; }
 .hdr-title .club span { color: var(--lime); }
+.hdr-title .club .so { font-style: normal; font-size: .58em; letter-spacing: .06em; color: var(--lime); border: 1.5px solid var(--lime); border-radius: 6px; padding: 1px 4px 0; margin-left: 3px; vertical-align: .28em; }
+.crest { padding: 0; display: inline-flex; align-items: center; justify-content: center; overflow: visible; margin-right: 2px; }
+.crest svg { width: 100%; height: 100%; display: block; }
+@media (max-width: 360px) { .hdr-title .club .so { display: none; } .btn-continue small { max-width: 80px; } }
 .hdr-title .sub { font-size: .72rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hdr-spacer { flex: 1; }
 .hdr-search { position: relative; }
@@ -620,7 +624,7 @@ select.inp { appearance: auto; }
   <div class="hdr-row">
     <button class="crest" id="crest" onclick="fmGo('ze')" aria-label="Falar com o Mister Zé"></button>
     <div class="hdr-title">
-      <div class="club">Mister <span>Zé</span> FC</div>
+      <div class="club">Mister <span>Zé</span> <em class="so" title="The Special One">S.O.</em></div>
       <div class="sub" id="hdrSub">Dossiê 2026/27 · Tu vs Mister Zé</div>
     </div>
     <div class="hdr-spacer"></div>
