@@ -10916,6 +10916,7 @@ slipRegistar = (function (prev) {
 const RSS2JSON = u => 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(u);
 const MKT = { 'PT:pt-150': 'pt-PT', 'GB:en': 'en-GB', 'ES:es': 'es-ES', 'IT:it': 'it-IT', 'DE:de': 'de-DE', 'FR:fr': 'fr-FR', 'NL:nl': 'nl-NL', 'TR:tr': 'tr-TR', 'DK:da': 'da-DK', 'FI:fi': 'fi-FI', 'BE:nl': 'nl-BE', 'BE:fr': 'fr-BE' };
 const RSS_CACHE = new Map();
+const FOOT_WORD = { pt: 'futebol', en: 'football', es: 'fútbol', it: 'calcio', de: 'Fußball', fr: 'football', nl: 'voetbal', tr: 'futbol', da: 'fodbold', fi: 'jalkapallo' };
 const xmlEsc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 function unBing(link) { const m = String(link || '').match(/[?&]url=([^&]+)/); try { return m ? decodeURIComponent(m[1]) : link; } catch (e) { return link; } }
 const hostName = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return 'notícia'; } };
@@ -10923,7 +10924,9 @@ function gnToBing(url) {
   const u = new URL(url);
   const q = (u.searchParams.get('q') || '').replace(/\bwhen:\d+[dhm]\b/g, '').trim();
   const mkt = MKT[u.searchParams.get('ceid') || ''] || 'pt-PT';
-  return `https://www.bing.com/news/search?q=${encodeURIComponent(q)}&format=rss&mkt=${mkt}&setlang=${mkt.slice(0, 2)}`;
+  // «Porto», «Braga», «Milan»… também são cidades: a palavra «futebol» na língua da edição tira as notícias da câmara municipal
+  const ball = /romano/i.test(q) ? '' : ' ' + (FOOT_WORD[mkt.slice(0, 2)] || 'football');
+  return `https://www.bing.com/news/search?q=${encodeURIComponent(q + ball)}&format=rss&mkt=${mkt}&setlang=${mkt.slice(0, 2)}`;
 }
 async function rssJson(feedUrl) {
   const c = RSS_CACHE.get(feedUrl); if (c && Date.now() - c.t < 15 * 60e3) return c.j;
