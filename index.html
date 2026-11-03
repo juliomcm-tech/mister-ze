@@ -11277,7 +11277,7 @@ function calGate() {
 }
 function calUngate() { CAL_STATIC.forEach(m => { if (!matches.includes(m)) matches.push(m); if (m.calSt === 'pending') { delete m.calSt; delete m.calNote; if (m.aviso === CAL_PENDING_TXT) m.aviso = m._orig.aviso || null; } }); }
 calApply = (function (prev) { return function () { calUngate(); const r = prev.apply(this, arguments); calGate(); return r; }; })(calApply);
-calVerify = (function (prev) { return async function () { calUngate(); try { return await prev.apply(this, arguments); } finally { calGate(); } }; })(calVerify);
+calVerify = (function (prev) { return async function () { try { return await prev.apply(this, arguments); } finally { calGate(); } }; })(calVerify);   // durante a verificação os jogos por confirmar continuam escondidos
 renderCalendar = (function (prev) {
   return function () {
     calGate();
