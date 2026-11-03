@@ -12191,6 +12191,19 @@ zeJogosDoDia = function () {
   zeLastMatch = rows[0].m;
   return { mood: 'feliz', html: `${pickOne(['Ora bem, o menu dos próximos dias:', 'O que me interessa:', 'Radar ligado:'])}<br>${rows.map((x, i) => `${i === 0 ? '⭐' : '•'} ${x.line}`).join('<br><br>')}<br><br><span class="muted">✅ vale = as casas pagam acima da odd justa · 💶 = aposta com valor (as mesmas regras do duelo) · 🧠 = estudado a fundo. Mete sempre a odd da TUA casa no duelo.</span><br>Fico de olho no <b>${esc(rows[0].m.home)} vs ${esc(rows[0].m.away)}</b> — diz «duelo» ou pergunta-me o que quiseres.` };
 };
+/* «jogo do dia» sem estudos feitos (ex.: acabaste de abrir a app): estuda os 4 primeiros antes de responder */
+zeJogosDoDia = (function (prev) {
+  return function () {
+    const list = upcoming(3).slice(0, 6).map(x => x.m);
+    const todo = list.filter(m => m.espn && m.espn.ev && !studyFor(m)).slice(0, 4);
+    if (!todo.length || navigator.onLine === false || (typeof espnCooling === 'function' && espnCooling())) return prev();
+    return { mood: 'pensativo', html: `Deixa-me ver forma e odds de ${todo.length} ${todo.length > 1 ? 'jogos' : 'jogo'} antes de te responder… 🧐`, later: async () => {
+      for (const m of todo) { PRE_NEWS_OFF = true; try { await zeStudy(m); } catch (e) {} finally { PRE_NEWS_OFF = false; } const s = studyFor(m); if (s && s.news && s.news.skipped) delete s.news; }
+      try { diarySnapAll(); } catch (e) {}
+      return prev();
+    } };
+  };
+})(zeJogosDoDia);
 
 renderWallet(); renderUpdateInfo();
 
