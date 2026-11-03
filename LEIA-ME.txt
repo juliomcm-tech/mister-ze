@@ -1,0 +1,39 @@
+MISTER ZÉ · APP PARA O TELEMÓVEL (sem Play Store)
+
+Ficheiros (todos na mesma pasta, sem subpastas):
+  index.html              a app
+  manifest.webmanifest    nome, ícone, cores, atalhos e "Partilhar com o Mister Zé"
+  sw.js                   funciona offline e recebe partilhas do Android
+  icon-192.png / icon-512.png / icon-maskable-512.png   ícones (a cara do Zé)
+
+1) PÔR ONLINE (precisa de https) — GitHub Pages
+   - GitHub → New repository → nome: mister-ze → Public → Create
+   - "uploading an existing file" → arrasta os 6 ficheiros → Commit changes
+   - Settings → Pages → Source: Deploy from a branch → Branch: main / (root) → Save
+   - Espera 1–2 minutos. O link fica: https://O-TEU-UTILIZADOR.github.io/mister-ze/
+
+2) INSTALAR NO SAMSUNG
+   - Abre o link no Chrome (ou Samsung Internet) do telemóvel
+   - Carrega em "Instalar" no topo, ou menu ⋮ → "Instalar aplicação" / "Adicionar ao ecrã principal"
+   - Aparece o ícone do Mister Zé no ecrã inicial. Abre em ecrã cheio, como uma app.
+
+3) PASSAR OS DADOS DO PC PARA O TELEMÓVEL
+   - No PC: Definições → Backup → "Exportar tudo" (gera um .json)
+   - Envia o .json para o telemóvel (WhatsApp para ti, email, Drive…)
+   - Na app: Definições → Backup → "Importar" → escolhe o .json
+   (ou usa "PC ↔ telemóvel" com um token do GitHub só com permissão "gist")
+
+4) USAR NO DIA A DIA
+   - Na Betano/Placard/galeria: Partilhar → Mister Zé → ele abre e analisa o print
+   - Carrega no ícone do Zé sem soltar: atalhos para Zé, Duelo e Carteiras
+   - Só usa internet quando carregas em "Atualizar resultados" (e no leitor de prints)
+
+5) ATUALIZAR A APP
+   - Substitui o index.html no GitHub pelo novo. Na próxima vez que abrires a app
+     com internet, já vem a versão nova. As bancas e apostas não se perdem
+     (ficam guardadas no telemóvel, não no ficheiro).
+
+Notas
+   - Cada telemóvel/PC tem as suas próprias carteiras. Amigos que usem o mesmo link
+     têm as deles, separadas das tuas.
+   - O leitor de prints precisa de internet na 1.ª vez; depois fica guardado.
