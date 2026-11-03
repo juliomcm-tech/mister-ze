@@ -12183,7 +12183,7 @@ zeJogosDoDia = function () {
     let val = null; try { val = st && st.books ? oddsValue(m).filter(v => v.ev > zeEdgeFor(0.03, v.o) && v.o <= 6 && v.p >= 0.2 && !v.doubt && (!isContra(v.k, favOf(r.mk), favOf({ '1': 1 / st.books[0].odds['1'], X: 1 / st.books[0].odds.X, '2': 1 / st.books[0].odds['2'] })) || v.ev >= CONTRA_EDGE))[0] : null; } catch (e) {}
     const score = (val ? 2 : 0) + (pub && need && pub >= need ? 1 : 0) + (r.conf === 'alta' ? 0.5 : r.conf === 'baixa' ? -0.5 : 0) + (best ? best.p : 0);
     const line = `<b>${esc(m.home)} vs ${esc(m.away)}</b> (${whenTxt(m)}${m.kickoff ? ', ' + m.kickoff : ''})<br>` +
-      (best ? `${esc(marketName(best.kk, m))} ${pct(best.p)} · justa ${need.toFixed(2)}${pub > 1 ? (pub >= need ? ` · casas ${pub.toFixed(2)} ✅ <b>vale</b>` : ` · casas ${pub.toFixed(2)} ❌ não vale`) : ' · <span class="muted">sem odds ainda</span>'}` : 'jogo equilibrado — só com odd boa') +
+      (best ? `${esc(marketName(best.kk, m))} ${pct(best.p)} · justa ${need.toFixed(2)}${pub > 1 ? (pub >= need ? ` · casas ${pub.toFixed(2)} ✅ <b>vale</b>` : ` · casas ${pub.toFixed(2)} ❌ não vale`) : st && st.books && st.books.length ? ' · <span class="muted">as casas não dão esta linha</span>' : ' · <span class="muted">sem odds ainda</span>'}` : 'jogo equilibrado — só com odd boa') +
       (val ? `<br>💶 Valor: <b>${esc(marketName(val.k, m))} @ ${val.o.toFixed(2)}</b> (${esc(val.book)}, +${Math.round(val.ev * 100)}%)` : '') +
       ` <span class="muted">· confiança ${esc(r.conf || '—')}${st ? ' 🧠' : ''}</span>`;
     return { m, line, score };
@@ -12204,6 +12204,15 @@ zeJogosDoDia = (function (prev) {
     } };
   };
 })(zeJogosDoDia);
+/* nomes de mercados que faltavam (ex.: «U3.5» → «Menos de 3.5 golos») */
+marketName = (function (prev) {
+  return function (k, m) {
+    const n = prev(k, m);
+    if (n && n !== k) return n;
+    const g = /^([OU])(\d+(?:\.\d+)?)$/.exec(k || '');
+    return g ? `${g[1] === 'O' ? 'Mais' : 'Menos'} de ${g[2]} golos` : n;
+  };
+})(marketName);
 
 renderWallet(); renderUpdateInfo();
 
