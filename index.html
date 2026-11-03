@@ -11960,6 +11960,26 @@ openModal = (function (prev) {
 })(openModal);
 /* «jogo do dia»: marca os jogos já estudados a fundo */
 setTimeout(() => { try { diarySnapAll(); } catch (e) {} }, 2500);
+/* histórico que já existia (previsões guardadas desde a v26): entra no diário para não começar do zero */
+(function diaryBackfill() {
+  try {
+    const P = lsGet(PRED_KEY, {}), D = diaryLoad(); let n = 0;
+    Object.entries(P).forEach(([k, p]) => {
+      if (!p.done || !p.res || D.items['pred:' + k]) return;
+      if (Object.values(D.items).some(x => x.home === p.home && x.away === p.away && Math.abs(new Date(x.kick) - new Date(p.day)) < 2 * 864e5)) return;
+      const [i, j] = p.res.split('-').map(Number); if (!isFinite(i) || !isFinite(j)) return;
+      const mk = { '1': p.p1, X: p.pX, '2': p.p2, '1X': p.p1 + p.pX, X2: p.pX + p.p2, 'O2.5': p.pO25, 'U2.5': 1 - p.pO25, BTTS: p.pBTTS };
+      const best = ['1', '1X', 'O2.5', 'BTTS', 'U2.5', 'X2', '2'].map(kk => ({ k: kk, p: mk[kk] })).filter(o => o.p >= 0.55 && o.p <= 0.85).sort((a, b) => b.p - a.p)[0];
+      const hit = kk => (MARKET_CONDS[kk](i, j) ? 1 : 0);
+      D.items['pred:' + k] = { key: 'pred:' + k, home: p.home, away: p.away, league: p.league, kick: p.day, t: p.t, backfill: true,
+        pick: best ? { k: best.k, label: marketName(best.k, p), p: +best.p.toFixed(3), need: +(1.03 / best.p).toFixed(2) } : null,
+        mk: Object.fromEntries(Object.entries(mk).map(([a, b]) => [a, +b.toFixed(3)])), cs: null, res: p.res,
+        g: { pick: best ? hit(best.k) : null, fav: hit(['1', 'X', '2'].sort((a, b) => mk[b] - mk[a])[0]), cs: null, o25: hit('O2.5'), btts: hit('BTTS'), value: null } };
+      n++;
+    });
+    if (n) diarySave(D);
+  } catch (e) { console.warn(e); }
+})();
 
 renderWallet(); renderUpdateInfo();
 
