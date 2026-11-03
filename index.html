@@ -11334,6 +11334,226 @@ try { updateContinue(); } catch (e) {}
 })();
 (function () { const b = document.querySelector('.hdr-ico'); if (b && b.textContent.trim() === '⌕') b.textContent = '🔎'; })();
 
+
+
+/* =====================================================================
+   v45 · testado online (3 nov 2026, 21h30)
+   - notícias: o rss2json começou a responder 429 («demasiados feeds novos») → segunda via (r.jina.ai),
+     memória de 30 min no aparelho e no máximo 4 pesquisas novas por minuto
+   - chat: «como está o duelo» já não abre o perfil do Como; «casa vence» não salta para o Casa Pia;
+     «o que achas do derby…» não vira Derby County; perguntas («quem é mais forte X ou Y?») nunca mexem na força das equipas
+   - chat novo: classificação de qualquer liga, «transferências benfica», «mercado»
+   - a app atualiza-se sozinha quando há versão nova
+   ===================================================================== */
+const APP_VER = 'v45';
+
+/* ---------- 1) notícias e YouTube sem falhar ---------- */
+const FEED_LS = 'ze_feed_cache_v1';
+let R2J_COOL = 0, JINA_COOL = 0;
+const FEED_BUDGET = { t: 0, n: 0 };
+function feedLsGet(u) { try { const c = lsGet(FEED_LS, {})[u]; return c && Date.now() - c.t < 30 * 60e3 ? c.j : null; } catch (e) { return null; } }
+function feedLsSet(u, j) {
+  try {
+    const o = lsGet(FEED_LS, {}); o[u] = { t: Date.now(), j: { status: 'ok', feed: { title: (j.feed && j.feed.title) || '' }, items: (j.items || []).slice(0, 15).map(it => ({ title: it.title, link: it.link, pubDate: it.pubDate, author: it.author || '' })) } };
+    const ks = Object.keys(o).sort((a, b) => o[a].t - o[b].t); while (ks.length > 40) delete o[ks.shift()];
+    lsSet(FEED_LS, o);
+  } catch (e) {}
+}
+const toR2jDate = d => { const x = new Date(d); return isNaN(x) ? '' : x.toISOString().slice(0, 19).replace('T', ' '); };
+async function timedFetch(url, ms, init) {
+  const ctrl = new AbortController(); const tm = setTimeout(() => ctrl.abort(), ms);
+  try { return await fetch(url, { ...(init || {}), signal: ctrl.signal, cache: 'no-store' }); } finally { clearTimeout(tm); }
+}
+function xmlToItemsRe(xml) {
+  const un = t => String(t || '').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&amp;/g, '&').trim();
+  const tag = (b, n) => { const m = b.match(new RegExp('<' + n + '[^>]*>([\\s\\S]*?)</' + n + '>', 'i')); return m ? un(m[1]) : ''; };
+  const items = (xml.match(/<item[\s>][\s\S]*?<\/item>/gi) || []).map(b => ({ title: tag(b, 'title'), link: tag(b, 'link'), pubDate: toR2jDate(tag(b, 'pubDate')), author: tag(b, 'News:Source') || tag(b, 'source') }));
+  const entries = items.length ? [] : (xml.match(/<entry[\s>][\s\S]*?<\/entry>/gi) || []).map(b => ({ title: tag(b, 'title'), link: (b.match(/<link[^>]*href="([^"]+)"/i) || [])[1] || '', pubDate: toR2jDate(tag(b, 'published')), author: '' }));
+  return { title: tag(xml, 'title'), items: items.length ? items : entries };
+}
+function xmlToItems(xml) {
+  const doc = new DOMParser().parseFromString(xml, 'text/xml');
+  if (doc.getElementsByTagName('parsererror').length) return xmlToItemsRe(xml);   // XML mal formado: lê à mão
+  const items = [...doc.getElementsByTagName('item')].map(it => {
+    const g = n => { const el = it.getElementsByTagName(n)[0]; return el ? el.textContent.trim() : ''; };
+    return { title: g('title'), link: g('link'), pubDate: toR2jDate(g('pubDate')), author: g('News:Source') || g('source') || '' };
+  });
+  if (items.length) return { title: (doc.getElementsByTagName('title')[0] || {}).textContent || '', items };
+  const entries = [...doc.getElementsByTagName('entry')].map(e => {
+    const l = e.getElementsByTagName('link')[0];
+    return { title: (e.getElementsByTagName('title')[0] || {}).textContent || '', link: l ? l.getAttribute('href') : '', pubDate: toR2jDate((e.getElementsByTagName('published')[0] || {}).textContent || ''), author: '' };
+  });
+  return { title: (doc.getElementsByTagName('title')[0] || {}).textContent || '', items: entries };
+}
+rssJson = async function (feedUrl) {
+  const m = RSS_CACHE.get(feedUrl); if (m && Date.now() - m.t < 30 * 60e3) return m.j;
+  const ls = feedLsGet(feedUrl); if (ls) { RSS_CACHE.set(feedUrl, { t: Date.now(), j: ls }); return ls; }
+  // no máximo 6 pesquisas de notícias novas por minuto (o YouTube não conta) (os serviços grátis cortam quem pede muito de seguida)
+  if (Date.now() - FEED_BUDGET.t > 60e3) { FEED_BUDGET.t = Date.now(); FEED_BUDGET.n = 0; }
+  const yt = /youtube\.com\/feeds/.test(feedUrl);
+  if (!yt && FEED_BUDGET.n >= 6) throw new Error('muitas pesquisas seguidas — espera um minuto');
+  if (!yt) FEED_BUDGET.n++;
+  let j = null, why = '';
+  if (Date.now() > R2J_COOL) {
+    try {
+      const r = await timedFetch(RSS2JSON(feedUrl), 6000);
+      const x = await r.json().catch(() => null);
+      if (r.ok && x && x.status === 'ok') j = x;
+      else { why = (x && x.message) || 'HTTP ' + r.status; if (r.status === 429 || /short period|limit/i.test(why)) R2J_COOL = Date.now() + 10 * 60e3; }
+    } catch (e) { why = e.name === 'AbortError' ? 'demorou' : e.message; }
+  }
+  if (!j && Date.now() > JINA_COOL) {
+    try {
+      const r = await timedFetch('https://r.jina.ai/' + feedUrl, 8000, { headers: { 'X-Return-Format': 'html' } });
+      const txt = await r.text();
+      if (r.ok && /<rss|<feed|<item|<entry/i.test(txt)) { const p = xmlToItems(txt); if (p.items.length) j = { status: 'ok', feed: { title: p.title }, items: p.items }; }
+      else { if (r.status === 429) JINA_COOL = Date.now() + 5 * 60e3; why = why || 'HTTP ' + r.status; }
+    } catch (e) { why = why || e.message; }
+  }
+  if (!j) throw new Error('feed ' + (why || 'sem resposta'));
+  RSS_CACHE.set(feedUrl, { t: Date.now(), j }); feedLsSet(feedUrl, j);
+  return j;
+};
+
+/* ---------- 2) nomes de equipas que também são palavras ---------- */
+['casa', 'pia'].forEach(w => TEAM_GENERIC.add(w));                // «Casa Pia» só com as duas palavras
+try { if (typeof EXP_CACHE !== 'undefined' && EXP_CACHE.clear) EXP_CACHE.clear(); } catch (e) {}
+const AMBIG_TEAM = n => { const t = normTxt(n).split(' '); return t[0] === 'como' || (t[0] === 'derby' && t.length <= 2); };
+function opponentNamed(team, q) {
+  return matches.some(m => !m.past && teamInMatch(m, team) && [m.home, m.away].some(o => normTxt(o) !== normTxt(team) && !AMBIG_TEAM(o) && teamScore(o, q) > 0));
+}
+function ambigOK(team, q, raw) {
+  const n = normTxt(team);
+  if (/^como/.test(n)) return /\bcomo 1907\b|\bcomo calcio\b/.test(q) || /(^|[^.!?]\s)Como\b/.test(String(raw || '').replace(/^\s*Como\b/, '')) || opponentNamed(team, q);
+  if (/^derby/.test(n)) return /\bderby county\b/.test(q) || /\bDerby\b/.test(String(raw || '')) && !/\b(o|um|no|do|grande|este|esse)\s+Derby\b/.test(String(raw || '')) || opponentNamed(team, q);
+  return true;
+}
+let TM_RAW = '';
+function ambigFilter(list, q) {
+  const plain = list.filter(n => !AMBIG_TEAM(n));
+  if (plain.length >= 2) return plain;                 // «o derby Charlton–Bolton»: há duas equipas claras, a palavra «derby» é só uma palavra
+  return list.filter(n => !AMBIG_TEAM(n) || ambigOK(n, q, TM_RAW));
+}
+teamsMentioned = (function (prev) { return function (q) { return ambigFilter(prev(q), q); }; })(teamsMentioned);
+profTeamsInText = (function (prev) { return function (q) { return ambigFilter(prev(q), q); }; })(profTeamsInText);
+
+/* ---------- 3) chat: classificação, comparação, transferências, mercado ---------- */
+function leagueOfTeam(team) {
+  const m = matches.find(x => x.espn && x.espn.code && !/uefa/.test(x.espn.code) && teamInMatch(x, team));
+  return m ? m.espn.code : null;
+}
+function standingsTable(code, focus) {
+  const L = lsGet(LIVE_KEY, null), S = L && L.standings && L.standings[code];
+  const tb = S && S[0] && S[0].table;
+  if (!tb || !tb.length) return null;
+  const rows = tb.slice().sort((a, b) => b.points - a.points || (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst) || b.goalsFor - a.goalsFor);
+  const fi = focus ? rows.findIndex(r => teamScore(r.team.name, normTxt(focus)) > 0 || teamScore(focus, normTxt(r.team.name)) > 0) : -1;
+  const show = rows.map((r, i) => ({ r, i })).filter(x => x.i < 8 || x.i >= rows.length - 3 || Math.abs(x.i - fi) <= 1);
+  let last = -1;
+  const line = ({ r, i }) => { const gap = i - last > 1 ? '<div class="muted">…</div>' : ''; last = i; const gd = r.goalsFor - r.goalsAgainst;
+    return `${gap}<div style="display:flex;gap:6px;${i === fi ? 'color:var(--lime);font-weight:800;' : ''}"><span style="width:22px;text-align:right;">${i + 1}.</span><span style="flex:1;">${esc(r.team.name)}</span><span class="muted">${r.playedGames} j · ${gd > 0 ? '+' : ''}${gd}</span><b style="width:28px;text-align:right;">${r.points}</b></div>`; };
+  return `<b>🏆 ${esc(ESPN_LEAGUES[code] || (typeof EXTRA_LEAGUES !== 'undefined' && EXTRA_LEAGUES[code]) || code)}</b><div style="font-size:.84rem;line-height:1.55;margin-top:4px;">${show.map(line).join('')}</div>`;
+}
+async function standingsFetch(code) {
+  const j = await fetchJSON(`https://site.api.espn.com/apis/v2/sports/soccer/${code}/standings`);
+  const s = espnStandings(j); if (!s) return false;
+  const L = lsGet(LIVE_KEY, null) || { matches: [], standings: {} }; L.standings = L.standings || {}; L.standings[code] = s; lsSet(LIVE_KEY, L);
+  return true;
+}
+function teamStrength(name) {
+  const t = profFind(name); if (!t) return null;
+  const p = teamProfile(t); if (!p || !p.n) return null;
+  const att = (p.ah + p.aa) / 2, def = (p.dh + p.da) / 2;
+  return { p, att, def, idx: att / def, ppg: (p.H.pts + p.A.pts) / p.n };
+}
+function compareHTML(a, b) {
+  const A = teamStrength(a), B = teamStrength(b);
+  const f = x => x.toFixed(2);
+  const row = (n, S) => S ? `<b>${esc(S.p.t.name)}</b>: ${f(S.ppg)} pts/j em ${S.p.n} jogos · ataque ×${f(S.att)} · defesa ×${f(S.def)} <span class="muted">(1 = média da liga; defesa abaixo de 1 é melhor)</span>${S.p.tags.length ? '<br><span class="muted">' + S.p.tags.join(' · ') + '</span>' : ''}` : `<b>${esc(n)}</b>: ainda não tenho jogos desta época (carrega em 📡 Atualizar ou estuda um jogo dele).`;
+  let verdict = '';
+  if (A && B) {
+    const d = A.idx / B.idx - 1, diffLeague = A.p.t.code !== B.p.t.code;
+    verdict = Math.abs(d) < 0.08 ? '⚖️ Estão muito parecidos.' : `👉 Mais forte agora: <b>${esc((d > 0 ? A : B).p.t.name)}</b> (${Math.round(Math.abs(d) * 100)}% melhor no saldo ataque/defesa).`;
+    if (diffLeague) verdict += ' <span class="muted">São ligas diferentes: cada um é medido contra a sua liga.</span>';
+  }
+  const dm = matches.find(m => !m.past && !m.aviso && teamInMatch(m, a) && teamInMatch(m, b));
+  let direct = '';
+  if (dm) { try { const r = modelo(dm); direct = `<br>🆚 No jogo <b>${esc(dm.home)} vs ${esc(dm.away)}</b> (${esc(dm.date)}): 1 ${pct(r.mk['1'])} · X ${pct(r.mk['X'])} · 2 ${pct(r.mk['2'])}.`; zeLastMatch = dm; } catch (e) {} }
+  return `${row(a, A)}<br>${row(b, B)}<br>${verdict}${direct}<br><span class="muted">Só respondi — não mudei nada na força das equipas.</span>`;
+}
+zeTalk = (function (prev) {
+  return function (raw, opts) {
+    TM_RAW = String(raw || '');
+    const q = normTxt(raw);
+    const isQ = /\?\s*$/.test(TM_RAW.trim()) || /^(quem|qual|quais|sera|e que|achas|o que|porque|porque e que|quanto|onde|quando|como e que)\b/.test(q);
+    try {
+      // classificação / tabela
+      if (/\b(classificac\w*|tabela|standings|em que lugar|que lugar|posicao|lider|lideres)\b/.test(q) && !/aposta|odd/.test(q)) {
+        const teams = teamsMentioned(expandAliases(q));
+        const code = leagueCodeFromName(TM_RAW) || (teams[0] && leagueOfTeam(teams[0]));
+        if (code) {
+          const h = standingsTable(code, teams[0]);
+          if (h) return { mood: 'pensativo', html: h };
+          return { mood: 'pensativo', html: 'Vou buscar a classificação… 🏆', later: async () => { const ok = await standingsFetch(code).catch(() => false); return { mood: ok ? 'feliz' : 'pensativo', html: ok ? standingsTable(code, teams[0]) : 'Não consegui a classificação desta liga agora.' }; } };
+        }
+      }
+      // «quem é mais forte X ou Y?» — só responde, não regista nada
+      if ((isQ || / ou /.test(q)) && /(mais forte|mais fraco|melhor equipa|quem e melhor|esta melhor|esta pior|quem ganha)/.test(q)) {
+        const teams = profTeamsInText(expandAliases(q));
+        if (teams.length >= 2) return { mood: 'pensativo', html: compareHTML(teams[0], teams[1]) };
+        if (teams.length === 1 && isQ) return { mood: 'pensativo', html: compareHTML(teams[0], teams[0]).split('<br>')[0] + '<br><span class="muted">Diz-me com quem comparar («Benfica ou Porto?»).</span>' };
+      }
+      // «transferências benfica» (sem «do»)
+      const tm = TM_RAW.match(/^\s*((?:as\s+)?(?:transfer[eê]ncias|compras|vendas|contrata[cç][oõ]es|refor[cç]os|saldo))\s+(?!(do|da|de|dos|das)\b)(.+)$/i);
+      if (tm) return prev(`${tm[1]} do ${tm[3]}`, opts);
+      // «mercado» sozinho → negócios do Fabrizio Romano e dos jornais
+      if (/^(o )?mercado( de transferencias)?$|^(ultimas|novidades|noticias) (do )?mercado|^here we go$|^fabrizio( romano)?$/.test(q.replace(/[?!.]+$/, ''))) {
+        return { mood: 'pensativo', html: 'Vou ver o que o Fabrizio Romano e os jornais dizem… 📺', later: async () => { const it = await ytFetch().catch(() => []); return { mood: 'feliz', html: `<b>📺 Mercado (Fabrizio Romano + jornais)</b><br>${ytDealsHTML(it || [])}` }; } };
+      }
+    } catch (e) { console.warn(e); }
+    return prev(raw, opts);
+  };
+})(zeTalk);
+
+/* ---------- 4) odds: quando ainda não há, dizer quando costumam sair ---------- */
+oddsHTML = (function (prev) {
+  return function (m) {
+    let h = prev(m);
+    try {
+      const st = studyFor(m), d = parseDayLabel(m.date), days = d ? daysFromToday(d) : null;
+      if (st && !st.offline && !(st.books && st.books.length) && days != null && days > 6) h = h.replace('As casas ainda não publicaram odds para este jogo (ou a ESPN não as tem).', `O jogo é daqui a ${days} dias — as casas costumam publicar as odds 5 a 7 dias antes. Volta mais perto da data.`);
+    } catch (e) {}
+    return h;
+  };
+})(oddsHTML);
+
+/* ---------- 5) versão nova → atualiza sozinha ---------- */
+(function autoUpdate() {
+  if (!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
+  const had = !!navigator.serviceWorker.controller;
+  let done = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!had || done) return; done = true;
+    const busy = document.querySelector('.modal-overlay.open') || (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && document.activeElement.value);
+    if (!busy) { try { sessionStorage.setItem('ze_updated', '1'); } catch (e) {} location.reload(); }
+    else toast('🆕 Há uma versão nova do Mister Zé — fecha e volta a abrir a app.');
+  });
+  const check = () => navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => {});
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+  setInterval(check, 30 * 60e3);
+  try { if (sessionStorage.getItem('ze_updated')) { sessionStorage.removeItem('ze_updated'); setTimeout(() => toast(`🆕 Mister Zé atualizado (${APP_VER}).`), 800); } } catch (e) {}
+})();
+renderConfig = (function (prev) {
+  return function () {
+    const r = prev.apply(this, arguments);
+    try {
+      const v = document.getElementById('view-config');
+      if (v && !document.getElementById('appVer')) v.insertAdjacentHTML('beforeend', `<div id="appVer" class="muted" style="text-align:center;font-size:.75rem;margin:14px 0 4px;">Mister Zé ${APP_VER} · atualiza-se sozinho quando há versão nova</div>`);
+    } catch (e) {}
+    return r;
+  };
+})(renderConfig);
+
 renderWallet(); renderUpdateInfo();
 
 </script>

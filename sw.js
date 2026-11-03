@@ -4,7 +4,7 @@
    - leitor de prints (OCR) e tipos de letra guardados na 1.ª utilização → depois funcionam offline
    - resultados (ESPN) nunca são guardados aqui: vão sempre à rede
    - recebe partilhas do Android (prints e links) → abre o chat do Zé */
-const VERSION = 'ze-v44c';
+const VERSION = 'ze-v45';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 
 self.addEventListener('install', e => {
@@ -38,11 +38,12 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
 
   // Resultados e dados ao vivo: sempre rede (nunca cache)
-  if (/espn\.com|football-data\.org|corsproxy\.io|allorigins\.win|codetabs\.com|thingproxy|api\.github\.com/.test(url.hostname)) return;
+  if (/espn\.com|rss2json\.com|r\.jina\.ai|football-data\.org|corsproxy\.io|allorigins\.win|codetabs\.com|thingproxy|api\.github\.com/.test(url.hostname)) return;
 
   // A própria app: rede primeiro, cache como reserva
   if (req.mode === 'navigate' || (url.origin === self.location.origin && /\/(index\.html)?$/.test(url.pathname))) {
-    e.respondWith(fetch(req).then(res => {
+    // «no-cache»: pergunta sempre ao GitHub se há versão nova (sem isto o telemóvel podia ficar 10 min com a antiga)
+    e.respondWith(fetch(url.href, { cache: 'no-cache', credentials: 'same-origin' }).then(res => {
       const copy = res.clone();
       caches.open(VERSION).then(c => c.put('./index.html', copy));
       return res;
