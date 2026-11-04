@@ -4,14 +4,14 @@
    - leitor de prints (OCR) e tipos de letra guardados na 1.ª utilização → depois funcionam offline
    - resultados (ESPN) nunca são guardados aqui: vão sempre à rede
    - recebe partilhas do Android (prints e links) → abre o chat do Zé */
-const VERSION = 'ze-v47e';
+const VERSION = 'ze-v48';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== VERSION && k !== 'ze-runtime' && k !== 'ze-share').map(k => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== VERSION && k !== 'ze-runtime2' && k !== 'ze-share').map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
 
 self.addEventListener('fetch', e => {
@@ -54,7 +54,8 @@ self.addEventListener('fetch', e => {
   // Ficheiros da app, tipos de letra e leitor de prints (OCR): cache primeiro
   if (url.origin === self.location.origin || /fonts\.(googleapis|gstatic)\.com|cdn\.jsdelivr\.net|unpkg\.com|tessdata\.projectnaptha\.com/.test(url.hostname)) {
     e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(res => {
-      if (res && (res.ok || res.type === 'opaque')) { const copy = res.clone(); caches.open('ze-runtime').then(c => c.put(req, copy)); }
+      // só guarda respostas boas (uma resposta «opaca» pode esconder um erro e ficava guardada para sempre)
+      if (res && res.ok && res.type !== 'opaque') { const copy = res.clone(); caches.open('ze-runtime2').then(c => c.put(req, copy)); }
       return res;
     })));
   }

@@ -5398,7 +5398,7 @@ async function ocrFiles(files, status) {
         const r3 = await w.recognize(canvas, {}, { blocks: true, text: true });
         const geo = parseGeometric(ocrWords(r3.data), canvas.width);
         const full = s => s.legs.filter(l => Number(l.odd) > 1 && l.home && l.away).length;
-        if (full(geo) >= full(one)) { geo.declared = one.declared || geo.declared; one = geo; }
+        if (full(geo) > full(one) || (full(geo) === full(one) && good(geo) >= good(one) && good(geo) > 0)) { geo.declared = one.declared || geo.declared; one = geo; }   // v48: nunca trocar uma leitura com seleções por uma vazia
         else { one.totalOdd = one.totalOdd || geo.totalOdd; one.appProb = geo.appProb; }
       } catch (e) { console.warn(e); }
       await w.setParameters({ tessedit_pageseg_mode: '6' });
@@ -5964,7 +5964,7 @@ async function ocrFiles(files, status) {
         const r3 = await w.recognize(canvas, {}, { blocks: true, text: true });
         const geo = parseGeometric(ocrWords(r3.data), canvas.width);
         const full = s => s.legs.filter(l => Number(l.odd) > 1 && l.home && l.away).length;
-        if (full(geo) >= full(one)) { geo.declared = one.declared || geo.declared; one = geo; }
+        if (full(geo) > full(one) || (full(geo) === full(one) && good(geo) >= good(one) && good(geo) > 0)) { geo.declared = one.declared || geo.declared; one = geo; }   // v48: nunca trocar uma leitura com seleções por uma vazia
         else { one.totalOdd = one.totalOdd || geo.totalOdd; one.appProb = geo.appProb; }
       } catch (e) { console.warn(e); }
       await w.setParameters({ tessedit_pageseg_mode: '6' });
@@ -11349,7 +11349,7 @@ try { updateContinue(); } catch (e) {}
    - chat novo: classificação de qualquer liga, «transferências benfica», «mercado»
    - a app atualiza-se sozinha quando há versão nova
    ===================================================================== */
-const APP_VER = 'v47';
+const APP_VER = 'v48';
 
 /* ---------- 1) notícias e YouTube sem falhar ---------- */
 const FEED_LS = 'ze_feed_cache_v1';
@@ -12217,6 +12217,231 @@ marketName = (function (prev) {
     return g ? `${g[1] === 'O' ? 'Mais' : 'Menos'} de ${g[2]} golos` : n;
   };
 })(marketName);
+
+
+
+/* =====================================================================
+   v48 · leitura de boletins à prova de telemóvel
+   - o leitor (OCR) descarrega-se uma vez em segundo plano, com o progresso à vista; se a rede for lenta
+     o descarregamento continua (antes cortava aos 60 s e voltava ao início → «erro» sempre)
+   - se o leitor falhar, tenta outra vez sozinho com um leitor mais leve e imagem mais pequena
+   - 🩺 «Testar o leitor»: diz exatamente em que passo falha (para corrigirmos)
+   - leitura: «Viking FK - Sabah» é o jogo, não a seleção; equipa de fora que falte vem do calendário;
+     nunca se troca uma leitura com seleções por uma vazia
+   - «Boletim do Zé»: tira seleções de jogos que já acabaram
+   ===================================================================== */
+const OCR_JS = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+let OCR_INIT_P = null, OCR_LANGS = 'por+eng', OCR_STAGE = '', OCR_DL = 0;
+function ocrWrapRecognize(w) {
+  if (w._z36) return w;
+  const rec = w.recognize.bind(w);
+  w.recognize = async function (img, opts, out) {
+    if (OCR_PASS >= OCR_MAX_PASSES && OCR_LAST) return OCR_LAST;
+    OCR_PASS++;
+    const r = await Promise.race([rec(img, opts, out), new Promise((_, rej) => setTimeout(() => rej(new Error('a leitura demorou demasiado (imagem muito grande ou telemóvel sem memória)')), IS_PHONE ? 120000 : 120000))]);
+    OCR_LAST = r; return r;
+  };
+  w._z36 = true;
+  return w;
+}
+async function ocrLoadScriptRetry() {
+  if (window.Tesseract) return;
+  let last;
+  for (let i = 0; i < 3; i++) {
+    try { OCR_STAGE = 'a carregar o leitor'; await loadScript(OCR_JS + (i ? '?r=' + i : ''), 45000); if (window.Tesseract) return; }
+    catch (e) { last = e; await new Promise(r => setTimeout(r, 1500)); }
+  }
+  throw last || new Error('não consegui carregar o leitor (OCR)');
+}
+function ocrInit(langs) {
+  if (OCR_INIT_P) return OCR_INIT_P;
+  OCR_INIT_P = (async () => {
+    if (navigator.onLine === false && !window.Tesseract) throw new Error('sem internet para carregar o leitor (OCR)');
+    await ocrLoadScriptRetry();
+    OCR_STAGE = 'a preparar o leitor';
+    const w = await Tesseract.createWorker(langs || OCR_LANGS, 1, {
+      logger: m => {
+        if (/loading language|loading tesseract core/i.test(m.status || '')) { OCR_DL = m.progress || 0; OCR_STAGE = 'a descarregar o leitor'; }
+        if (window._ocrProgress) window._ocrProgress(m);
+      }
+    });
+    await w.setParameters({ tessedit_pageseg_mode: '6' });
+    OCR_STAGE = 'pronto';
+    window._zeOcr = ocrWrapRecognize(w);
+    return window._zeOcr;
+  })().catch(e => { OCR_INIT_P = null; OCR_STAGE = 'falhou: ' + (e && e.message || e); throw e; });
+  return OCR_INIT_P;
+}
+getOcrWorker = async function (onProgress) {
+  window._ocrProgress = m => {
+    try {
+      if (/loading language|loading tesseract core|initializ/i.test(m.status || '')) onProgress && onProgress({ status: 'loading', progress: m.progress, _txt: `A preparar o leitor de boletins${m.progress ? ' ' + Math.round(m.progress * 100) + '%' : ''} (só na 1.ª vez)…` });
+      else onProgress && onProgress(m);
+    } catch (e) {}
+  };
+  if (window._zeOcr) return window._zeOcr;
+  // não desiste do descarregamento: se demorar, avisa, mas o leitor continua a vir
+  return await Promise.race([ocrInit(), new Promise((_, rej) => setTimeout(() => rej(new Error(`o leitor ainda está a descarregar (${OCR_STAGE}${OCR_DL ? ' ' + Math.round(OCR_DL * 100) + '%' : ''}) — espera um minuto e manda outra vez`)), IS_PHONE ? 150000 : 90000))]);
+};
+/* o estado «A preparar o leitor 45%» aparece no ecrã */
+ocrFiles = (function (prev) {
+  return async function (files, status) {
+    const st = typeof status === 'function' ? status : () => {};
+    const wrapped = t => st(t);
+    // 1.ª tentativa normal; se o motor rebentar (memória/worker), 2.ª com leitor só inglês e imagem mais pequena
+    try {
+      const out = await prev.call(this, files, wrapped);
+      return ocrPost(out);
+    } catch (e) {
+      const msg = String(e && e.message || e);
+      if (/ainda está a descarregar|sem internet/i.test(msg)) throw e;
+      st('😬 O leitor engasgou-se — vou tentar outra vez com uma versão mais leve…');
+      try { if (window._zeOcr) await window._zeOcr.terminate(); } catch (x) {}
+      window._zeOcr = null; OCR_INIT_P = null;
+      const keepLangs = OCR_LANGS, keepPx = OCR_PX_OVERRIDE;
+      OCR_LANGS = 'eng'; OCR_PX_OVERRIDE = 1.2e6;
+      try { await ocrInit('eng'); const out = await prev.call(this, files, wrapped); return ocrPost(out); }
+      finally { OCR_LANGS = keepLangs; OCR_PX_OVERRIDE = keepPx; try { if (window._zeOcr) await window._zeOcr.terminate(); } catch (x) {} window._zeOcr = null; OCR_INIT_P = null; }
+    }
+  };
+})(ocrFiles);
+let OCR_PX_OVERRIDE = null;
+capCanvas = (function (prev) {
+  return function (c) {
+    if (!OCR_PX_OVERRIDE) return prev(c);
+    const px = c.width * c.height; if (px <= OCR_PX_OVERRIDE) return c;
+    const k = Math.sqrt(OCR_PX_OVERRIDE / px), o = document.createElement('canvas');
+    o.width = Math.round(c.width * k); o.height = Math.round(c.height * k);
+    o.getContext('2d').drawImage(c, 0, 0, o.width, o.height); return o;
+  };
+})(capCanvas);
+/* imagens que o browser não consegue abrir (ex.: HEIC) → mensagem clara */
+prepImage = (function (prev) {
+  return async function (file) {
+    try { return await prev(file); }
+    catch (e) {
+      if (/inválida|invalid|decode/i.test(String(e && e.message))) throw new Error(`não consegui abrir a imagem «${file && file.name || ''}» (${file && file.type || 'formato desconhecido'}). Usa um screenshot normal (PNG/JPG).`);
+      throw e;
+    }
+  };
+})(prepImage);
+
+/* ---------- arrumar o que se leu ---------- */
+const EVT_RE = /^\s*(.{2,40}?)\s+(?:-|–|—|vs\.?|v)\s+(.{2,40}?)\s*$/i;
+function liveFinder(home) {
+  const L = lsGet(LIVE_KEY, null), now = Date.now();
+  const cand = [];
+  matches.forEach(m => { if (teamScore(m.home, normTxt(home)) > 0 || teamScore(home, normTxt(m.home)) > 0 || simil(m.home, home) >= 0.8) cand.push({ home: m.home, away: m.away, side: 'h' }); else if (teamScore(m.away, normTxt(home)) > 0 || simil(m.away, home) >= 0.8) cand.push({ home: m.home, away: m.away, side: 'a' }); });
+  ((L && L.matches) || []).forEach(x => {
+    if (Math.abs(new Date(x.utcDate).getTime() - now) > 5 * 864e5) return;
+    const h = x.homeTeam.shortName || x.homeTeam.name, a = x.awayTeam.shortName || x.awayTeam.name;
+    if (teamScore(h, normTxt(home)) > 0 || teamScore(home, normTxt(h)) > 0 || simil(h, home) >= 0.8 || teamScore(x.homeTeam.name, normTxt(home)) > 0) cand.push({ home: h, away: a, side: 'h' });
+    else if (teamScore(a, normTxt(home)) > 0 || simil(a, home) >= 0.8 || teamScore(x.awayTeam.name, normTxt(home)) > 0) cand.push({ home: h, away: a, side: 'a' });
+  });
+  const uniq = []; cand.forEach(c => { if (!uniq.some(u => normTxt(u.home) === normTxt(c.home) && normTxt(u.away) === normTxt(c.away))) uniq.push(c); });
+  return uniq.length === 1 ? uniq[0] : null;
+}
+function ocrPostOne(g) {
+  if (!g || !Array.isArray(g.legs)) return g;
+  g.legs.forEach(l => {
+    // «Viking FK - Sabah» na seleção é o jogo: a seleção verdadeira é o nome que ficou em «casa»
+    const ev = EVT_RE.exec(String(l.sel || ''));
+    if (ev && (!l.away || !l.home || normTxt(l.home) === normTxt(ev[1]))) {
+      const pickName = l.home && normTxt(l.home) !== normTxt(l.sel) ? l.home : '';
+      l.home = ev[1].trim(); l.away = ev[2].trim();
+      if (pickName) l.sel = pickName;
+    }
+    // falta a equipa de fora: procura no calendário e nos resultados dos últimos dias
+    if (l.home && !l.away) {
+      const f = liveFinder(l.home);
+      if (f) { l.away = f.side === 'h' ? f.away : f.home; if (f.side === 'a') { const h = l.home; l.home = f.home; l.away = h; } l._filled = true; }
+    }
+  });
+  // lixo da leitura (sem odd e com nomes ilegíveis) fora
+  g.legs = g.legs.filter(l => Number(l.odd) > 1 || (nameQuality(l.home || '') >= 0.6 && nameQuality(l.away || '') >= 0.6));
+  // repetidos mal lidos («Malorca – Cad 1Siiint» sem odd ao lado de «Maiorca – Cadis» com odd)
+  g.legs = g.legs.filter((l, i) => Number(l.odd) > 1 || !g.legs.some((o, j) => j !== i && Number(o.odd) > 1 && (simil(o.home || '', l.home || '') >= 0.75 || simil(o.away || '', l.away || '') >= 0.75)));
+  return g;
+}
+function ocrPost(out) { try { return ocrPostOne(out); } catch (e) { console.warn(e); return out; } }
+
+/* ---------- Boletim do Zé sem jogos que já acabaram ---------- */
+poolLoad = (function (prev) {
+  return function () {
+    const p = prev();
+    try {
+      const L = lsGet(LIVE_KEY, null), fin = ((L && L.matches) || []).filter(x => x.status === 'FINISHED' && Date.now() - new Date(x.utcDate).getTime() < 3 * 864e5);
+      const done = l => fin.some(x => sameTeams({ home: l.home, away: l.away }, x.homeTeam.shortName || x.homeTeam.name, x.awayTeam.shortName || x.awayTeam.name)) || matches.some(m => m.past && sameTeams({ home: l.home, away: l.away }, m.home, m.away));
+      const before = p.legs.length;
+      p.legs = p.legs.filter(l => !(l.home && l.away && done(l)));
+      if (p.legs.length !== before) p._dropped = before - p.legs.length;
+    } catch (e) {}
+    return p;
+  };
+})(poolLoad);
+
+/* ---------- 🩺 testar o leitor ---------- */
+async function ocrSelfTest(btn) {
+  const box = document.getElementById('ocrTestBox') || (btn && btn.parentNode && (() => { const d = document.createElement('div'); d.id = 'ocrTestBox'; btn.parentNode.appendChild(d); return d; })());
+  if (!box) return;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ A testar…'; }
+  const rows = []; const t0 = Date.now();
+  const show = () => { box.innerHTML = `<div class="reason" style="margin-top:8px;font-size:.84rem;line-height:1.5;"><div class="rz-head">🩺 Teste do leitor de boletins</div>${rows.join('<br>')}</div>`; };
+  const step = (ok, t) => { rows.push(`${ok === null ? '⏳' : ok ? '✅' : '❌'} ${t}`); show(); };
+  step(true, `Aparelho: ${IS_PHONE ? 'telemóvel' : 'computador'} · memória ${navigator.deviceMemory || '?'} GB · ${navigator.onLine === false ? 'SEM internet' : 'com internet'} · ${navigator.serviceWorker && navigator.serviceWorker.controller ? 'app instalada/ativa' : 'site'}`);
+  try {
+    let t = Date.now(); await ocrLoadScriptRetry(); step(true, `Leitor carregado (${Math.round((Date.now() - t) / 100) / 10} s)`);
+    t = Date.now();
+    const w = await getOcrWorker(m => { if (m && m._txt) { rows[rows.length - 1] = '⏳ ' + m._txt; show(); } });
+    step(true, `Motor pronto (${Math.round((Date.now() - t) / 100) / 10} s)`);
+    const c = document.createElement('canvas'); c.width = 900; c.height = 300; const x = c.getContext('2d');
+    x.fillStyle = '#fff'; x.fillRect(0, 0, 900, 300); x.fillStyle = '#111'; x.font = 'bold 48px Arial';
+    x.fillText('Benfica - Porto', 30, 90); x.fillText('Resultado Final 1.85', 30, 190);
+    t = Date.now(); OCR_PASS = 0; OCR_LAST = null;
+    const r = await w.recognize(c);
+    const txt = (r && r.data && r.data.text || '').replace(/\s+/g, ' ').trim();
+    const ok = /benfica/i.test(txt) && /1[.,]85/.test(txt);
+    step(ok, `Leitura de teste (${Math.round((Date.now() - t) / 100) / 10} s): «${esc(txt.slice(0, 60))}»`);
+    step(ok, ok ? `<b>O leitor funciona neste aparelho.</b> Se um print teu falhar, é o print — manda-o e eu digo o que não percebi.` : '<b>O leitor arrancou mas leu mal.</b> Manda print deste quadro.');
+  } catch (e) {
+    step(false, `Falhou em «${esc(OCR_STAGE || '?')}»: ${esc(String(e && e.message || e).slice(0, 200))}`);
+    step(false, 'Manda-me print deste quadro para eu corrigir. Plano B que funciona sempre: Galeria → abre o print → ícone T (extrair texto) → Copiar, e cola no chat.');
+  }
+  rows.push(`<span class="muted">total ${Math.round((Date.now() - t0) / 1000)} s</span>`); show();
+  if (btn) { btn.disabled = false; btn.textContent = '🩺 Testar o leitor'; }
+}
+ocrErrorHTML = (function (prev) {
+  return function (e, partial) {
+    return prev(e, partial) + `<div class="acts" style="margin-top:6px;"><button class="mini" onclick="ocrSelfTest(this)">🩺 Testar o leitor</button></div>`;
+  };
+})(ocrErrorHTML);
+renderConfig = (function (prev) {
+  return function () {
+    const r = prev.apply(this, arguments);
+    try {
+      const v = document.getElementById('appVer');
+      if (v && !document.getElementById('ocrTestBtn')) v.insertAdjacentHTML('beforebegin', '<div style="text-align:center;margin-top:10px;"><button id="ocrTestBtn" class="btn btn-sm" onclick="ocrSelfTest(this)">🩺 Testar o leitor de boletins</button></div>');
+    } catch (e) {}
+    return r;
+  };
+})(renderConfig);
+/* prepara o leitor em segundo plano (uma vez), para o 1.º print não esperar pelo descarregamento */
+(function ocrPrewarm() {
+  if (/jsdom/i.test(navigator.userAgent || '') || !/^https?:$/.test(location.protocol)) return;
+  const c = navigator.connection; if (c && (c.saveData || /2g/.test(c.effectiveType || ''))) return;
+  if (lsGet('ze_ocr_warm', 0) > Date.now() - 7 * 864e5) return;
+  setTimeout(async () => {
+    try {
+      if (window._zeOcr || document.visibilityState === 'hidden') return;
+      const w = await ocrInit();
+      lsSet('ze_ocr_warm', Date.now());
+      // liberta a memória; os ficheiros ficam guardados e o próximo arranque é rápido
+      setTimeout(async () => { try { if (window._zeOcr === w && !OCR_BUSY) { await w.terminate(); window._zeOcr = null; OCR_INIT_P = null; } } catch (e) {} }, 20000);
+    } catch (e) {}
+  }, 15000);
+})();
+let OCR_BUSY = false;
+ocrBatch = (function (prev) { return async function () { OCR_BUSY = true; try { return await prev.apply(this, arguments); } finally { OCR_BUSY = false; } }; })(ocrBatch);
 
 renderWallet(); renderUpdateInfo();
 
