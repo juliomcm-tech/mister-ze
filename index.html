@@ -12219,7 +12219,7 @@ zeJogosDoDia = function () {
 zeJogosDoDia = (function (prev) {
   return function () {
     const list = upcoming(3).slice(0, 6).map(x => x.m);
-    const todo = list.filter(m => m.espn && m.espn.ev && !studyFor(m)).slice(0, 4);
+    const todo = list.filter(m => m.espn && m.espn.ev && (!studyFor(m) || (!studyFor(m).market && !studyFor(m).oddsTried))).slice(0, 6);   // v51: todos os da lista (sem odds o Zé exagera nos jogos europeus)
     if (!todo.length || navigator.onLine === false || (typeof espnCooling === 'function' && espnCooling())) return prev();
     return { mood: 'pensativo', html: `Deixa-me ver forma e odds de ${todo.length} ${todo.length > 1 ? 'jogos' : 'jogo'} antes de te responder… 🧐`, later: async () => {
       for (const m of todo) { PRE_NEWS_OFF = true; try { await zeStudy(m); } catch (e) {} finally { PRE_NEWS_OFF = false; } const s = studyFor(m); if (s && s.news && s.news.skipped) delete s.news; }
