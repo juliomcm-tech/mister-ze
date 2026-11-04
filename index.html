@@ -707,7 +707,7 @@ select.inp { appearance: auto; }
       <div>
         <div class="eyebrow">Match Day</div>
         <h1>Análise do dia</h1>
-        <p>Melhor pick, meteo em tempo real, cenário e aposta lógica do dossiê.</p>
+        <p>O melhor jogo do dia, o cenário provável e a aposta que o Zé faria.</p>
       </div>
     </div>
     <div class="btn-row">
@@ -725,7 +725,7 @@ select.inp { appearance: auto; }
       <div>
         <div class="eyebrow">Duelo</div>
         <h1 id="duelTitle">Tu vs Mister Zé</h1>
-        <p>Mesma banca inicial. O Zé segue o dossiê e as regras de stake; tu segues a tua cabeça.</p>
+        <p>Mesma banca inicial. O Zé segue o modelo e as regras de stake; tu segues a tua cabeça.</p>
       </div>
       <div class="btn-row" style="margin:0;">
         <button class="btn btn-lime" onclick="prepararDuelo()">⚔️ Preparar duelo</button>
@@ -750,7 +750,7 @@ select.inp { appearance: auto; }
       <div>
         <div class="eyebrow">Competições</div>
         <h1>Calendário</h1>
-        <p>Todos os jogos do dossiê por fase. Toca num jogo para abrir o cartão.</p>
+        <p>Jogos confirmados pela ESPN, por fase. Toca num jogo para abrir o cartão.</p>
       </div>
       <div class="btn-row" style="margin:0;">
         <button class="btn btn-sm btn-upd" onclick="atualizarTudo()">🔄 Atualizar jogos</button>
@@ -1282,7 +1282,7 @@ select.inp { appearance: auto; }
         <div>
           <div class="eyebrow">Adjunto técnico</div>
           <h1>Mister Zé</h1>
-          <p>Tático offline · dossiê + futebol geral · memória do último jogo.</p>
+          <p>Analista online · jogos, odds, notícias e o diário das previsões.</p>
         </div>
       </div>
     </div>
@@ -1290,21 +1290,27 @@ select.inp { appearance: auto; }
       <div id="zeContext"></div>
       <div id="chatLog"></div>
       <div class="panel-b">
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
-          <button type="button" class="ze-chip" onclick="zeAsk('jogo do dia')">🔮 Jogo do dia</button>
-          <button type="button" class="ze-chip" onclick="zeAsk('over 2.5')">Over 2.5</button>
-          <button type="button" class="ze-chip" onclick="zeAsk('over 3.5')">Over 3.5</button>
-          <button type="button" class="ze-chip" onclick="zeAsk('ambas marcam?')">BTTS</button>
-          <button type="button" class="ze-chip" onclick="zeAsk('casa vence')">Casa vence</button>
-          <button type="button" class="ze-chip" onclick="zeAsk('quem marca?')">Marcador</button>
-          <button type="button" class="ze-chip" onclick="zeAsk('placar?')">Placar</button>
-          <button type="button" class="ze-chip" onclick="zeAsk('é seguro?')">Confiança</button>
-          <button type="button" class="ze-chip" onclick="zeAsk('melhores do dia')">🎯 Melhores do dia</button>
-          <button type="button" class="ze-chip" onclick="zeAsk('boletim do zé')">🧾 Boletim do Zé</button>
-          <button type="button" class="ze-chip" onclick="zeAsk('analisa-me')">🧠 Analisa-me</button>
-          <button type="button" class="ze-chip" onclick="zeAsk('o que dizem os jornais?')">📰 Notícias</button>
-          <button type="button" class="ze-chip" onclick="zeAsk('acertos')">📊 Acertos</button>
-          <button type="button" class="ze-chip" onclick="zeAsk('ajuda')">Ajuda</button>
+        <div class="chip-tabs" role="tablist">
+          <button type="button" class="chip-tab active" data-g="jogo" onclick="chipGroup('jogo')">⚽ Jogo</button>
+          <button type="button" class="chip-tab" data-g="apostas" onclick="chipGroup('apostas')">💶 Apostas</button>
+          <button type="button" class="chip-tab" data-g="ze" onclick="chipGroup('ze')">🤖 Zé</button>
+        </div>
+        <div class="chip-row" id="chipRow" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+          <button type="button" class="ze-chip" data-g="jogo" onclick="zeAsk('jogo do dia')">🔮 Jogo do dia</button>
+          <button type="button" class="ze-chip" data-g="jogo" onclick="zeAsk('placar?')">Placar</button>
+          <button type="button" class="ze-chip" data-g="jogo" onclick="zeAsk('over 2.5')">Golos (+2.5)</button>
+          <button type="button" class="ze-chip" data-g="jogo" onclick="zeAsk('ambas marcam?')">Ambas marcam</button>
+          <button type="button" class="ze-chip" data-g="jogo" onclick="zeAsk('quem marca?')">Marcador</button>
+          <button type="button" class="ze-chip" data-g="jogo" onclick="zeAsk('é seguro?')">Confiança</button>
+          <button type="button" class="ze-chip" data-g="apostas" onclick="zeAsk('melhores do dia')">🎯 Melhores do dia</button>
+          <button type="button" class="ze-chip" data-g="apostas" onclick="zeAsk('boletim do zé')">🧾 Boletim do Zé</button>
+          <button type="button" class="ze-chip" data-g="apostas" onclick="zeAsk('analisa-me')">🧠 Analisa-me</button>
+          <button type="button" class="ze-chip" data-g="apostas" onclick="zeAsk('casa vence')">Casa vence</button>
+          <button type="button" class="ze-chip" data-g="apostas" onclick="zeAsk('over 3.5')">Golos (+3.5)</button>
+          <button type="button" class="ze-chip" data-g="ze" onclick="zeAsk('o que dizem os jornais?')">📰 Notícias</button>
+          <button type="button" class="ze-chip" data-g="ze" onclick="zeAsk('acertos')">📊 Acertos</button>
+          <button type="button" class="ze-chip" data-g="ze" onclick="zeAsk('mercado')">🔁 Transferências</button>
+          <button type="button" class="ze-chip" data-g="ze" onclick="zeAsk('ajuda')">❓ Ajuda</button>
         </div>
         <div style="display:flex;gap:8px;">
           <label class="btn btn-lime" for="zeSlipFile" title="Mandar print do boletim" aria-label="Mandar print do boletim">📸</label>
@@ -1372,7 +1378,7 @@ select.inp { appearance: auto; }
         <div class="panel-b" id="cfgBrain"></div>
       </div>
       <div class="panel">
-        <div class="panel-h"><span>📡 Jogos e resultados</span><span class="muted">internet só no botão</span></div>
+        <div class="panel-h"><span>📡 Jogos e resultados</span><span class="muted">atualiza sozinho</span></div>
         <div class="panel-b">
           <label class="lbl" style="margin-bottom:8px;">Token football-data.org (opcional — já não é preciso)<input id="cfgToken" class="inp" type="password" autocomplete="off" placeholder="podes deixar vazio"></label>
           <div class="btn-row" style="margin-bottom:8px;">
@@ -1380,7 +1386,7 @@ select.inp { appearance: auto; }
             <button class="btn btn-primary" onclick="atualizarTudo()">🔄 Atualizar jogos e resultados</button>
           </div>
           <div id="liveStatus" class="hint"></div>
-          <div class="hint" style="margin-top:8px;">O Zé só vai à internet quando carregas no botão (sem token, fonte pública ESPN): traz os jogos dos próximos 4 dias, os <b>resultados</b> dos últimos 4 e <b>liquida sozinho</b> as apostas abertas (tuas e dele, incluindo múltiplas). Fica guardado e funciona offline 3 dias. Ligas: Liga Portugal 1 e 2, Premier, Championship, La Liga, Serie A, Bundesliga, Ligue 1, Eredivisie, Dinamarca, Champions, Liga Europa (+ NBA para boletins).</div>
+          <div class="hint" style="margin-top:8px;">Com internet, o Zé atualiza sozinho quando abres a app e de 20 em 20 minutos (fonte pública ESPN, sem token): traz os jogos dos próximos dias, os <b>resultados</b> e <b>liquida sozinho</b> as apostas abertas (tuas e dele, incluindo múltiplas). Ligas: Liga Portugal, Premier League, Championship, La Liga, Serie A, Bundesliga, Ligue 1, Eredivisie, Champions, Liga Europa e Conference (+ NBA para boletins).</div>
           <div id="liveCache" class="hint" style="margin-top:6px;"></div>
         </div>
       </div>
@@ -1404,7 +1410,7 @@ select.inp { appearance: auto; }
             <button class="btn" onclick="syncDown()">⬇️ Receber</button>
           </div>
           <div id="syncStatus" class="hint"></div>
-          <div class="hint" style="margin-top:6px;">A app continua offline. Só liga ao GitHub quando carregas num destes botões: guarda bancas, épocas, perfil e foto num gist <b>privado</b> para teres o mesmo duelo no PC e no telemóvel. Sem token, usa o backup por ficheiro.</div>
+          <div class="hint" style="margin-top:6px;">Só liga ao GitHub quando carregas num destes botões: guarda bancas, épocas, perfil e foto num gist <b>privado</b> para teres o mesmo duelo no PC e no telemóvel. Sem token, usa o backup por ficheiro.</div>
         </div>
       </div>
       <div class="panel" style="grid-column:1/-1;">
@@ -3244,7 +3250,7 @@ function fmGo(view, fromHistory) {
     setHTML('zeHeroFace', zeFace('feliz', 64));
     const log = document.getElementById('chatLog');
     if (log && !log.innerHTML.trim()) {
-      addChat('bot', 'Olá, sou o <strong>Mister Zé</strong> 🤖<br>Dossiê + duelo + banca. Diz o jogo, toca em <em>Jogo do dia</em>, ou usa os chips.', 'feliz');
+      addChat('bot', 'Olá, sou o <strong>Mister Zé</strong> 🤖<br>Jogos, odds, duelo e banca. Diz o jogo, toca em <em>Jogo do dia</em>, ou usa os botões em baixo.', 'feliz');
       const today = upcoming(0);
       if (today.length) {
         zeLastMatch = today[0].m;
@@ -5186,7 +5192,8 @@ async function loadLineups(code, eventId) {
     v[tid] = {
       formation: r.formation || null,
       starters: rows.filter(x => x.starter).map(x => (x.athlete && (x.athlete.displayName || x.athlete.shortName)) || ''),
-      bench: rows.filter(x => !x.starter).map(x => (x.athlete && (x.athlete.displayName || x.athlete.shortName)) || '')
+      bench: rows.filter(x => !x.starter).map(x => (x.athlete && (x.athlete.displayName || x.athlete.shortName)) || ''),
+      xi: rows.filter(x => x.starter).map(x => ({ n: (x.athlete && (x.athlete.displayName || x.athlete.shortName)) || '', pos: (x.position && x.position.abbreviation) || '', fp: +x.formationPlace || 0, j: x.jersey || '' }))
     };
   });
   c.lineups[k] = { t: Date.now(), v };
@@ -7538,13 +7545,20 @@ async function zeStudy(m, status) {
 }
 
 /* ---------- Mercado → golos esperados equivalentes ---------- */
+/* probabilidade «justa» de Mais numa linha de golos: .5 normal; inteira = sem contar o reembolso; .25/.75 = meia-meia (asiática) */
+function ouValue(M, L) {
+  const v = x => { if (Math.abs(x - Math.round(x)) < 1e-9) { const a = mprob(M, (i, j) => i + j > x), b = mprob(M, (i, j) => i + j < x); return a + b > 0 ? a / (a + b) : 0.5; } return mprob(M, (i, j) => i + j > x); };
+  const f = L - Math.floor(L);
+  return Math.abs(f - 0.25) < 1e-6 || Math.abs(f - 0.75) < 1e-6 ? (v(L - 0.25) + v(L + 0.25)) / 2 : v(L);
+}
 function fitLambdas(p1, pX, p2, pO) {
   let best = null;
   for (let lh = 0.2; lh <= 3.6; lh += 0.05) for (let la = 0.15; la <= 3.2; la += 0.05) {
     const M = scoreMatrix(lh, la, 8);
     const q1 = mprob(M, (i, j) => i > j), q2 = mprob(M, (i, j) => i < j), qX = 1 - q1 - q2;
     let err = (q1 - p1) ** 2 + (qX - pX) ** 2 + (q2 - p2) ** 2;
-    if (pO != null) err += 0.7 * (mprob(M, (i, j) => i + j > 2.5) - pO) ** 2;
+    if (pO != null && typeof pO === 'object') err += 0.7 * (ouValue(M, pO.line) - pO.p) ** 2;
+    else if (pO != null) err += 0.7 * (mprob(M, (i, j) => i + j > 2.5) - pO) ** 2;
     if (!best || err < best.err) best = { lh, la, err };
   }
   return best;
@@ -7653,10 +7667,10 @@ modelo = function (m) {
     sources.push('ficha');
   }
   if (st && st.market) {
-    const mk = st.market, fit = fitLambdas(mk.p1, mk.pX, mk.p2, mk.pO25);
+    const mk = st.market, fit = fitLambdas(mk.p1, mk.pX, mk.p2, mk.ou || mk.pO25);
     const w = W.wModel;
     const nlh = w * lh + (1 - w) * fit.lh, nla = w * la + (1 - w) * fit.la;
-    trace.push({ k: 'Mercado', txt: `${esc(mk.provider)}: 1 ${pct(mk.p1)} · X ${pct(mk.pX)} · 2 ${pct(mk.p2)}${mk.pO25 != null ? ` · Over 2.5 ${pct(mk.pO25)}` : ''} (margem ${(mk.margin * 100).toFixed(1)}%) → confio ${Math.round((1 - w) * 100)}% no mercado${W.L.nMkt >= 8 ? ' (aprendido)' : ''} → <b>${nlh.toFixed(2)}–${nla.toFixed(2)}</b>` });
+    trace.push({ k: 'Mercado', txt: `${esc(mk.provider)}: 1 ${pct(mk.p1)} · X ${pct(mk.pX)} · 2 ${pct(mk.p2)}${mk.pO25 != null ? ` · Over 2.5 ${pct(mk.pO25)}` : mk.ou ? ` · Mais de ${String(mk.ou.line).replace('.', ',')} ${pct(mk.ou.p)}` : ''} (margem ${(mk.margin * 100).toFixed(1)}%) → confio ${Math.round((1 - w) * 100)}% no mercado${W.L.nMkt >= 8 ? ' (aprendido)' : ''} → <b>${nlh.toFixed(2)}–${nla.toFixed(2)}</b>` });
     lh = nlh; la = nla; sources.push('mercado');
   }
   if (st && st.h2h && st.h2h.n >= 2) {
@@ -11066,6 +11080,10 @@ function marketFromBook(b) {
   const o = b.odds, s = 1 / o['1'] + 1 / o.X + 1 / o['2'];
   const out = { provider: b.provider, odds: { ...o }, p1: (1 / o['1']) / s, pX: (1 / o.X) / s, p2: (1 / o['2']) / s, margin: s - 1 };
   if (o['O2.5'] && o['U2.5']) { const t = 1 / o['O2.5'] + 1 / o['U2.5']; out.pO25 = (1 / o['O2.5']) / t; }
+  // v50: qualquer linha de golos (2.75, 3.5, 3…) — escolhe a mais equilibrada
+  let best = null;
+  Object.keys(o).forEach(k => { const g = /^O(\d+(?:\.\d+)?)$/.exec(k); if (!g || !(o['U' + g[1]] > 1)) return; const t = 1 / o[k] + 1 / o['U' + g[1]], p = (1 / o[k]) / t; if (!best || Math.abs(p - 0.5) < Math.abs(best.p - 0.5)) best = { line: +g[1], p }; });
+  if (best) out.ou = best;
   return out;
 }
 async function oddsInto(st, m, force) {
@@ -11349,7 +11367,7 @@ try { updateContinue(); } catch (e) {}
    - chat novo: classificação de qualquer liga, «transferências benfica», «mercado»
    - a app atualiza-se sozinha quando há versão nova
    ===================================================================== */
-const APP_VER = 'v49';
+const APP_VER = 'v50';
 
 /* ---------- 1) notícias e YouTube sem falhar ---------- */
 const FEED_LS = 'ze_feed_cache_v1';
@@ -12039,7 +12057,9 @@ zeStudy = (function (prev) {
     return st;
   };
 })(zeStudy);
-/* cansaço → golos esperados (pequeno: 4–6%) */
+/* cansaço → golos esperados (pequeno: 4–6%)
+   v50: a simulação de 540 jogos mostrou o contrário (quem joga mais é quem está na Europa = a melhor equipa) → fica só como nota */
+var ZE_FATIGUE_ON = false;
 lambdasFor = (function (prev) {
   return function (m) {
     const b = prev(m);
@@ -12053,7 +12073,7 @@ lambdasFor = (function (prev) {
       // jogo grande daqui a ≤3 dias → risco de poupanças (só aviso, sem mexer nos números)
       st.rotRisk = [st.restH && st.restH.until != null && st.restH.until <= 3 ? m.home : null, st.restA && st.restA.until != null && st.restA.until <= 3 ? m.away : null].filter(Boolean);
       st.fatigueNote = note;
-      return note ? { ...b, lh: +lh.toFixed(2), la: +la.toFixed(2) } : b;
+      return note && ZE_FATIGUE_ON ? { ...b, lh: +lh.toFixed(2), la: +la.toFixed(2) } : b;
     } catch (e) { return b; }
   };
 })(lambdasFor);
@@ -12066,7 +12086,7 @@ modelo = (function (prev) {
       if (!r || !r.mk || r._conf2) return r;
       const st = studyFor(m);
       const out = { ...r, _conf2: true, trace: (r.trace || []).slice() };
-      if (st && st.fatigueNote) out.trace.splice(Math.max(1, out.trace.length - 1), 0, { k: 'Cansaço', txt: `${esc(st.fatigueNote)} → ajuste pequeno nos golos esperados` });
+      if (st && st.fatigueNote) out.trace.splice(Math.max(1, out.trace.length - 1), 0, { k: 'Descanso', txt: ZE_FATIGUE_ON ? `${esc(st.fatigueNote)} → ajuste pequeno nos golos esperados` : `${esc(st.fatigueNote)} — só nota: nos 540 jogos testados isto não pesou (quem joga mais vezes costuma ser a melhor equipa).` });
       if (st && st.rotRisk && st.rotRisk.length) out.trace.push({ k: 'Calendário', txt: `${st.rotRisk.map(esc).join(' e ')} ${st.rotRisk.length > 1 ? 'voltam' : 'volta'} a jogar daqui a ≤3 dias → pode haver poupanças. Confirma os onzes antes de apostar.` });
       if (st && st.formAll) out.trace.push({ k: 'Forma', txt: 'Jogo europeu: a forma conta com todas as competições (liga, taças e Europa), não só esta.' });
       let conf = r.conf, why = [];
@@ -12785,6 +12805,687 @@ tipsHTML = (function (prev) {
     return h;
   };
 })(tipsHTML);
+
+
+/* =====================================================================
+   v50 · o que a simulação de 540 jogos ensinou
+   1) Com odds, confiar quase tudo nas casas: 90% em jogos europeus entre ligas diferentes, 85% no resto
+   2) Prémio de qualidade para quem joga na Europa, nos jogos da liga
+   3) Jogos europeus entre ligas diferentes: força relativa das ligas
+   4) Golos nos jogos europeus um pouco acima
+   5) «Valor» mais apertado: só ligas nacionais, odd ≤ 2,20 e valor ≤ 20%
+   6) Marcadores puxados para as odds de marcador das casas
+   7) Época passada carregada sozinha (arranque de época) e equipas europeias atualizadas sozinhas
+   8) Margem das casas (o «IVA») à vista
+   ===================================================================== */
+const EURO_KEY = 'ze_euro_v1';
+const ZE_TUNE = { euroQ: 0.25, leagueK: 1, euGoals: 1.1, wCross: 0.1, wDom: 0.15, valMaxOdd: 2.2, valMaxEv: 0.20 };   // afinado na simulação de 540 jogos (4 nov 2026)
+const LEAGUE_COEF = { 'eng.1': 1, 'esp.1': 0.97, 'ita.1': 0.95, 'ger.1': 0.95, 'fra.1': 0.9, 'ned.1': 0.85, 'por.1': 0.85, 'bel.1': 0.8, 'tur.1': 0.79, 'eng.2': 0.78, 'sco.1': 0.74, 'aut.1': 0.74, 'cze.1': 0.74, 'gre.1': 0.74, 'den.1': 0.73, 'sui.1': 0.73, 'nor.1': 0.72, 'swe.1': 0.7 };
+const LEAGUE_COEF_UNKNOWN = 0.72;
+const EURO = (() => { const d = lsGet(EURO_KEY, null) || {}; return { ids: new Set((d.ids || []).map(String)), dom: d.dom || {}, t: d.t || 0 }; })();
+let DOM_IDX = null, DOM_IDX_T = 0;
+function zeCachesClear() { DOM_IDX = null; try { MODEL_CACHE.clear(); ZE_MODEL_CACHE.clear(); } catch (e) {} }
+/** para a simulação: lista de equipas europeias e liga de cada uma */
+function zeEuroSetData(ids, dom) { EURO.ids = new Set((ids || []).map(String)); EURO.dom = dom || {}; zeCachesClear(); }
+function domIndex() {
+  if (DOM_IDX && Date.now() - DOM_IDX_T < 600e3) return DOM_IDX;
+  const ix = new Map();
+  Object.entries(EURO.dom || {}).forEach(([id, c]) => { if (c) ix.set(String(id), c); });
+  try { const L = lsGet(LIVE_KEY, null); Object.entries((L && L.standings) || {}).forEach(([c, S]) => { if (/uefa|nba/.test(c)) return; ((S && S[0] && S[0].table) || []).forEach(r => { const id = String((r.team && r.team.id) || ''); if (id && !ix.has(id)) ix.set(id, c); }); }); } catch (e) {}
+  try { const P = prof(); Object.keys(P.teams || {}).forEach(k => { const i = k.indexOf('|'), c = k.slice(0, i), id = k.slice(i + 1); if (!/uefa|nba/.test(c) && id && !ix.has(id)) ix.set(id, c); }); } catch (e) {}
+  DOM_IDX = ix; DOM_IDX_T = Date.now();
+  return ix;
+}
+function domOf(id) { return id == null ? null : domIndex().get(String(id)) || null; }
+function isEuroTeam(id) { return id != null && EURO.ids.has(String(id)); }
+function coefOf(code) { return code && LEAGUE_COEF[code] != null ? LEAGUE_COEF[code] : LEAGUE_COEF_UNKNOWN; }
+/** contexto do jogo: europeu? entre ligas diferentes? uma equipa europeia contra uma que não é? */
+function matchCtx(m) {
+  const e = m && m.espn; if (!e || !e.code || !e.h || !e.a) return null;
+  const eu = /^uefa/.test(e.code);
+  if (eu) {
+    const dh = domOf(e.h), da = domOf(e.a);
+    return { eu: true, cross: !dh || !da || dh !== da, dh, da, coefH: coefOf(dh), coefA: coefOf(da), domEuro: null };
+  }
+  const eh = isEuroTeam(e.h), ea = isEuroTeam(e.a);
+  return { eu: false, cross: false, domEuro: eh && !ea ? 'h' : ea && !eh ? 'a' : null };
+}
+
+/* ---------- golos esperados: qualidade, nível das ligas, golos na Europa ---------- */
+const Q_NOTE = new Map();
+lambdasFor = (function (prev) {
+  return function (m) {
+    const b = prev(m);
+    try {
+      const c = matchCtx(m); if (!c) return b;
+      let lh = b.lh, la = b.la; const notes = [];
+      if (c.domEuro && ZE_TUNE.euroQ > 0) {
+        const q = ZE_TUNE.euroQ;
+        if (c.domEuro === 'h') { lh *= 1 + q; la *= 1 - q / 2; } else { la *= 1 + q; lh *= 1 - q / 2; }
+        notes.push(`${esc(c.domEuro === 'h' ? m.home : m.away)} joga na Europa e o adversário não → prémio de qualidade (a tabela não mostra o plantel)`);
+      }
+      if (c.eu && c.cross && ZE_TUNE.leagueK > 0 && Math.abs(c.coefH - c.coefA) > 0.005) {
+        const r = Math.pow(c.coefH / c.coefA, ZE_TUNE.leagueK);
+        lh *= r; la /= r;
+        const nm = d => d ? (ESPN_LEAGUES[d] || (typeof EXTRA_LEAGUES !== 'undefined' && EXTRA_LEAGUES[d]) || d) : 'liga mais fraca';
+        notes.push(`ligas diferentes (${esc(nm(c.dh))} vs ${esc(nm(c.da))}) → ${c.coefH > c.coefA ? esc(m.home) : esc(m.away)} vem de uma liga mais forte`);
+      }
+      if (c.eu && ZE_TUNE.euGoals !== 1) { lh *= ZE_TUNE.euGoals; la *= ZE_TUNE.euGoals; notes.push(`jogos europeus têm mais golos do que a média (+${Math.round((ZE_TUNE.euGoals - 1) * 100)}%)`); }
+      if (!notes.length) { Q_NOTE.delete(mKey(m)); return b; }
+      const out = { ...b, lh: +clamp(lh, 0.15, 4.5).toFixed(2), la: +clamp(la, 0.12, 4.2).toFixed(2) };
+      Q_NOTE.set(mKey(m), { notes, before: [b.lh, b.la], after: [out.lh, out.la] });
+      return out;
+    } catch (e) { return b; }
+  };
+})(lambdasFor);
+
+/* ---------- confiança no mercado por tipo de jogo ---------- */
+let CUR_CTX = null;
+const _learnWeightsV49 = learnWeights;
+learnWeights = function () {
+  const W = _learnWeightsV49();
+  try {
+    let w = CUR_CTX && CUR_CTX.eu && CUR_CTX.cross ? ZE_TUNE.wCross : ZE_TUNE.wDom, earned = false;
+    // se o diário mostrar que o Zé bate as casas em ≥40 jogos, ganha mais peso (até 50%)
+    const P = typeof diaryPro === 'function' ? diaryPro() : null;
+    if (P && P.vs && P.vs.n >= 40 && P.vs.bz < P.vs.bm) { w = Math.min(0.5, w + 0.1); earned = true; }
+    return { ...W, wModel: w, wEarned: earned };
+  } catch (e) { return W; }
+};
+modelo = (function (prev) {
+  return function (m) {
+    const saved = CUR_CTX;
+    CUR_CTX = matchCtx(m);
+    try {
+      const r = prev.apply(this, arguments);
+      if (!r || !r.trace || r._v50) return r;
+      const out = { ...r, _v50: true, trace: r.trace.map(t => t.k === 'Mercado' ? { ...t, txt: t.txt.replace(' (aprendido)', '').replace(/confio (\d+)% no mercado/, (s, n) => `confio ${n}% nas casas${CUR_CTX && CUR_CTX.eu && CUR_CTX.cross ? ' (jogo entre ligas diferentes)' : ''} <span class="muted">— testado em 540 jogos: as casas erram menos do que eu</span>`) } : t) };
+      const q = Q_NOTE.get(mKey(m));
+      if (q) out.trace.splice(1, 0, { k: 'Qualidade', txt: `${q.notes.join(' · ')} → <b>${q.after[0].toFixed(2)}–${q.after[1].toFixed(2)}</b>` });
+      return out;
+    } finally { CUR_CTX = saved; }
+  };
+})(modelo);
+
+/* ---------- «valor» mais apertado ---------- */
+const GATE_WHY = { eu: 'jogo europeu', odd: 'odd acima de 2,20', ev: 'valor demasiado grande para ser verdade' };
+function zeValueGate(x, m) {
+  const c = matchCtx(m);
+  if (c && c.eu) return { ok: false, why: GATE_WHY.eu };
+  if (x.o > ZE_TUNE.valMaxOdd) return { ok: false, why: GATE_WHY.odd };
+  if (x.ev > ZE_TUNE.valMaxEv) return { ok: false, why: GATE_WHY.ev };
+  return { ok: true };
+}
+oddsValue = (function (prev) {
+  return function (m) {
+    return prev(m).map(x => { if (!(x.ev > 0.029)) return x; const g = zeValueGate(x, m); return g.ok ? x : { ...x, ev: 0.029, ev0: x.ev, gate: g.why }; });
+  };
+})(oddsValue);
+oddsHTML = (function (prev) {
+  return function (m) {
+    let h = prev(m);
+    try {
+      const st = studyFor(m);
+      const g = oddsValue(m).filter(x => x.gate && x.ev0 > zeEdgeFor(0.03, x.o)).sort((a, b) => b.ev0 - a.ev0)[0];
+      const mg = st && st.books ? st.books.filter(b => b.odds['1'] && b.odds.X && b.odds['2']).map(b => `${esc(b.provider)} ${((1 / b.odds['1'] + 1 / b.odds.X + 1 / b.odds['2'] - 1) * 100).toFixed(1).replace('.', ',')}%`) : [];
+      const add = (g ? `<div class="muted" style="margin-top:4px;font-size:.8rem;">🔒 <b>${esc(marketName(g.k, m))}</b> @ ${g.o.toFixed(2)} dava +${Math.round(g.ev0 * 100)}% pelas minhas contas, mas é ${esc(g.gate)}: na simulação de 540 jogos, apostas assim perderam dinheiro. Sem valor provado.</div>` : '')
+        + (mg.length ? `<div class="muted" style="margin-top:4px;font-size:.78rem;">💸 Margem das casas no 1X2 (o «IVA» delas): ${mg.join(' · ')}</div>` : '');
+      if (add) { const i = h.indexOf('<div class="acts" style="margin-top:6px;">'); h = i > 0 ? h.slice(0, i) + add + h.slice(i) : h + add; }
+    } catch (e) {}
+    return h;
+  };
+})(oddsHTML);
+zeDecide = (function (prev) {
+  return function (m, odds, bankAvail) {
+    let d = prev(m, odds, bankAvail);
+    try {
+      const keep = { rows: d.rows, favM: d.favM, favK: d.favK, contraSkip: d.contraSkip, doubtSkip: d.doubtSkip };
+      const o = { ...odds }; let gated = null, guard = 0;
+      const chk = p => zeValueGate({ k: p.k, o: p.odd, p: p.p, ev: p.ev }, m);
+      while (d.pick && !chk(d.pick).ok && guard++ < 8) {
+        gated = gated || { ...d.pick, why: chk(d.pick).why };
+        delete o[d.pick.k];
+        if (!Object.keys(o).filter(k => o[k] > 1).length) { d = { ...d, pick: null, stake: 0 }; break; }
+        d = prev(m, o, bankAvail);
+      }
+      Object.assign(d, keep);
+      (d.rows || []).forEach(x => { if (x.odd && x.ev > 0) { const g = zeValueGate({ k: x.k, o: x.odd, p: x.p, ev: x.ev }, m); if (!g.ok) x.gate = g.why; } });
+      if (gated) d.gateSkip = gated;
+    } catch (e) { console.warn(e); }
+    return d;
+  };
+})(zeDecide);
+zeDecidirUI = (function (prev) {
+  return function () {
+    const r = prev.apply(this, arguments);
+    try {
+      const d = dueloAtual && dueloAtual.decision, el = document.getElementById('zeDecision');
+      if (!d || !el) return r;
+      el.querySelectorAll('table.mtable tbody tr').forEach(tr => {
+        const lab = (tr.cells[0] && tr.cells[0].textContent || '').trim(), x = (d.rows || []).find(y => y.odd && y.label === lab);
+        if (!x || !x.gate || !(x.ev > d.minEdge) || /zebra|discordo|contra o favorito/.test(tr.cells[3] ? tr.cells[3].textContent : '')) return;
+        const c = tr.cells[3]; if (!c) return; c.className = ''; c.style.color = 'var(--muted)'; c.innerHTML += '<br><span style="font-size:.68rem;">🔒 sem valor provado</span>';
+      });
+      if (d.gateSkip) {
+        const box = [...el.querySelectorAll('.reason')].find(b => /Porquê/.test(b.textContent));
+        const line = `🔒 ${esc(d.gateSkip.label)} @ ${d.gateSkip.odd.toFixed(2)} dava +${(d.gateSkip.ev * 100).toFixed(1)}%, mas é ${esc(d.gateSkip.why)}. Na simulação de 540 jogos, apostas assim perderam dinheiro — não conta como valor.`;
+        if (box) box.lastElementChild.insertAdjacentHTML('beforeend', '<br>' + line);
+        if (!d.pick) el.querySelectorAll('.speech').forEach(sp => { sp.innerHTML = sp.innerHTML.replace(/Nenhuma destas odds tem valor ≥ [\d.]+%\./, 'Nenhuma destas odds tem valor provado (vê o «Porquê?» em baixo).'); });
+      }
+    } catch (e) { console.warn(e); }
+    return r;
+  };
+})(zeDecidirUI);
+
+/* ---------- marcadores puxados para as odds das casas ---------- */
+function blendScorers(board, so) {
+  if (!board || !so || !so.length) return board;
+  [board.home, board.away].forEach(list => {
+    (list || []).forEach(p => {
+      const base = p.probZe != null ? p.probZe : p.prob;
+      const o = so.find(x => nameMatch(p.name, x.name));
+      if (!o || !(o.odd > 1) || p.status === 'fora' || p.status === 'lesão' || p.status === 'suplente') { if (p.probZe != null) { p.prob = p.probZe; delete p.mkt; } return; }
+      const pm = Math.min(0.9, 0.85 / o.odd);   // as odds de marcador têm ~15% de margem
+      p.probZe = base; p.mkt = pm; p.prob = 0.4 * base + 0.6 * pm;
+    });
+    (list || []).sort((a, b) => b.prob - a.prob);
+  });
+  board.mktBlend = true;
+  return board;
+}
+zeStudy = (function (prev) {
+  return async function (m, status) {
+    const st = await prev.apply(this, arguments);
+    try {
+      if (st && st.scorerOdds && st.scorerOdds.length) {
+        blendScorers(st.board, st.scorerOdds);
+        const k = typeof boardKey === 'function' && boardKey(m);
+        if (k && BOARD_MEM[k] && BOARD_MEM[k] !== st.board) blendScorers(BOARD_MEM[k], st.scorerOdds);
+      }
+    } catch (e) {}
+    return st;
+  };
+})(zeStudy);
+
+/* ---------- equipas europeias e época passada, sozinhas ---------- */
+async function zeEuroRefresh(force) {
+  if (!force && EURO.t && Date.now() - EURO.t < 6 * 864e5 && EURO.ids.size >= 40) return false;
+  const ids = new Set(EURO.ids);
+  for (const code of ['uefa.champions', 'uefa.europa', 'uefa.europa.conf']) {
+    try {
+      const j = await fetchJSON(`https://site.api.espn.com/apis/site/v2/sports/soccer/${code}/teams`);
+      ((((j.sports || [])[0] || {}).leagues || [])[0] || { teams: [] }).teams.forEach(t => { const id = t && t.team && t.team.id; if (id) ids.add(String(id)); });
+    } catch (e) {}
+  }
+  try { const L = lsGet(LIVE_KEY, null); ((L && L.matches) || []).forEach(x => { if (x && x.competition && /^uefa/.test(x.competition.code || '')) { if (x.homeTeam) ids.add(String(x.homeTeam.id)); if (x.awayTeam) ids.add(String(x.awayTeam.id)); } }); } catch (e) {}
+  if (ids.size < 20) return false;
+  EURO.ids = ids; EURO.t = Date.now();
+  lsSet(EURO_KEY, { ids: [...ids], t: EURO.t });
+  zeCachesClear();
+  return true;
+}
+async function zePrevSeasonAuto() {
+  try {
+    const P = prof(), now = new Date();
+    const seasonStart = new Date(now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1, 6, 1);
+    if (P.prevLoadedAt && new Date(P.prevLoadedAt) >= seasonStart) return false;
+    await profLoadPrevSeason();
+    zeCachesClear();
+    return true;
+  } catch (e) { return false; }
+}
+atualizarTudo = (function (prev) {
+  return async function () {
+    const r = await prev.apply(this, arguments);
+    if (navigator.onLine !== false && !window.__ZE_LAB) setTimeout(() => { zeEuroRefresh().catch(() => {}).then(() => zePrevSeasonAuto()).catch(() => {}); }, 4000);
+    return r;
+  };
+})(atualizarTudo);
+
+
+/* =====================================================================
+   v50 · Campo do jogo (substitui o «XI provável» desenhado à mão)
+   - Onzes oficiais (saem ~1h antes): as duas equipas no esquema real, com marcadores destacados
+   - Antes disso: ameaças de golo e quem está de fora, de cada lado
+   - Sem dados do jogo, o campo não aparece
+   ===================================================================== */
+(function () {
+  const css = `
+.zpitch-wrap{margin:12px 0;}
+.zpitch-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:.78rem;margin-bottom:6px;}
+.zpitch-h b{white-space:nowrap;color:var(--lime,#c6f432);letter-spacing:.03em;text-transform:uppercase;font-size:.74rem;}
+.zpitch{position:relative;width:100%;aspect-ratio:3/4;max-height:560px;border-radius:12px;overflow:hidden;border:1px solid #1f6b3a;
+  background:repeating-linear-gradient(180deg,#1b6b36 0 10%,#1e7a3d 10% 20%);}
+.zpitch:before{content:"";position:absolute;inset:4%;border:2px solid rgba(255,255,255,.45);border-radius:4px;}
+.zpitch:after{content:"";position:absolute;left:4%;right:4%;top:50%;border-top:2px solid rgba(255,255,255,.45);}
+.zp-circle{position:absolute;left:50%;top:50%;width:22%;aspect-ratio:1;transform:translate(-50%,-50%);border:2px solid rgba(255,255,255,.45);border-radius:50%;}
+.zp-box{position:absolute;left:28%;width:44%;height:11%;border:2px solid rgba(255,255,255,.45);}
+.zp-box.t{top:4%;border-top:0}.zp-box.b{bottom:4%;border-bottom:0}
+.zp-p{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;width:20%;pointer-events:none;}
+.zp-dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:800 .62rem/1 system-ui,sans-serif;box-shadow:0 1px 3px rgba(0,0,0,.5);}
+.zp-p.h .zp-dot{background:#c6f432;color:#0b1a05;}
+.zp-p.a .zp-dot{background:#e2e8f0;color:#0f172a;}
+.zp-n{margin-top:2px;font:600 .6rem/1.1 system-ui,sans-serif;color:#fff;text-shadow:0 1px 2px #000;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.zp-g{position:absolute;top:-6px;right:calc(50% - 20px);font-size:.58rem;background:#0f172a;color:#fde047;border-radius:6px;padding:0 3px;}
+.zp-team{position:absolute;left:6%;font:800 .66rem/1 system-ui,sans-serif;color:rgba(255,255,255,.85);text-shadow:0 1px 2px #000;}
+.zp-team.t{top:5.5%}.zp-team.b{bottom:5.5%}
+.zp-half{position:absolute;left:6%;right:6%;display:flex;flex-direction:column;gap:6px;font-size:.78rem;color:#f1f5f9;text-shadow:0 1px 2px rgba(0,0,0,.6);}
+.zp-half.t{top:7%}.zp-half.b{bottom:7%}
+.zp-chip{display:inline-block;background:rgba(15,23,42,.72);border-radius:8px;padding:3px 7px;margin:2px 4px 0 0;font-size:.74rem;}
+.zpitch-notes{font-size:.8rem;line-height:1.5;margin-top:6px;}
+`;
+  try { const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st); } catch (e) {}
+})();
+
+/* a ficha guarda o onze com posições para o desenho */
+buildBoard = (function (prev) {
+  return function (m, scorers, rosters, lineups) {
+    const b = prev(m, scorers, rosters, lineups);
+    try { if (lineups && m.espn) b.xi = { h: (lineups[m.espn.h] && lineups[m.espn.h].xi) || null, a: (lineups[m.espn.a] && lineups[m.espn.a].xi) || null }; } catch (e) {}
+    return b;
+  };
+})(buildBoard);
+
+/* profundidade da posição no campo: 0 GR, 1 defesa, 2 médio defensivo/centro, 3 médio ofensivo, 4 avançado */
+function posDepth(p) {
+  const a = String(p || '').toUpperCase();
+  if (a === 'G' || a === 'GK') return 0;
+  if (/WB/.test(a)) return 1.5;
+  if (/^(DM|CDM)/.test(a)) return 2;
+  if (/^(CD|CB|D|LB|RB|SW)/.test(a)) return 1;
+  if (/^(AM|CAM)/.test(a)) return 3;
+  if (/^(F|CF|ST|LW|RW|SS|W)/.test(a) || /-F$/.test(a)) return 4;
+  if (/^(M|CM|LM|RM)/.test(a)) return 2.2;
+  return 2.5;
+}
+function posSide(p) { const a = String(p || '').toUpperCase(); return /^L/.test(a) ? 0 : /-L$/.test(a) ? 1 : /^R/.test(a) ? 4 : /-R$/.test(a) ? 3 : 2; }
+/** reparte o onze em linhas (GR + linhas do esquema), cada linha da esquerda para a direita */
+function xiRows(xi, formation) {
+  const list = (xi || []).filter(p => p && p.n).slice(0, 11);
+  if (list.length < 9) return null;
+  const sorted = list.slice().sort((x, y) => posDepth(x.pos) - posDepth(y.pos) || (x.fp || 0) - (y.fp || 0));
+  const gk = sorted[0];
+  let counts = String(formation || '').split('-').map(Number).filter(n => n > 0);
+  const out = sorted.slice(1);
+  if (counts.reduce((s, n) => s + n, 0) !== out.length) {
+    // sem esquema: agrupa pela posição
+    counts = []; let cur = null;
+    out.forEach(p => { const d = Math.round(posDepth(p.pos)); if (d !== cur) { counts.push(0); cur = d; } counts[counts.length - 1]++; });
+  }
+  const rows = []; let i = 0;
+  counts.forEach(c => { rows.push(out.slice(i, i + c).sort((x, y) => posSide(x.pos) - posSide(y.pos) || (x.fp || 0) - (y.fp || 0))); i += c; });
+  return { gk, rows };
+}
+function shortName(n) {
+  const parts = String(n || '').trim().split(/\s+/);
+  const last = parts.length > 1 ? parts.slice(-1)[0] : parts[0];
+  const s = /^(de|da|dos|van|von|di|el|al|mac|mc|le|la|ten|ter)$/i.test(parts[parts.length - 2] || '') ? parts.slice(-2).join(' ') : last;
+  return s.length > 11 ? s.slice(0, 10) + '…' : s;
+}
+function pitchHTML(m) {
+  const st = typeof studyFor === 'function' ? studyFor(m) : null;
+  const b = (st && st.board) || (typeof boardFor === 'function' && boardFor(m));
+  if (!b || !b.home || !b.away) return '';
+  const goalsOf = (list, name) => { const p = (list || []).find(x => nameMatch(x.name, name)); return p ? p.goals : 0; };
+  const notes = [];
+  const outOf = (list) => (list || []).filter(p => p.status === 'lesão' || (p.inj && p.status !== 'titular' && p.status !== 'suplente')).sort((a, c) => c.goals - a.goals).slice(0, 4);
+  const benchStars = (list) => (list || []).filter(p => p.status === 'suplente' && p.goals >= 3);
+  const threats = (list) => (list || []).filter(p => p.status !== 'fora' && p.status !== 'lesão' && p.prob > 0.08).slice(0, 3);
+  const pctS = x => Math.round(x * 100) + '%';
+  [['h', b.home, m.home], ['a', b.away, m.away]].forEach(([, list, team]) => {
+    const o = outOf(list), bs = benchStars(list);
+    if (o.length) notes.push(`🚑 <b>${esc(team)}</b> sem ${o.map(p => `${esc(p.name)}${p.goals ? ` (${p.goals} golos)` : ''}`).join(', ')}`);
+    if (bs.length) notes.push(`🪑 <b>${esc(team)}</b>: ${bs.map(p => `${esc(p.name)} (${p.goals} golos)`).join(', ')} no banco`);
+  });
+  const rh = b.lineupKnown && b.xi ? xiRows(b.xi.h, b.formation && b.formation.h) : null;
+  const ra = b.lineupKnown && b.xi ? xiRows(b.xi.a, b.formation && b.formation.a) : null;
+  let field = '', status;
+  if (rh && ra) {
+    status = 'onzes oficiais';
+    const dot = (p, side, x, y, list) => { const g = goalsOf(list, p.n); return `<div class="zp-p ${side}" style="left:${x.toFixed(1)}%;top:${y.toFixed(1)}%;"><div class="zp-dot">${esc(String(p.j || '').slice(0, 2)) || '•'}</div>${g ? `<span class="zp-g">⚽${g}</span>` : ''}<div class="zp-n">${esc(shortName(p.n))}</div></div>`; };
+    const half = (R, side, list) => {
+      const home = side === 'h', H = [];
+      const yGk = home ? 92 : 8, yEnd = home ? 57 : 43, n = R.rows.length;
+      H.push(dot(R.gk, side, 50, yGk, list));
+      R.rows.forEach((row, k) => {
+        const y = yGk + (yEnd - yGk) * (k + 1) / n;
+        row.forEach((p, i) => { let x = (i + 1) / (row.length + 1) * 100; if (!home) x = 100 - x; H.push(dot(p, side, x, y, list)); });
+      });
+      return H.join('');
+    };
+    field = `<div class="zpitch"><div class="zp-circle"></div><div class="zp-box t"></div><div class="zp-box b"></div>
+      <div class="zp-team t">${esc(m.away)}${b.formation && b.formation.a ? ' · ' + esc(b.formation.a) : ''}</div><div class="zp-team b">${esc(m.home)}${b.formation && b.formation.h ? ' · ' + esc(b.formation.h) : ''}</div>
+      ${half(ra, 'a', b.away)}${half(rh, 'h', b.home)}</div>`;
+  } else {
+    status = 'onzes saem ~1h antes';
+    const halfTxt = (list, team) => {
+      const t = threats(list), o = outOf(list);
+      return `<div><b>${esc(team)}</b></div>`
+        + `<div>🎯 ${t.length ? t.map(p => `<span class="zp-chip">${esc(shortName(p.name))} ${pctS(p.prob)}</span>`).join('') : '<span class="zp-chip">sem marcadores claros</span>'}</div>`
+        + (o.length ? `<div>🚑 ${o.map(p => `<span class="zp-chip">${esc(shortName(p.name))}</span>`).join('')}</div>` : '');
+    };
+    field = `<div class="zpitch" style="aspect-ratio:4/3;"><div class="zp-circle"></div>
+      <div class="zp-half t">${halfTxt(b.away, m.away)}</div><div class="zp-half b">${halfTxt(b.home, m.home)}</div></div>`;
+  }
+  return `<div class="zpitch-wrap"><div class="zpitch-h"><b>⚽ Campo do jogo</b><span class="muted">${status}</span></div>${field}
+    ${notes.length ? `<div class="zpitch-notes">${notes.join('<br>')}</div>` : ''}
+    <div class="muted" style="font-size:.72rem;margin-top:4px;">${rh && ra ? '⚽ = golos na época. Fonte: ficha oficial (ESPN).' : '🎯 = probabilidade de marcar neste jogo. Volta ~1h antes para ver os onzes.'}</div></div>`;
+}
+/* o desenho antigo (só a equipa da casa, num 4-2-3-1 inventado) dá lugar ao campo real */
+pitchXI = function (m) {
+  try { return `<div id="zPitchSlot">${pitchHTML(m)}</div>`; } catch (e) { return '<div id="zPitchSlot"></div>'; }
+};
+function pitchRefresh(m) { const el = document.getElementById('zPitchSlot'); if (el && m) { try { el.innerHTML = pitchHTML(m); } catch (e) {} } }
+studyInModal = (function (prev) {
+  return async function (btn) {
+    const r = await prev.apply(this, arguments);
+    try { pitchRefresh(window._modalMatch); } catch (e) {}
+    return r;
+  };
+})(studyInModal);
+
+
+/* =====================================================================
+   v50 · clareza no telemóvel
+   1) Chips do chat em 3 grupos (Jogo · Apostas · Zé)
+   2) Botões e chips com altura de dedo (44 px) em ecrãs táteis
+   3) «Testar ligação» testa só o que a app usa hoje: ESPN direta, odds e notícias
+   ===================================================================== */
+(function () {
+  const css = `
+.chip-tabs{display:flex;gap:6px;margin-bottom:8px;}
+.chip-tab{flex:1;background:transparent;border:1px solid var(--line2);color:var(--muted);border-radius:10px;padding:8px 6px;font-weight:700;font-size:.8rem;cursor:pointer;}
+.chip-tab.active{background:var(--tile);color:var(--text);border-color:var(--lime,#c6f432);}
+#chipRow .ze-chip[hidden]{display:none;}
+@media (pointer:coarse){
+  .ze-chip,.chip-tab,.btn-sm,.ifilter{min-height:44px;}
+  .btn{min-height:44px;}
+  #chipRow .ze-chip{padding:8px 13px;font-size:.8rem;}
+  .needs .ze-chip{min-height:36px;}
+}`;
+  try { const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st); } catch (e) {}
+})();
+function chipGroup(g) {
+  try { localStorage.setItem('ze_chip_group', g); } catch (e) {}
+  document.querySelectorAll('.chip-tab').forEach(b => b.classList.toggle('active', b.dataset.g === g));
+  document.querySelectorAll('#chipRow .ze-chip').forEach(c => { c.hidden = c.dataset.g !== g; });
+}
+(function () { let g = 'jogo'; try { g = localStorage.getItem('ze_chip_group') || 'jogo'; } catch (e) {} if (!/^(jogo|apostas|ze)$/.test(g)) g = 'jogo'; try { chipGroup(g); } catch (e) {} })();
+
+/* ---------- 🩺 Testar ligação: o que a app usa hoje ---------- */
+netTest = async function (btn) {
+  const box = document.getElementById('netTestBox'); if (!box) return;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ A testar…'; }
+  const line = (ok, txt) => `<div>${ok ? '✅' : '❌'} ${txt}</div>`;
+  const out = [];
+  const time = async (f) => { const t0 = Date.now(); try { const v = await f(); return { ok: true, v, ms: Date.now() - t0 }; } catch (e) { return { ok: false, err: e && (e.status || e.message) || 'falhou', ms: Date.now() - t0 }; } };
+  box.innerHTML = '<div class="muted">⏳ A testar jogos, odds e notícias…</div>';
+  const now = new Date(), ym = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0');
+  const g = await time(async () => { const j = await getJSONany(`https://site.api.espn.com/apis/site/v2/sports/soccer/por.1/scoreboard?dates=${ym}&limit=1000`); return (j.events || []); });
+  out.push(line(g.ok && g.v.length, g.ok ? `<b>Jogos e resultados</b> (ESPN): ${g.v.length} jogos da Liga Portugal este mês · ${g.ms} ms` : `<b>Jogos e resultados</b> (ESPN): ${esc(String(g.err))}`));
+  const ev = g.ok ? (g.v.find(e => e.status && e.status.type && e.status.type.state === 'pre') || g.v[0]) : null;
+  if (ev) {
+    const o = await time(() => coreOdds('por.1', ev.id, true));
+    out.push(line(o.ok, o.ok ? `<b>Odds</b> (ESPN/Bet365): ${o.v.length ? o.v.map(b => esc(b.provider)).join(', ') : 'este jogo ainda sem odds publicadas'} · ${o.ms} ms` : `<b>Odds</b>: ${esc(String(o.err))}`));
+  }
+  const n = await time(async () => { const t = await fetchText(gnToBing('https://news.google.com/rss/search?q=Benfica&hl=pt-PT&gl=PT&ceid=PT:pt-150')); const k = (String(t).match(/<item[\s>]/g) || []).length; if (!k) throw new Error('sem notícias'); return k; });
+  out.push(line(n.ok, n.ok ? `<b>Notícias</b> (Bing): ${n.v} títulos · ${n.ms} ms` : `<b>Notícias</b>: ${esc(String(n.err))} <span class="muted">(o resto funciona na mesma)</span>`));
+  const allOk = g.ok && g.v.length;
+  box.innerHTML = `<div style="font-size:.84rem;line-height:1.6;">${out.join('')}</div><div style="margin-top:6px;font-size:.86rem;">${allOk ? '👍 A ligação está boa. Se algo não aparecer, carrega em 📡 Atualizar.' : '⚠️ Sem jogos da ESPN neste momento. Confirma a internet e tenta outra vez; se continuar, manda-me print disto.'}</div>`;
+  if (btn) { btn.disabled = false; btn.textContent = '🩺 Testar ligação'; }
+};
+
+
+/* =====================================================================
+   v50 · ecrãs com dados reais
+   1) Scouting a partir dos resultados desta época (ESPN): fortes em casa, fracos fora, em subida
+   2) «Hoje» no Início: jogos de hoje com o veredito do Zé + apostas abertas, numa só lista
+   3) Lembrete semanal de backup (os dados vivem só neste telemóvel)
+   ===================================================================== */
+const SCOUT_KEY = 'ze_scout_v1';
+const SCOUT_CODES = ['por.1', 'eng.1', 'esp.1', 'ita.1', 'ger.1', 'fra.1', 'ned.1', 'eng.2'];
+let SCOUT_TAB = 'casa', SCOUT_BUSY = false;
+(function () {
+  const css = `
+.sc-tabs{display:flex;gap:6px;margin:6px 0 12px;}
+.sc-tab{flex:1;background:transparent;border:1px solid var(--line2);color:var(--muted);border-radius:10px;padding:9px 6px;font-weight:700;font-size:.8rem;cursor:pointer;min-height:44px;}
+.sc-tab.active{background:var(--tile);color:var(--text);border-color:var(--lime,#c6f432);}
+.sc-card{background:var(--panel,#16112b);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;}
+.sc-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+.sc-name{font-weight:800;font-size:1rem;}
+.sc-lg{font-size:.72rem;color:var(--muted);}
+.sc-stat{font-size:.82rem;margin-top:4px;line-height:1.45;}
+.sc-next{margin-top:8px;font-size:.82rem;padding:8px 10px;border-radius:9px;background:var(--tile);cursor:pointer;}
+.sc-form{display:inline-flex;gap:3px;vertical-align:middle;margin-left:4px;}
+.sc-form i{font-style:normal;font-size:.62rem;font-weight:800;width:16px;height:16px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;}
+.sc-form i.v{background:#16a34a;color:#fff}.sc-form i.e{background:#64748b;color:#fff}.sc-form i.d{background:#dc2626;color:#fff}
+.hoje-row{display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer;}
+.hoje-row:last-child{border-bottom:0}
+.hoje-h{font-weight:800;font-size:.8rem;min-width:42px;color:var(--lime,#c6f432);}
+.hoje-m{flex:1;min-width:0;font-size:.86rem;}
+.hoje-v{font-size:.76rem;color:var(--muted);margin-top:2px;}
+.bk-nag{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.35);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:.84rem;}
+`;
+  try { const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st); } catch (e) {}
+})();
+
+/* ---------- 1) Scouting ---------- */
+function seasonStartFor(code, now) { now = now || new Date(); return new Date(now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1, 6, 15); }
+async function scoutLoad(force) {
+  const c = lsGet(SCOUT_KEY, null);
+  if (!force && c && Date.now() - c.t < 12 * 3600e3 && c.teams && c.teams.length) return c;
+  const now = new Date(), teams = {};
+  for (const code of SCOUT_CODES) {
+    try {
+      const j = await espnByMonths(`https://site.api.espn.com/apis/site/v2/sports/soccer/${code}/scoreboard`, ymd(seasonStartFor(code, now)), ymd(now));
+      const fin = (j.events || []).map(ev => normalizeEspn(ev, code, ESPN_LEAGUES[code] || code)).filter(x => x && x.status === 'FINISHED' && x.score && x.score.fullTime && x.score.fullTime.home != null)
+        .sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
+      fin.forEach(x => {
+        const hg = x.score.fullTime.home, ag = x.score.fullTime.away;
+        [[x.homeTeam, 'H', hg, ag], [x.awayTeam, 'A', ag, hg]].forEach(([tm, side, gf, ga]) => {
+          const k = code + '|' + tm.id;
+          const t = teams[k] = teams[k] || { id: String(tm.id), name: tm.shortName || tm.name, code, H: { n: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0 }, A: { n: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0 }, form: [] };
+          const s = t[side]; s.n++; s.gf += gf; s.ga += ga; if (gf > ga) s.w++; else if (gf === ga) s.d++; else s.l++;
+          t.form.push(gf > ga ? 'V' : gf === ga ? 'E' : 'D');
+        });
+      });
+    } catch (e) {}
+  }
+  const list = Object.values(teams).map(t => ({ ...t, form: t.form.slice(-5) }));
+  if (!list.length) { if (c) return c; throw new Error('sem dados'); }
+  const out = { t: Date.now(), teams: list };
+  lsSet(SCOUT_KEY, out);
+  return out;
+}
+const ppgOf = s => s.n ? (3 * s.w + s.d) / s.n : 0;
+const formPts = f => f.reduce((a, x) => a + (x === 'V' ? 3 : x === 'E' ? 1 : 0), 0);
+function scoutRank(data, tab) {
+  const L = data.teams;
+  if (tab === 'casa') return L.filter(t => t.H.n >= 3).sort((a, b) => ppgOf(b.H) - ppgOf(a.H) || (b.H.gf - b.H.ga) / b.H.n - (a.H.gf - a.H.ga) / a.H.n).slice(0, 10);
+  if (tab === 'fora') return L.filter(t => t.A.n >= 3).sort((a, b) => ppgOf(a.A) - ppgOf(b.A) || (a.A.gf - a.A.ga) / a.A.n - (b.A.gf - b.A.ga) / b.A.n).slice(0, 10);
+  return L.filter(t => t.form.length >= 5 && t.H.n + t.A.n >= 6).map(t => ({ ...t, trend: formPts(t.form) / 5 - (ppgOf(t.H) * t.H.n + ppgOf(t.A) * t.A.n) / (t.H.n + t.A.n) }))
+    .filter(t => formPts(t.form) >= 10 && t.trend > 0.25).sort((a, b) => b.trend - a.trend || formPts(b.form) - formPts(a.form)).slice(0, 10);
+}
+function scoutNext(t, side) {
+  const tn = normTxt(t.name);
+  const up = matches.map((m, i) => ({ m, i })).filter(({ m }) => !m.past && !m.aviso && m.espn && (String(m.espn.h) === t.id || String(m.espn.a) === t.id || teamInMatch(m, tn)))
+    .map(x => ({ ...x, d: parseDayLabel(x.m.date) })).filter(x => x.d && x.d >= new Date(Date.now() - 3 * 3600e3)).sort((a, b) => a.d - b.d);
+  const want = side ? up.find(x => side === 'H' ? String(x.m.espn.h) === t.id : String(x.m.espn.a) === t.id) : up[0];
+  return want || null;
+}
+function scoutCard(t, rank, tab) {
+  const s = tab === 'fora' ? t.A : t.H, where = tab === 'fora' ? 'fora' : 'em casa';
+  const lg = ESPN_LEAGUES[t.code] || t.code;
+  let stat;
+  if (tab === 'subida') stat = `Últimos 5: <b>${formPts(t.form)} pts</b> (média da época ${((ppgOf(t.H) * t.H.n + ppgOf(t.A) * t.A.n) / (t.H.n + t.A.n) * 5).toFixed(1)} em 5 jogos)`;
+  else stat = `${where}: <b>${s.w}V ${s.d}E ${s.l}D</b> · ${ppgOf(s).toFixed(2)} pts/jogo · marca ${(s.gf / s.n).toFixed(1)} · sofre ${(s.ga / s.n).toFixed(1)}`;
+  const nx = scoutNext(t, tab === 'casa' ? 'H' : tab === 'fora' ? 'A' : null);
+  let next = '';
+  if (nx) {
+    let p = null; try { const r = modelo(nx.m); const isH = String(nx.m.espn.h) === t.id || teamInMatch(nx.m, normTxt(t.name)) && normTxt(nx.m.home) === normTxt(t.name); p = isH ? r.mk['1'] : r.mk['2']; } catch (e) {}
+    const opp = String(nx.m.espn.h) === t.id ? nx.m.away : nx.m.home;
+    next = `<div class="sc-next" onclick="openMatchIdx(${nx.i})">📅 ${esc(nx.m.date)} · ${String(nx.m.espn.h) === t.id ? 'recebe' : 'visita'} <b>${esc(opp)}</b>${p != null ? ` · Zé: ${esc(t.name)} ganha <b>${Math.round(p * 100)}%</b>` : ''} ›</div>`;
+  }
+  const form = `<span class="sc-form">${t.form.map(x => `<i class="${x === 'V' ? 'v' : x === 'E' ? 'e' : 'd'}">${x}</i>`).join('')}</span>`;
+  return `<div class="sc-card"><div class="sc-top"><span class="sc-name">${rank}. ${esc(t.name)}</span><span class="sc-lg">${esc(lg)}</span></div>
+    <div class="sc-stat">${stat}</div><div class="sc-stat">Forma ${form}</div>${next}</div>`;
+}
+async function renderScout(force) {
+  const view = document.getElementById('view-scout'); if (!view) return;
+  ['section-best', 'section-worst'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+  view.querySelectorAll('.controls, .screen-head .toggle-bar').forEach(el => { el.style.display = 'none'; });
+  const p = view.querySelector('.screen-head p'); if (p) p.textContent = 'Desta época, com resultados reais: quem é forte em casa, quem é fraco fora e quem está em subida.';
+  let box = document.getElementById('scoutLive');
+  if (!box) { box = document.createElement('div'); box.id = 'scoutLive'; view.querySelector('.screen-head').insertAdjacentElement('afterend', box); }
+  const tabs = `<div class="sc-tabs">${[['casa', '🏠 Fortes em casa'], ['fora', '✈️ Fracos fora'], ['subida', '📈 Em subida']].map(([k, l]) => `<button class="sc-tab${SCOUT_TAB === k ? ' active' : ''}" onclick="SCOUT_TAB='${k}';renderScout()">${l}</button>`).join('')}</div>`;
+  const c = lsGet(SCOUT_KEY, null);
+  const draw = (data, note) => {
+    const L = scoutRank(data, SCOUT_TAB);
+    box.innerHTML = tabs + (L.length ? L.map((t, i) => scoutCard(t, i + 1, SCOUT_TAB)).join('') : '<div class="muted" style="padding:10px 0;">Ainda poucos jogos para esta lista.</div>')
+      + `<div class="muted" style="font-size:.74rem;margin:8px 0 4px;">${note || ''}Resultados ESPN · ${data.teams.length} equipas de ${SCOUT_CODES.length} ligas · atualizado ${new Date(data.t).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} <button class="btn btn-sm" style="margin-left:6px;" onclick="renderScout(true)">🔄</button></div>`;
+  };
+  if (c && c.teams && c.teams.length) draw(c);
+  else box.innerHTML = tabs + '<div class="muted" style="padding:10px 0;">⏳ A juntar os resultados desta época…</div>';
+  const stale = !c || Date.now() - c.t > 12 * 3600e3;
+  if ((force || stale) && !SCOUT_BUSY && navigator.onLine !== false) {
+    SCOUT_BUSY = true;
+    try { const d = await scoutLoad(true); draw(d); }
+    catch (e) { if (!c) box.innerHTML = tabs + '<div class="muted" style="padding:10px 0;">Sem ligação para juntar os resultados. Tenta outra vez com internet.</div>'; }
+    finally { SCOUT_BUSY = false; }
+  }
+}
+
+/* ---------- 2) «Hoje» no Início ---------- */
+function safePickOf(r) { return ['1', '1X', 'O1.5', 'O2.5', 'BTTS', 'U2.5', 'X2', '2'].map(k => ({ k, p: r.mk[k] })).filter(o => o.p >= 0.55 && o.p <= 0.85).sort((a, b) => b.p - a.p)[0] || null; }
+function hojeHTML() {
+  const now = new Date(), d0 = new Date(now); d0.setHours(0, 0, 0, 0);
+  const d1 = new Date(d0.getTime() + 864e5);
+  const today = matches.map((m, i) => ({ m, i, d: parseDayLabel(m.date) })).filter(x => x.d && x.d >= d0 && x.d < d1 && !x.m.past && !x.m.aviso && x.m.live)
+    .sort((a, b) => String(a.m.kickoff || '').localeCompare(String(b.m.kickoff || '')));
+  const b = loadBank();
+  const open = b.bets.filter(x => x.status === 'open').map(x => ({ x, who: 'you' })).concat(b.zeBets.filter(x => x.status === 'open').map(x => ({ x, who: 'ze' })));
+  if (!today.length && !open.length) return '';
+  const rows = today.slice(0, 12).map(({ m, i }) => {
+    let v = '';
+    try {
+      const r = modelo(m), fav = favOf(r.mk), sp = safePickOf(r);
+      const favTxt = fav === 'X' ? 'empate' : (fav === '1' ? m.home : m.away);
+      const val = typeof studyFor === 'function' && studyFor(m) ? oddsValue(m).filter(x => x.ev > zeEdgeFor(0.03, x.o) && x.o <= 6 && x.p >= 0.2)[0] : null;
+      v = `Mais provável: <b>${esc(favTxt)}</b> ${Math.round(r.mk[fav] * 100)}%${sp ? ` · seguro: ${esc(marketName(sp.k, m))} ${Math.round(sp.p * 100)}%` : ''}${val ? ` · 💶 valor em ${esc(marketName(val.k, m))} @ ${val.o.toFixed(2)}` : ''}`;
+    } catch (e) {}
+    const mine = open.filter(o => teamScore(String(o.x.match || ''), normTxt(m.home)) > 0 || teamScore(String(o.x.match || ''), normTxt(m.away)) > 0);
+    const tag = mine.length ? ` <span class="spill open" style="font-size:.66rem;">${mine.map(o => o.who === 'ze' ? 'Zé apostou' : 'apostaste').join(' · ')}</span>` : '';
+    return `<div class="hoje-row" onclick="openMatchIdx(${i})"><div class="hoje-h">${esc(m.kickoff || '—')}</div><div class="hoje-m"><b>${esc(m.home)}</b> vs <b>${esc(m.away)}</b>${tag}<div class="hoje-v">${v}</div></div></div>`;
+  }).join('');
+  const bets = open.slice(0, 6).map(({ x, who }) => `<div class="hoje-row" onclick="fmGo('banca')"><div class="hoje-h" style="color:${who === 'ze' ? 'var(--lime)' : 'var(--blue)'};">${who === 'ze' ? 'Zé' : 'Tu'}</div><div class="hoje-m">${esc(x.match || '')}<div class="hoje-v">${esc(x.pick || '')} @ ${(+x.odd || 0).toFixed(2)} · ${(+x.stake || 0).toFixed(2)} €</div></div></div>`).join('');
+  return `<div class="panel" id="hojePanel"><div class="panel-h"><span>📅 Hoje</span><span class="muted">${today.length} jogo${today.length === 1 ? '' : 's'} · ${open.length} aposta${open.length === 1 ? '' : 's'} aberta${open.length === 1 ? '' : 's'}</span></div>
+    <div class="panel-b" style="padding-top:2px;">${rows || '<div class="muted" style="padding:8px 0;">Hoje não há jogos no radar.</div>'}${bets ? `<div style="margin-top:8px;font-size:.74rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Apostas abertas</div>${bets}` : ''}</div></div>`;
+}
+
+/* ---------- 3) lembrete de backup ---------- */
+const BK_KEY = 'ze_last_backup';
+function backupNagHTML() {
+  const b = loadBank(); const n = b.bets.length + b.zeBets.length;
+  if (n < 3) return '';
+  const last = +(lsGet(BK_KEY, 0) || 0), days = last ? Math.floor((Date.now() - last) / 864e5) : null;
+  if (days != null && days < 7) return '';
+  let snooze = 0; try { snooze = +(sessionStorage.getItem('ze_bk_snooze') || 0); } catch (e) {}
+  if (snooze) return '';
+  return `<div class="bk-nag" id="bkNag">💾 <span style="flex:1;min-width:160px;">${days == null ? 'Ainda não fizeste nenhuma cópia' : `Última cópia há ${days} dias`}. Os dados vivem só neste telemóvel — se limpares o Chrome, perdes o duelo.</span>
+    <button class="btn btn-sm btn-primary" onclick="exportBackup()">⬇️ Guardar cópia</button><button class="btn btn-sm" onclick="try{sessionStorage.setItem('ze_bk_snooze','1')}catch(e){};document.getElementById('bkNag').remove()">Agora não</button></div>`;
+}
+exportBackup = (function (prev) { return function () { const r = prev.apply(this, arguments); try { lsSet(BK_KEY, Date.now()); const n = document.getElementById('bkNag'); if (n) n.remove(); } catch (e) {} return r; }; })(exportBackup);
+syncUp = (function (prev) { return async function () { const r = await prev.apply(this, arguments); try { const s = document.getElementById('syncStatus'); if (s && /✅/.test(s.textContent)) { lsSet(BK_KEY, Date.now()); const n = document.getElementById('bkNag'); if (n) n.remove(); } } catch (e) {} return r; }; })(syncUp);
+
+renderPortal = (function (prev) {
+  return function () {
+    const r = prev.apply(this, arguments);
+    try {
+      const view = document.getElementById('view-portal'); if (!view) return r;
+      const grid = view.querySelector('.portal-grid'); if (!grid) return r;
+      ['hojePanel', 'bkNag'].forEach(id => { const el = document.getElementById(id); if (el) el.remove(); });
+      const h = hojeHTML(), nag = backupNagHTML();
+      if (h) grid.insertAdjacentHTML('beforebegin', h);
+      if (nag) grid.insertAdjacentHTML('beforebegin', nag);
+      // o mosaico do Scouting deixa de prometer «10 + 10» do dossiê antigo
+      view.querySelectorAll('.tile').forEach(t => { if (/Scouting/.test(t.textContent) && /10 \+ 10/.test(t.textContent)) { const tv = t.querySelector('.tv'), ts = t.querySelector('.ts'); if (tv) tv.textContent = 'Época real'; if (ts) ts.textContent = 'Fortes em casa · fracos fora · em subida'; } });
+    } catch (e) { console.warn(e); }
+    return r;
+  };
+})(renderPortal);
+fmGo = (function (prev) {
+  return function (view) {
+    const r = prev.apply(this, arguments);
+    if (view === 'scout') { try { renderScout(); } catch (e) { console.warn(e); } }
+    return r;
+  };
+})(fmGo);
+
+
+/* =====================================================================
+   v50 · listas de previsões: o 1/X/2 dentro dos quadrados laranja
+   O leitor de texto confundia o «1» com «A», «a», «to». Agora o Zé encontra os quadrados pela cor
+   e lê o algarismo pela forma (estreito = 1; barra em baixo = 2; resto = X).
+   ===================================================================== */
+async function predPills(file) {
+  const d = await decodeAny(file);
+  const k = Math.min(1, 1000 / d.w);
+  const W = Math.max(1, Math.round(d.w * k)), H = Math.max(1, Math.round(d.h * k));
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d'); ctx.drawImage(d.src, 0, 0, W, H); d.done();
+  const p = ctx.getImageData(0, 0, W, H).data, N = W * H, M = new Uint8Array(N);
+  for (let i = 0, j = 0; i < N; i++, j += 4) { const R = p[j], G = p[j + 1], B = p[j + 2]; M[i] = R > 150 && R - G > 50 && R - B > 60 && G < 160 ? 1 : 0; }
+  const seen = new Uint8Array(N), comps = [], stack = new Int32Array(N);
+  for (let s = 0; s < N; s++) {
+    if (!M[s] || seen[s]) continue;
+    let top = 0; stack[top++] = s; seen[s] = 1;
+    let x0 = W, x1 = 0, y0 = H, y1 = 0;
+    while (top) {
+      const q = stack[--top], x = q % W, y = (q - x) / W;
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+      if (x + 1 < W && M[q + 1] && !seen[q + 1]) { seen[q + 1] = 1; stack[top++] = q + 1; }
+      if (x > 0 && M[q - 1] && !seen[q - 1]) { seen[q - 1] = 1; stack[top++] = q - 1; }
+      if (y + 1 < H && M[q + W] && !seen[q + W]) { seen[q + W] = 1; stack[top++] = q + W; }
+      if (y > 0 && M[q - W] && !seen[q - W]) { seen[q - W] = 1; stack[top++] = q - W; }
+    }
+    const pw = x1 - x0, ph = y1 - y0;
+    if (pw > W * 0.1 && pw < W * 0.35 && ph > 0 && pw / ph > 1.8 && pw / ph < 5) comps.push({ x0, x1, y0, y1 });
+  }
+  comps.sort((a, b) => a.y0 - b.y0);
+  return comps.map(({ x0, x1, y0, y1 }) => {
+    const pw = x1 - x0, ph = y1 - y0;
+    const ix0 = x0 + Math.round(pw * 0.12), ix1 = x1 - Math.round(pw * 0.12), iy0 = y0 + Math.round(ph * 0.18), iy1 = y1 - Math.round(ph * 0.18);
+    let bx0 = W, bx1 = -1, by0 = H, by1 = -1;
+    for (let y = iy0; y < iy1; y++) for (let x = ix0; x < ix1; x++) if (M[y * W + x]) { if (x < bx0) bx0 = x; if (x > bx1) bx1 = x; if (y < by0) by0 = y; if (y > by1) by1 = y; }
+    if (bx1 < 0) return null;
+    const bw = bx1 - bx0 + 1, bh = by1 - by0 + 1;
+    if (bw / bh < 0.55) return '1';
+    let bot = 0;
+    for (let x = bx0; x <= bx1; x++) { for (let y = Math.round(by1 - bh * 0.2); y <= by1; y++) if (M[y * W + x]) { bot++; break; } }
+    return bot / bw > 0.6 ? '2' : 'X';
+  });
+}
+ocrFiles = (function (prev) {
+  return async function (files, status) {
+    const out = await prev.apply(this, arguments);
+    try {
+      if (!out || !out.preds || !out.legs || !out.legs.length) return out;
+      let picks = [];
+      for (const f of await normFiles([...(files || [])], () => {})) picks = picks.concat(await predPills(f));
+      if (picks.length !== out.legs.length || picks.some(x => !x)) return out;
+      out.legs.forEach((l, i) => {
+        const pk = picks[i];
+        l.away = String(l.away || '').replace(/\s+([a-z]{1,2}|[^A-Za-zÀ-ÿ0-9]{1,3})$/, '').trim();
+        l.home = String(l.home || '').replace(/\s+([a-z]{1,2}|[^A-Za-zÀ-ÿ0-9]{1,3})$/, '').trim();
+        l.tip = pk; l.sel = pk === '1' ? `${l.home} vence` : pk === '2' ? `${l.away} vence` : 'Empate';
+      });
+      out.pillsRead = picks.length;
+    } catch (e) { console.warn('pills', e); }
+    return out;
+  };
+})(ocrFiles);
+/* nomes que as apps de dicas escrevem de outra maneira */
+Object.assign(TEAM_ALIAS, { 'olympiakos piraeus': 'olympiacos', 'olympiakos': 'olympiacos', 'slavia praha': 'slavia prague', 'fenerbahce': 'fenerbahce fenerbahçe', 'kortrijk': 'kv kortrijk', 'mechelen': 'kv mechelen' });
 
 renderWallet(); renderUpdateInfo();
 
