@@ -11372,7 +11372,7 @@ try { updateContinue(); } catch (e) {}
    - chat novo: classificação de qualquer liga, «transferências benfica», «mercado»
    - a app atualiza-se sozinha quando há versão nova
    ===================================================================== */
-const APP_VER = 'v57';
+const APP_VER = 'v58';
 
 /* ---------- 1) notícias e YouTube sem falhar ---------- */
 const FEED_LS = 'ze_feed_cache_v1';
@@ -15600,14 +15600,14 @@ renderZeStats = (function (prev) {
     try {
       const [a, b] = zstRange(ZST_PER), s = goldStats(a === '0000' ? null : a, b === '9999' ? null : b);
       const box = document.querySelector('#zeStatsBox .panel .panel-b'); if (!box) return r;
-      const row = s ? `<div class="zst-row"><span>🥇 Selo de ouro</span><span><b style="color:${s.w / s.n >= s.p - 0.03 ? 'var(--lime)' : '#ff7a8f'}">${s.w}/${s.n} · ${Math.round(100 * s.w / s.n)}%</b> <span class="muted">prometia ${Math.round(s.p * 100)}%</span>${s.no ? ` · <b class="${s.pr >= 0 ? 'rx-pos' : 'rx-neg'}">${s.pr >= 0 ? '+' : ''}${eur2(s.pr)} €</b> <span class="muted">a 1 € (${s.no} com odd)</span>` : ''}</span></div>`
+      const row = s && s.n ? `<div class="zst-row"><span>🥇 Selo de ouro</span><span><b style="color:${s.w / s.n >= s.p - 0.03 ? 'var(--lime)' : '#ff7a8f'}">${s.w}/${s.n} · ${Math.round(100 * s.w / s.n)}%</b> <span class="muted">prometia ${Math.round(s.p * 100)}%</span>${s.no ? ` · <b class="${s.pr >= 0 ? 'rx-pos' : 'rx-neg'}">${s.pr >= 0 ? '+' : ''}${eur2(s.pr)} €</b> <span class="muted">a 1 € (${s.no} com odd)</span>` : ''}</span></div>`
         : `<div class="zst-row"><span>🥇 Selo de ouro</span><span class="muted">ainda sem apostas de ouro decididas</span></div>`;
       box.insertAdjacentHTML('afterbegin', row);
     } catch (e) {}
     return r;
   };
 })(renderZeStats);
-zeLogText = (function (prev) { return function () { let t = prev.apply(this, arguments); try { const s = goldStats(); if (s) t = t.replace(/\n(erros:)/, `\nouro: ${s.w}/${s.n} p${Math.round(s.p * 100)}${s.no ? ` lucro1€ ${s.pr.toFixed(2)} n${s.no}` : ''}\n$1`); } catch (e) {} return t; }; })(zeLogText);
+zeLogText = (function (prev) { return function () { let t = prev.apply(this, arguments); try { const s = goldStats(); if (s && s.n) t = t.replace(/\n(erros:)/, `\nouro: ${s.w}/${s.n} p${Math.round(s.p * 100)}${s.no ? ` lucro1€ ${s.pr.toFixed(2)} n${s.no}` : ''}\n$1`); } catch (e) {} return t; }; })(zeLogText);
 
 /* ---------- limpeza automática (o telemóvel guarda dados velhos que já não servem) ---------- */
 function zeCleanup() {
@@ -15676,6 +15676,205 @@ async function seloAutoStudy(force) {
 }
 applyLive = (function (prev) { return function () { const r = prev.apply(this, arguments); setTimeout(() => seloAutoStudy().catch(() => {}), 9000); return r; }; })(applyLive);
 setTimeout(() => seloAutoStudy().catch(() => {}), 15000);
+
+
+/* =====================================================================
+   v58 · fase 1 (sem custos)
+   1) CLV do selo de ouro: perto do apito, o Zé guarda a odd final da casa para cada aposta de ouro.
+      CLV = a odd que o selo apanhou vs o preço justo final. CLV positivo de forma consistente é o melhor
+      sinal de vantagem real (aparece antes do lucro).
+   2) 🩺 Saúde dos dados (nas Estatísticas): ESPN, odds, reserva football-data.org, erros, memória.
+   3) Reserva football-data.org: se a ESPN não responder e tiveres o token (grátis) em Definições,
+      o Atualizar usa-o para calendário, resultados e tabelas (sem odds nem marcadores).
+   ===================================================================== */
+function oddsFairProb(o, k) {
+  try {
+    if (OUT_SET[k] && o['1'] > 1 && o.X > 1 && o['2'] > 1) { const t = 1 / o['1'] + 1 / o.X + 1 / o['2']; return OUT_SET[k].reduce((a, j) => a + (1 / o[j]) / t, 0); }
+    const g = /^([OU])(\d+(?:\.\d+)?)$/.exec(k);
+    if (g) { const ov = o['O' + g[2]], un = o['U' + g[2]]; if (ov > 1 && un > 1) { const t = 1 / ov + 1 / un; return g[1] === 'O' ? (1 / ov) / t : (1 / un) / t; } }
+  } catch (e) {}
+  return null;
+}
+/* o registo do ouro passa a guardar a liga e a hora do jogo (para ir buscar a odd final) */
+goldSave = (function (prev) {
+  return function (list) {
+    const r = prev.apply(this, arguments);
+    try {
+      const L = goldLog(); let ch = false;
+      (list || []).forEach(c => { const id = c.m.espn && c.m.espn.ev + '|' + c.k2, x = id && L.legs[id]; if (!x) return; if (!x.code) { x.code = c.m.espn.code; ch = true; } if (!x.ko && c.k) { x.ko = new Date(c.k).getTime(); ch = true; } });
+      if (ch) lsSet(GOLD_KEY, L);
+    } catch (e) {}
+    return r;
+  };
+})(goldSave);
+let GCLV_RUN = false;
+async function goldClvCapture() {
+  if (GCLV_RUN || navigator.onLine === false || window.__ZE_LAB) return 0;
+  if (typeof espnCooling === 'function' && espnCooling()) return 0;
+  const L = goldLog(), now = Date.now();
+  const due = Object.entries(L.legs).filter(([, x]) => x.w == null && x.cl == null && x.code && x.ko && now > x.ko - 75 * 60e3 && now < x.ko - 2 * 60e3).slice(0, 6);
+  if (!due.length) return 0;
+  GCLV_RUN = true; let n = 0;
+  try {
+    for (const [id, x] of due) {
+      try {
+        const books = await coreOdds(x.code, x.ev, true);
+        const b = books && books[0]; if (!b) continue;
+        const L2 = goldLog(), y = L2.legs[id]; if (!y) continue;
+        y.cl = b.odds[y.k] > 1 ? +(+b.odds[y.k]).toFixed(2) : null; y.cf = oddsFairProb(b.odds, y.k); y.clAt = Date.now(); y.clBook = b.provider;
+        lsSet(GOLD_KEY, L2); n++;
+      } catch (e) {}
+      await new Promise(r => setTimeout(r, 400));
+    }
+  } finally { GCLV_RUN = false; }
+  return n;
+}
+function goldClvOf(x) {
+  if (!(x.o > 1)) return null;
+  if (x.cf > 0) return x.cf * x.o - 1;               // odd apanhada × probabilidade justa final − 1
+  if (x.cl > 1) return x.o / x.cl - 1;
+  return null;
+}
+goldStats = (function (prev) {
+  return function (from, to) {
+    const s = prev.apply(this, arguments);
+    try {
+      const g = Object.values(goldLog().legs).filter(x => (!from || isoDay(new Date(x.d)) >= from) && (!to || isoDay(new Date(x.d)) <= to)).map(goldClvOf).filter(v => v != null);
+      if (s && g.length) { s.clvN = g.length; s.clv = g.reduce((a, v) => a + v, 0) / g.length; s.clvPos = g.filter(v => v > 0).length; }
+      else if (!s && g.length) return { n: 0, w: 0, p: 0, no: 0, pr: 0, roi: null, clvN: g.length, clv: g.reduce((a, v) => a + v, 0) / g.length, clvPos: g.filter(v => v > 0).length };
+    } catch (e) {}
+    return s;
+  };
+})(goldStats);
+renderZeStats = (function (prev) {
+  return function () {
+    const r = prev.apply(this, arguments);
+    try {
+      const [a, b] = zstRange(ZST_PER), s = goldStats(a === '0000' ? null : a, b === '9999' ? null : b);
+      const first = document.querySelector('#zeStatsBox .panel .panel-b');
+      if (first && s && s.clvN) first.insertAdjacentHTML('afterbegin', `<div class="zst-row"><span>📈 CLV do ouro</span><span><b class="${s.clv >= 0 ? 'rx-pos' : 'rx-neg'}">${s.clv >= 0 ? '+' : ''}${(s.clv * 100).toFixed(1)}%</b> <span class="muted">em ${s.clvN} · ${s.clvPos} acima do preço final</span></span></div>`);
+      const box = document.getElementById('zeStatsBox'); if (box) box.insertAdjacentHTML('afterbegin', zeHealthHTML());
+    } catch (e) { console.warn(e); }
+    return r;
+  };
+})(renderZeStats);
+applyLive = (function (prev) { return function () { const r = prev.apply(this, arguments); setTimeout(() => goldClvCapture().catch(() => {}), 5000); return r; }; })(applyLive);
+if (!/jsdom/i.test(navigator.userAgent || '')) setInterval(() => { try { if (document.visibilityState === 'visible') goldClvCapture().catch(() => {}); } catch (e) {} }, 5 * 60e3);
+zeLogText = (function (prev) { return function () { let t = prev.apply(this, arguments); try { const s = goldStats(); if (s && s.clvN) t = t.replace(/\n(erros:)/, `\nouro clv: ${(s.clv * 100).toFixed(1)}% n${s.clvN} pos${s.clvPos}\n$1`); } catch (e) {} return t; }; })(zeLogText);
+
+/* ---------- 🩺 saúde dos dados ---------- */
+function zeHealth() {
+  const H = {};
+  try { const P = lsGet(LIVE_KEY, null); H.age = P && P.generatedAt ? Date.now() - new Date(P.generatedAt).getTime() : null; H.src = P && P.source ? P.source : (P && P.matches && P.matches.some(x => /\./.test((x.competition && x.competition.code) || '')) ? 'ESPN' : P ? 'football-data.org' : '—'); } catch (e) {}
+  try { H.okAt = typeof ESPN_OK_AT !== 'undefined' ? ESPN_OK_AT : 0; H.cool = typeof espnCooling === 'function' && espnCooling(); H.month = typeof ESPN_RANGE_BAD !== 'undefined' && ESPN_RANGE_BAD; } catch (e) {}
+  try { const now = Date.now(); const up = matches.filter(m => m.live && m.espn && !m.past && !m.aviso && kickOf(m) && kickOf(m).getTime() > now && kickOf(m).getTime() < now + 36 * 3600e3); H.up = up.length; H.withOdds = up.filter(m => { const s = studyFor(m); return s && s.books && s.books.length; }).length; } catch (e) {}
+  try { H.fdToken = !!(lsGet(LIVE_CFG, {}).token); } catch (e) {}
+  try { const E = lsGet(ERR_KEY, []); H.err24 = E.filter(e => Date.now() - e.t < 864e5).length; H.lastErr = E.length ? E[E.length - 1] : null; } catch (e) {}
+  try { let n = 0; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); n += (k.length + (localStorage.getItem(k) || '').length) * 2; } H.bytes = n; } catch (e) {}
+  return H;
+}
+function zeHealthHTML() {
+  const H = zeHealth(), ok = '🟢', warn = '🟡', bad = '🔴';
+  const ageTxt = H.age == null ? 'nunca' : H.age < 60e3 ? 'agora' : H.age < 3600e3 ? `há ${Math.round(H.age / 60e3)} min` : H.age < 864e5 ? `há ${Math.round(H.age / 3600e3)} h` : `há ${Math.round(H.age / 864e5)} dias`;
+  const mb = H.bytes ? H.bytes / 1048576 : 0;
+  const rows = [
+    [H.age != null && H.age < 3 * 3600e3 ? ok : H.age != null && H.age < 864e5 ? warn : bad, 'Dados', `atualizados ${ageTxt} · fonte ${esc(H.src || '—')}`],
+    [H.cool ? bad : H.okAt && Date.now() - H.okAt < 3 * 3600e3 ? ok : warn, 'ESPN', H.cool ? 'pediu uma pausa (volta em ~4 min)' : H.okAt ? `respondeu ${Math.round((Date.now() - H.okAt) / 60e3)} min atrás${H.month ? ' · a pedir mês a mês (a ESPN mudou as regras — já adaptado)' : ''}` : 'ainda não respondeu nesta sessão'],
+    [H.up ? (H.withOdds / H.up >= 0.3 ? ok : warn) : warn, 'Odds das casas', H.up ? `${H.withOdds} de ${H.up} jogos das próximas 36 h (o Zé vai buscar as dos desafios sozinho)` : 'sem jogos nas próximas 36 h'],
+    [H.fdToken ? ok : warn, 'Reserva', H.fdToken ? 'football-data.org pronta (se a ESPN falhar, uso-a para calendário e tabelas)' : 'sem reserva — põe o token grátis do football-data.org em Definições'],
+    [H.err24 ? warn : ok, 'Erros', H.err24 ? `${H.err24} nas últimas 24 h${H.lastErr ? ` · último: ${esc(String(H.lastErr.m || '').slice(0, 60))}` : ''}` : 'nenhum nas últimas 24 h'],
+    [mb < 3.5 ? ok : mb < 4.5 ? warn : bad, 'Memória', `${mb.toFixed(1).replace('.', ',')} MB de ~5 MB${mb >= 3.5 ? ' — faz um backup em Definições' : ''}`]
+  ];
+  return `<div class="panel"><div class="panel-h"><span>🩺 Saúde dos dados</span><button class="btn btn-sm" onclick="fmGo('config'); setTimeout(()=>{const b=document.querySelector('[onclick^=\\'netTest\\']'); if(b) b.scrollIntoView({behavior:'smooth',block:'center'});},150)">Testar ligação</button></div><div class="panel-b">${rows.map(([i, k, v]) => `<div class="zst-row"><span>${i} ${k}</span><span class="muted" style="text-align:right;">${v}</span></div>`).join('')}</div></div>`;
+}
+
+/* ---------- reserva football-data.org quando a ESPN falha ---------- */
+atualizarTudo = (function (prev) {
+  return async function (opts) {
+    const before = (() => { try { const P = lsGet(LIVE_KEY, null); return P && P.generatedAt; } catch (e) { return null; } })();
+    let r, err = null;
+    try { r = await prev.apply(this, arguments); } catch (e) { err = e; }
+    try {
+      const P = lsGet(LIVE_KEY, null), after = P && P.generatedAt;
+      const cfg = lsGet(LIVE_CFG, {});
+      if (after === before && cfg.token && navigator.onLine !== false && !window.__ZE_LAB && typeof liveRefresh === 'function') {
+        await liveRefresh();
+        const P2 = lsGet(LIVE_KEY, null);
+        if (P2 && P2.generatedAt !== before) { P2.source = 'football-data.org (reserva)'; lsSet(LIVE_KEY, P2); toast('📡 A ESPN não respondeu — usei a reserva football-data.org (calendário, resultados e tabelas; sem odds).'); }
+      }
+    } catch (e) {}
+    if (err) throw err;
+    return r;
+  };
+})(atualizarTudo);
+
+
+/* =====================================================================
+   v58 · 🧪 Teste do mês (sem ver o futuro), dentro da app
+   Abre uma cópia escondida e isolada da app (não mexe nos teus dados), vai buscar os jogos e as odds
+   dos últimos 30 dias e põe o Zé a decidir cada jogo como se fosse a véspera. No fim mostra quanto o
+   selo de ouro teria acertado e o lucro a 1 €. Demora uns minutos: deixa a app aberta.
+   ===================================================================== */
+const ZE_LAB_SRC = "(async function ZE_LAB2() {\n  const NAME = window.__LABNAME || 'x';\n  const post = (type, data) => { try { parent.postMessage({ bt2: true, name: NAME, type, data }, '*'); } catch (e) {} };\n  const sleep = ms => new Promise(r => setTimeout(r, ms));\n  window.addEventListener('message', e => {\n    const d = e.data; if (!d) return;\n    if (d.cmd === '__data') { window.__DATA_IN = d.data; window.__DATA_REPLY = true; return; }\n    if (d.cmd && d.id) { let v; try { v = (0, eval)(d.cmd); } catch (err) { v = 'ERR ' + err; } Promise.resolve(v).then(val => post('reply', { id: d.id, val: typeof val === 'string' ? val : JSON.stringify(val) })).catch(err => post('reply', { id: d.id, val: 'ERR ' + err })); }\n  });\n  try {\n    await sleep(2500);\n    post('need');\n    for (let w = 0; w < 100 && !window.__DATA_REPLY; w++) await sleep(150);\n    let DATA = window.__DATA_IN;\n    if (!DATA) {\n      const LG = window.__BT_LG || ['por.1', 'eng.1', 'eng.2', 'esp.1', 'esp.2', 'ita.1', 'ger.1', 'fra.1', 'ned.1'];\n      const MONTHS = window.__BT_MONTHS || ['202607', '202608', '202609', '202610', '202611'];\n      const byId = new Map();\n      for (const code of LG) for (const ym of MONTHS) {\n        if (!/uefa/.test(code) && ym === '202607') continue;\n        try {\n          const r = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${code}/scoreboard?dates=${ym}&limit=1000`, { cache: 'no-store' });\n          if (r.ok) { const j = await r.json(); (j.events || []).forEach(ev => { const n = normalizeEspn(ev, code, ESPN_LEAGUES[code] || code); if (n && n.status === 'FINISHED' && n.score && n.score.fullTime && n.score.fullTime.home != null) byId.set(n.id, n); }); }\n        } catch (e) {}\n        post('progress', `jogos ${code} ${ym}: ${byId.size}`);\n        await sleep(200);\n      }\n      DATA = { ALL: [...byId.values()].sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate)), ODDS: {} };\n    }\n    const ALL = DATA.ALL;\n    const NOW = window.__BT_NOW || Date.UTC(2026, 10, 4), FROM = window.__BT_FROM || 0;\n    const tableBefore = (code, t) => {\n      const rows = {};\n      ALL.forEach(x => {\n        if (x.competition.code !== code || new Date(x.utcDate).getTime() >= t) return;\n        const h = x.homeTeam, a = x.awayTeam, hg = x.score.fullTime.home, ag = x.score.fullTime.away;\n        const R = (tm) => rows[tm.id] = rows[tm.id] || { team: { id: tm.id, name: tm.name }, playedGames: 0, goalsFor: 0, goalsAgainst: 0, points: 0 };\n        const rh = R(h), ra = R(a);\n        rh.playedGames++; ra.playedGames++; rh.goalsFor += hg; rh.goalsAgainst += ag; ra.goalsFor += ag; ra.goalsAgainst += hg;\n        if (hg > ag) rh.points += 3; else if (hg < ag) ra.points += 3; else { rh.points++; ra.points++; }\n      });\n      return [{ type: 'TOTAL', table: Object.values(rows) }];\n    };\n    const gamesOf = (id, t, code) => ALL.filter(x => new Date(x.utcDate).getTime() < t && (x.homeTeam.id === id || x.awayTeam.id === id) && (!code || x.competition.code === code));\n    const recentFor = (id, t, code) => gamesOf(id, t, code).slice(-10).reverse().map(x => { const home = x.homeTeam.id === id; return { home, gf: home ? x.score.fullTime.home : x.score.fullTime.away, ga: home ? x.score.fullTime.away : x.score.fullTime.home, d: x.utcDate, opp: home ? x.awayTeam.shortName : x.homeTeam.shortName }; });\n    const restFor = (id, t) => { const g = gamesOf(id, t); const last = g[g.length - 1]; const nxt = ALL.find(x => new Date(x.utcDate).getTime() > t + 6 * 3600e3 && (x.homeTeam.id === id || x.awayTeam.id === id)); return { since: last ? (t - new Date(last.utcDate).getTime()) / 864e5 : null, until: nxt ? (new Date(nxt.utcDate).getTime() - t) / 864e5 : null }; };\n    const DOMC = {}; ALL.forEach(x => { if (/uefa/.test(x.competition.code)) return; [x.homeTeam.id, x.awayTeam.id].forEach(id => { const c = DOMC[id] = DOMC[id] || {}; c[x.competition.code] = (c[x.competition.code] || 0) + 1; }); });\n    const domLeague = id => { const c = DOMC[id]; return c ? Object.keys(c).sort((a, b) => c[b] - c[a])[0] : null; };\n    const EU = new Set(); ALL.forEach(x => { if (/uefa/.test(x.competition.code)) { EU.add(x.homeTeam.id); EU.add(x.awayTeam.id); } });\n    const domMap = {}; Object.keys(DOMC).forEach(id => { domMap[id] = domLeague(id); });\n    if (typeof zeEuroSetData === 'function') zeEuroSetData([...EU], domMap);\n    const cand = ALL.filter(x => {\n      const t = new Date(x.utcDate).getTime(); if (t > NOW || t < FROM) return false;\n      const code = x.competition.code;\n      if (/uefa/.test(code)) return new Date(x.utcDate) >= new Date('2026-09-10');\n      return gamesOf(x.homeTeam.id, t, code).length >= 4 && gamesOf(x.awayTeam.id, t, code).length >= 4;\n    });\n    const per = {}; const TEST = [];\n    cand.slice().reverse().forEach(x => { const c = x.competition.code; per[c] = (per[c] || 0) + 1; if (/uefa/.test(c) || per[c] <= (window.__BT_CAP || 70)) TEST.push(x); });\n    post('progress', `jogos: ${ALL.length} \u00b7 em teste: ${TEST.length}`);\n    const ODDS = DATA.ODDS || {};\n    let k = 0, fetched = 0;\n    for (const x of TEST) {\n      if (!ODDS[x.id]) { try { ODDS[x.id] = await coreOdds(x.competition.code, x.id, true); } catch (e) { ODDS[x.id] = []; } fetched++; await sleep(150); }\n      if (++k % 50 === 0) post('progress', `odds ${k}/${TEST.length}`);\n    }\n    DATA.ODDS = ODDS;\n    if (!window.__DATA_IN || fetched) post('data', DATA);\n    // pr\u00e9-calcular o que n\u00e3o muda\n    const PRE = TEST.map(x => {\n      const t = new Date(x.utcDate).getTime(), code = x.competition.code, eu = /uefa/.test(code);\n      return { x, t, code, eu, S: computeStrengths(tableBefore(code, t)), recH: recentFor(x.homeTeam.id, t, eu ? null : code), recA: recentFor(x.awayTeam.id, t, eu ? null : code), restH: restFor(x.homeTeam.id, t), restA: restFor(x.awayTeam.id, t), nh: gamesOf(x.homeTeam.id, t, code).length, na: gamesOf(x.awayTeam.id, t, code).length };\n    });\n    const res3 = (i, j) => [i > j ? 1 : 0, i === j ? 1 : 0, i < j ? 1 : 0];\n    const brier = (q, o) => (q[0] - o[0]) ** 2 + (q[1] - o[1]) ** 2 + (q[2] - o[2]) ** 2;\n    const agg = (rows, f) => { const v = rows.map(f).filter(z => z != null && isFinite(z)); return v.length ? +(v.reduce((a, b) => a + b, 0) / v.length).toFixed(4) : null; };\n    const SAFE_K = ['1', '1X', 'O1.5', 'O2.5', 'BTTS', 'U2.5', 'X2', '2'];\n    window.__run = function (opts) {\n      opts = opts || {};\n      if (typeof ZE_TUNE !== 'undefined' && opts.tune) Object.assign(ZE_TUNE, opts.tune);\n      if (typeof ZE_FATIGUE_ON !== 'undefined' && opts.fatigue != null) ZE_FATIGUE_ON = opts.fatigue;\n      try { MODEL_CACHE.clear(); ZE_MODEL_CACHE.clear(); } catch (e) {}\n      const R = [];\n      for (const P of PRE) {\n        const { x, t, code, eu } = P;\n        const lam = lambdasLive(P.S, x.homeTeam.id, x.awayTeam.id); if (!lam) continue;\n        const d = new Date(x.utcDate);\n        const m = { phase: 'imediato', type: 'best', fav: false, live: true, home: x.homeTeam.shortName || x.homeTeam.name, away: x.awayTeam.shortName || x.awayTeam.name, date: dayLabel(d), league: x.competition.name, lambdas: lam, espn: { h: x.homeTeam.id, a: x.awayTeam.id, code, ev: x.id }, kickoff: '20:00', bet: '\u2014', prob: '~' };\n        const key = mKey(m);\n        const i = x.score.fullTime.home, j = x.score.fullTime.away, o = res3(i, j);\n        const run = (st) => { if (st) STUDY[key] = st; else delete STUDY[key]; MODEL_CACHE.clear(); ZE_MODEL_CACHE.clear(); return modelo(m); };\n        const rA = run(null);\n        const stB = { t: Date.now(), m: { home: m.home, away: m.away }, sources: [], recentH: P.recH, recentA: P.recA, restH: P.restH, restA: P.restA, allT: Date.now(), oddsTried: Date.now(), books: [] };\n        const rB = run(stB);\n        const books = ODDS[x.id] || [];\n        let rC = null, mkt = null, vb = null;\n        if (books.length && !opts.skipC) {\n          const stC = { ...stB, t: Date.now() + 1, books, market: marketFromBook(books[0]) };\n          rC = run(stC); mkt = stC.market;\n          const favM = favOf(rC.mk), favK = favOf({ '1': 1 / books[0].odds['1'], X: 1 / books[0].odds.X, '2': 1 / books[0].odds['2'] });\n          const best = {};\n          books.forEach(b => Object.entries(b.odds).forEach(([kk, od]) => { const p = rC.mk[kk]; if (p == null || !(od > 1) || !MARKET_CONDS[kk]) return; if (!best[kk] || od > best[kk].o) best[kk] = { k: kk, o: od, p, ev: p * od - 1 }; }));\n          const mp = kk => { const bo = books[0].odds; if (OUT_SET[kk]) { const s = 1 / bo['1'] + 1 / bo.X + 1 / bo['2']; return OUT_SET[kk].reduce((a, q) => a + (1 / bo[q]) / s, 0); } const g = /^([OU])(\\d+(?:\\.\\d+)?)$/.exec(kk); if (!g) return null; const ov = bo['O' + g[2]], un = bo['U' + g[2]]; if (!(ov && un)) return null; const tt = 1 / ov + 1 / un; return g[1] === 'O' ? (1 / ov) / tt : (1 / un) / tt; };\n          const gate = c => typeof zeValueGate === 'function' ? zeValueGate(c, m).ok : true;\n          const ok = Object.values(best).filter(c => c.ev > zeEdgeFor(0.03, c.o) && c.o <= 6 && c.p >= 0.2 && !(mp(c.k) != null && c.p - mp(c.k) > 0.15) && (!isContra(c.k, favM, favK) || c.ev >= CONTRA_EDGE) && gate(c)).sort((a, b) => b.ev - a.ev)[0];\n          vb = ok ? { k: ok.k, o: ok.o, p: ok.p, ev: ok.ev, win: MARKET_CONDS[ok.k](i, j) ? 1 : 0 } : null;\n        }\n        const rS = rC || rB;\n        const sb = SAFE_K.map(kk => ({ kk, p: rS.mk[kk] })).filter(z => z.p >= 0.55 && z.p <= 0.85).sort((a, b) => b.p - a.p)[0];\n        let safe = null;\n        if (sb) { const od = Math.max(0, ...books.map(b => b.odds[sb.kk] || 0)); safe = { k: sb.kk, p: sb.p, win: MARKET_CONDS[sb.kk](i, j) ? 1 : 0, o: od > 1 ? od : null }; }\n        const bo = books[0] && books[0].odds;\n        R.push({ code, eu, cross: eu && domLeague(x.homeTeam.id) !== domLeague(x.awayTeam.id), de: !eu && (EU.has(x.homeTeam.id) !== EU.has(x.awayTeam.id)) ? (EU.has(x.homeTeam.id) ? 'h' : 'a') : null,\n          o, over: i + j > 2.5 ? 1 : 0, goals: i + j, A: [rA.mk['1'], rA.mk.X, rA.mk['2']], B: [rB.mk['1'], rB.mk.X, rB.mk['2']], C: rC ? [rC.mk['1'], rC.mk.X, rC.mk['2']] : null, M: mkt ? [mkt.p1, mkt.pX, mkt.p2] : null,\n          oB: rB.mk['O2.5'], oC: rC ? rC.mk['O2.5'] : null, gB: rB.lh + rB.la, conf: rC ? rC.conf : rB.conf, vb, safe, early: P.nh < 6 || P.na < 6,\n          margin: bo && bo['1'] && bo.X && bo['2'] ? 1 / bo['1'] + 1 / bo.X + 1 / bo['2'] - 1 : null });\n      }\n      window.__R = R;\n      const block = rows => {\n        const wm = rows.filter(r => r.M && r.C);\n        const sf = rows.filter(r => r.safe), so = sf.filter(r => r.safe.o), v = rows.filter(r => r.vb);\n        return { n: rows.length, nM: wm.length, A: agg(rows, r => brier(r.A, r.o)), B: agg(rows, r => brier(r.B, r.o)), C: agg(wm, r => brier(r.C, r.o)), M: agg(wm, r => brier(r.M, r.o)),\n          favB: agg(rows, r => r.o[r.B.indexOf(Math.max(...r.B))]), favC: agg(wm, r => r.o[r.C.indexOf(Math.max(...r.C))]), favM: agg(wm, r => r.o[r.M.indexOf(Math.max(...r.M))]),\n          home: agg(rows, r => r.o[0]), pHB: agg(rows, r => r.B[0]), pHC: agg(wm, r => r.C[0]), draw: agg(rows, r => r.o[1]), pXB: agg(rows, r => r.B[1]), pXC: agg(wm, r => r.C[1]), pXM: agg(wm, r => r.M[1]),\n          over: agg(rows, r => r.over), pOB: agg(rows, r => r.oB), pOC: agg(wm, r => r.oC), goals: agg(rows, r => r.goals), gB: agg(rows, r => r.gB),\n          safeN: sf.length, safeHit: agg(sf, r => r.safe.win), safeP: agg(sf, r => r.safe.p), safeNo: so.length, safeROI: agg(so, r => r.safe.win ? r.safe.o - 1 : -1), safeOdd: agg(so, r => r.safe.o),\n          vbN: v.length, vbHit: agg(v, r => r.vb.win), vbROI: agg(v, r => r.vb.win ? r.vb.o - 1 : -1), vbOdd: agg(v, r => r.vb.o), vbP: agg(v, r => r.vb.p),\n          margin: agg(rows, r => r.margin), confs: rows.reduce((a, r) => (a[r.conf] = (a[r.conf] || 0) + 1, a), {}) };\n      };\n      const S = { all: block(R), dom: block(R.filter(r => !r.eu)), eu: block(R.filter(r => r.eu)), cross: block(R.filter(r => r.cross)), euSame: block(R.filter(r => r.eu && !r.cross)),\n        domEuro: block(R.filter(r => r.de)), domNone: block(R.filter(r => !r.eu && !r.de)), early: block(R.filter(r => r.early)) };\n      window.__S = S;\n      return S;\n    };\n\n    /* ---------- selo de ouro, jogo a jogo por ordem de data (o hist\u00f3rico s\u00f3 tem o passado) ---------- */\n    window.__runSelo = function () {\n      try { localStorage.removeItem(ZARCH_KEY); } catch (e) {}\n      const A = { v: 1, rows: {} };\n      const rows = [];\n      const ord = PRE.slice().sort((a, b) => a.t - b.t);\n      for (const P of ord) {\n        const { x, t, code } = P;\n        const lam = lambdasLive(P.S, x.homeTeam.id, x.awayTeam.id); if (!lam) continue;\n        const books = ODDS[x.id] || []; if (!books.length) continue;\n        const d = new Date(x.utcDate);\n        const m = { phase: 'imediato', type: 'best', fav: false, live: true, home: x.homeTeam.shortName || x.homeTeam.name, away: x.awayTeam.shortName || x.awayTeam.name, date: dayLabel(d), league: x.competition.name, lambdas: lam, espn: { h: x.homeTeam.id, a: x.awayTeam.id, code, ev: x.id }, kickoff: '20:00', bet: '\u2014', prob: '~' };\n        const key = mKey(m), i = x.score.fullTime.home, j = x.score.fullTime.away;\n        STUDY[key] = { t: Date.now(), m: { home: m.home, away: m.away }, sources: [], recentH: P.recH, recentA: P.recA, restH: P.restH, restA: P.restA, allT: Date.now(), oddsTried: Date.now(), books, market: marketFromBook(books[0]) };\n        MODEL_CACHE.clear(); ZE_MODEL_CACHE.clear();\n        let z = null; try { z = zeLogical(m); } catch (e) {}\n        if (!z) { delete STUDY[key]; continue; }\n        const o0 = books[0].odds[z.k];\n        let c = { m, i: 0, k2: z.k, p: z.p, odd: o0 > 1 ? o0 : null, cat: z.p >= 0.75 ? 'segura' : 'dia', score: 1 };\n        let c2 = null; try { c2 = chFixMinOdd(c); } catch (e) { c2 = c; }\n        let s = null;\n        if (c2) { ZBRAKE_MEM = null; try { s = zeSelo(m, c2.k2, c2.p, c2.odd); } catch (e) { s = { grade: null, bad: ['erro'] }; } }\n        const kk = c2 ? c2.k2 : z.k, odd = books[0].odds[kk] > 1 ? books[0].odds[kk] : null;\n        rows.push({ d: x.utcDate.slice(0, 10), code, lg: x.competition.name, k: kk, p: c2 ? c2.p : z.p, grade: c2 ? (s && s.grade) || 'nenhum' : 'excluido', win: MARKET_CONDS[kk] ? (MARKET_CONDS[kk](i, j) ? 1 : 0) : null, odd, bad: s ? (s.bad || []).join('|') : 'odd<1.25', logic: { k: z.k, p: z.p, win: MARKET_CONDS[z.k] ? (MARKET_CONDS[z.k](i, j) ? 1 : 0) : null, odd: o0 > 1 ? o0 : null } });\n        // o resultado entra no hist\u00f3rico (como no di\u00e1rio) \u2014 s\u00f3 serve para os jogos seguintes\n        A.rows['bt|' + x.id] = { t: 'aposta', d: x.utcDate.slice(0, 10), lg: x.competition.name, c: code, j: m.home + ' vs ' + m.away, k: z.k, s: '', p: z.p, w: MARKET_CONDS[z.k](i, j) ? 1 : 0, r: i + '-' + j };\n        try { localStorage.setItem(ZARCH_KEY, JSON.stringify(A)); } catch (e) {}\n        delete STUDY[key];\n      }\n      window.__SR = rows;\n      const g = L => { const n = L.length, w = L.filter(r => r.win).length, p = L.reduce((s, r) => s + r.p, 0), wo = L.filter(r => r.odd > 1), pr = wo.reduce((s, r) => s + (r.win ? r.odd - 1 : -1), 0); return { n, hit: n ? +(w / n).toFixed(3) : null, prom: n ? +(p / n).toFixed(3) : null, nOdd: wo.length, roi: wo.length ? +(pr / wo.length).toFixed(3) : null, odd: wo.length ? +(wo.reduce((s, r) => s + r.odd, 0) / wo.length).toFixed(2) : null }; };\n      const by = (L, f) => { const o = {}; L.forEach(r => { const k = f(r); (o[k] = o[k] || []).push(r); }); return Object.fromEntries(Object.entries(o).map(([k, v]) => [k, g(v)])); };\n      const half = Math.floor(rows.length / 2);\n      const logicAll = rows.map(r => ({ ...r.logic, p: r.logic.p }));\n      return { n: rows.length, from: rows[0] && rows[0].d, to: rows[rows.length - 1] && rows[rows.length - 1].d,\n        logica: g(logicAll), logica125: g(logicAll.filter(r => (r.odd || 0) >= 1.25)),\n        porSelo: by(rows, r => r.grade), ouroPorLiga: by(rows.filter(r => r.grade === 'ouro'), r => r.code), ouroPorTipo: by(rows.filter(r => r.grade === 'ouro'), r => PICK_FAMILY(r.k)),\n        ouro1: g(rows.slice(0, half).filter(r => r.grade === 'ouro')), ouro2: g(rows.slice(half).filter(r => r.grade === 'ouro')),\n        motivos: rows.filter(r => r.grade !== 'ouro').reduce((a, r) => { (r.bad || '').split('|').filter(Boolean).forEach(b => { const k = b.replace(/\\(.*\\)/, '').trim(); a[k] = (a[k] || 0) + 1; }); return a; }, {}) };\n    };\n\n    /* ---------- poupan\u00e7as: o favorito joga pior quando a seguir tem Europa/Ta\u00e7a (ou acabou de ter)? ---------- */\n    window.__runRot = function (EXTRA) {\n      const EX = (EXTRA || []).map(e => ({ t: new Date(e.d).getTime(), h: String(e.h), a: String(e.a), c: e.c }));\n      const nextImp = (id, t) => EX.filter(e => (e.h === id || e.a === id) && e.t > t + 3600e3 && e.t - t < 4.5 * 864e5).length > 0;\n      const prevImp = (id, t) => EX.filter(e => (e.h === id || e.a === id) && e.t < t - 3600e3 && t - e.t < 3.5 * 864e5).length > 0;\n      const out = [];\n      for (const P of PRE) {\n        const { x, t, code } = P; if (/uefa/.test(code)) continue;\n        const books = ODDS[x.id] || []; if (!books.length) continue;\n        const bo = books[0].odds; if (!(bo['1'] > 1 && bo.X > 1 && bo['2'] > 1)) continue;\n        const s = 1 / bo['1'] + 1 / bo.X + 1 / bo['2'], q = [1 / bo['1'] / s, 1 / bo.X / s, 1 / bo['2'] / s];\n        const fav = q[0] >= q[2] ? 0 : 2, qf = q[fav]; if (qf < 0.5) continue;\n        const favId = String(fav === 0 ? x.homeTeam.id : x.awayTeam.id);\n        const i = x.score.fullTime.home, j = x.score.fullTime.away, won = fav === 0 ? i > j : j > i;\n        // folga na tabela antes do jogo\n        const T = tableBefore(code, t)[0].table.slice().sort((a, b) => b.points - a.points || (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst));\n        const pos = T.findIndex(r => String(r.team.id) === favId), lead = pos === 0 && T[1] ? T[0].points - T[1].points : null;\n        out.push({ code, qf, won: won ? 1 : 0, next: nextImp(favId, t), prev: prevImp(favId, t), lead, top3: pos >= 0 && pos < 3, oddF: fav === 0 ? bo['1'] : bo['2'] });\n      }\n      const g = L => { const n = L.length; if (!n) return { n: 0 }; const w = L.reduce((a, r) => a + r.won, 0), e = L.reduce((a, r) => a + r.qf, 0), v = L.reduce((a, r) => a + r.qf * (1 - r.qf), 0), pr = L.reduce((a, r) => a + (r.won ? r.oddF - 1 : -1), 0); return { n, ganhou: +(w / n).toFixed(3), casas: +(e / n).toFixed(3), z: +((w - e) / Math.sqrt(v)).toFixed(2), roiFav: +(pr / n).toFixed(3) }; };\n      return { todos: g(out), seguinteEuropaTaca: g(out.filter(r => r.next)), semNada: g(out.filter(r => !r.next && !r.prev)), vemDeEuropaTaca: g(out.filter(r => r.prev)),\n        lider5mais: g(out.filter(r => r.lead != null && r.lead >= 5)), lider5mais_e_seguinte: g(out.filter(r => r.lead != null && r.lead >= 5 && r.next)),\n        top3_seguinte: g(out.filter(r => r.top3 && r.next)), favForte_seguinte: g(out.filter(r => r.qf >= 0.65 && r.next)), favForte_semNada: g(out.filter(r => r.qf >= 0.65 && !r.next && !r.prev)) };\n    };\n    const S0 = window.__run({});\n    post('done', { n: S0.all.n });\n  } catch (e) { post('error', String(e && e.stack || e)); }\n})();\n";
+const MT_KEY = 'ze_month_test_v1';
+let MT_RUN = null;
+function mtMonths(from, to) { const out = []; const d = new Date(from.getFullYear(), from.getMonth(), 1); while (d <= to) { out.push(d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0')); d.setMonth(d.getMonth() + 1); } return out; }
+async function zeMonthTest() {
+  if (MT_RUN) { toast('🧪 O teste já está a correr…'); return; }
+  const box = document.getElementById('mtBox'); if (!box) return;
+  if (navigator.onLine === false) { box.innerHTML = '<div class="muted">Precisa de internet.</div>'; return; }
+  const now = new Date(), to = new Date(now.getTime() - 864e5), from = new Date(now.getTime() - 31 * 864e5), seasonStart = new Date(now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1, 6, 1);
+  const pre = `window.__BT_NOW=${to.getTime()};window.__BT_FROM=${from.getTime()};window.__BT_CAP=30;window.__BT_MONTHS=${JSON.stringify(mtMonths(seasonStart, now))};`;
+  const SHIM = "(function(){var mk=function(){var m={};return{getItem:function(k){return Object.prototype.hasOwnProperty.call(m,k)?m[k]:null},setItem:function(k,v){m[k]=String(v)},removeItem:function(k){delete m[k]},clear:function(){for(var k in m)delete m[k]},key:function(i){var ks=Object.keys(m);return i<ks.length?ks[i]:null},get length(){return Object.keys(m).length}}};try{Object.defineProperty(window,'localStorage',{value:mk(),configurable:true})}catch(e){}try{Object.defineProperty(window,'sessionStorage',{value:mk(),configurable:true})}catch(e){}try{Object.defineProperty(Navigator.prototype,'onLine',{get:function(){return false},configurable:true})}catch(e){}window.__ZE_LAB=true;})();";
+  box.innerHTML = '<div class="muted">⏳ A preparar o laboratório…</div>';
+  let html = '';
+  try { html = await (await fetch(location.href.split('#')[0].split('?')[0] + '?lab=' + Date.now(), { cache: 'no-store' })).text(); } catch (e) {}
+  if (!html || html.indexOf('<head>') < 0) { box.innerHTML = '<div class="muted">Não consegui abrir a cópia da app (precisa de internet).</div>'; return; }
+  const i = html.indexOf('<head>') + 6, j = html.lastIndexOf('</body>');
+  const doc = html.slice(0, i) + '<script>window.__LABNAME="mt";' + pre + SHIM + '<\/script>' + html.slice(i, j) + '<script>' + ZE_LAB_SRC + '<\/script>' + html.slice(j);
+  const f = document.createElement('iframe'); f.setAttribute('sandbox', 'allow-scripts'); f.style.cssText = 'position:fixed;width:2px;height:2px;right:0;bottom:0;opacity:0.01;border:0;pointer-events:none;z-index:1;'; f.srcdoc = doc;
+  const replies = {};
+  const ask = cmd => new Promise(res => { const id = Math.random().toString(36).slice(2); f.contentWindow.postMessage({ cmd, id }, '*'); const t = setInterval(() => { if (replies[id] != null) { clearInterval(t); res(replies[id]); } }, 200); setTimeout(() => { clearInterval(t); res(null); }, 240000); });
+  MT_RUN = { t: Date.now() };
+  const done = new Promise(resolve => {
+    const onMsg = e => {
+      const d = e.data; if (!d || !d.bt2 || d.name !== 'mt' || e.source !== f.contentWindow) return;
+      if (d.type === 'need') { f.contentWindow.postMessage({ cmd: '__data', data: null }, '*'); return; }
+      if (d.type === 'reply') { replies[d.data.id] = d.data.val; return; }
+      if (d.type === 'progress') { const el = document.getElementById('mtProg'); if (el) el.textContent = '⏳ ' + String(d.data).replace(/^odds/, 'odds das casas').replace(/^jogos /, 'jogos ') + ' · ' + Math.round((Date.now() - MT_RUN.t) / 1000) + ' s'; return; }
+      if (d.type === 'done' || d.type === 'error') { window.removeEventListener('message', onMsg); resolve(d.type === 'done' ? null : String(d.data || 'erro')); }
+    };
+    window.addEventListener('message', onMsg);
+  });
+  box.innerHTML = '<div class="muted" id="mtProg">⏳ A começar… (deixa a app aberta; demora uns minutos)</div>';
+  document.body.appendChild(f);
+  const err = await Promise.race([done, new Promise(r => setTimeout(() => r('demorou demasiado (mais de 15 min)'), 15 * 60e3))]);
+  let res = null;
+  if (!err) { const v = await ask('JSON.stringify(window.__runSelo())'); try { res = JSON.parse(v); } catch (e) {} }
+  try { f.remove(); } catch (e) {}
+  MT_RUN = null;
+  if (!res) { box.innerHTML = `<div class="muted">Não consegui terminar o teste${err ? ` (${esc(err).slice(0, 120)})` : ''}. Tenta outra vez mais logo.</div>`; return; }
+  res.at = Date.now(); lsSet(MT_KEY, res);
+  box.innerHTML = mtHTML(res);
+}
+function mtHTML(r) {
+  if (!r) return '<div class="muted">Ainda não correste nenhum teste.</div>';
+  const line = (lab, g) => g && g.n ? `<div class="zst-row"><span>${lab}</span><span><b>${Math.round(g.hit * 100)}%</b> <span class="muted">em ${g.n} · prometia ${Math.round(g.prom * 100)}%</span>${g.nOdd ? ` · <b class="${g.roi >= 0 ? 'rx-pos' : 'rx-neg'}">${g.roi >= 0 ? '+' : ''}${Math.round(g.roi * 100)}%</b> <span class="muted">a 1 € (odd média ${String(g.odd).replace('.', ',')})</span>` : ''}</span></div>` : `<div class="zst-row"><span>${lab}</span><span class="muted">sem jogos</span></div>`;
+  const ps = r.porSelo || {};
+  return `<div class="muted" style="font-size:.76rem;margin-bottom:6px;">${r.n} jogos de ${esc(r.from || '')} a ${esc(r.to || '')} · corrido ${new Date(r.at).toLocaleString('pt-PT')}</div>
+    ${line('🥇 Selo de ouro', ps.ouro)}${line('Sem selo', ps.nenhum)}${line('💡 Aposta lógica (todas)', r.logica)}${line('Aposta lógica com odd ≥ 1.25', r.logica125)}
+    <div class="muted" style="font-size:.72rem;margin-top:6px;">Cada jogo foi decidido só com o que se sabia na véspera. Com menos de 50 jogos de ouro, os números ainda mexem muito.</div>`;
+}
+renderZeStats = (function (prev) {
+  return function () {
+    const r = prev.apply(this, arguments);
+    try {
+      const box = document.getElementById('zeStatsBox'); if (!box || document.getElementById('mtPanel')) return r;
+      box.insertAdjacentHTML('beforeend', `<div class="panel" id="mtPanel"><div class="panel-h"><span>🧪 Teste do mês</span><button class="btn btn-sm btn-lime" onclick="zeMonthTest()">${MT_RUN ? 'a correr…' : 'Correr agora'}</button></div><div class="panel-b"><div class="hint" style="margin-bottom:8px;">Simula os últimos 30 dias como se o Zé não soubesse os resultados: decide cada jogo com o que havia na véspera e confere. Corre numa cópia isolada da app — os teus dados não mudam. Faz isto uma vez por mês para ver se o selo de ouro continua a merecer confiança.</div><div id="mtBox">${mtHTML(lsGet(MT_KEY, null))}</div></div></div>`);
+    } catch (e) {}
+    return r;
+  };
+})(renderZeStats);
 
 renderWallet(); renderUpdateInfo();
 

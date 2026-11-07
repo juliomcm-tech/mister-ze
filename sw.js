@@ -4,7 +4,7 @@
    - leitor de prints (OCR) e tipos de letra guardados na 1.ª utilização → depois funcionam offline
    - resultados (ESPN) nunca são guardados aqui: vão sempre à rede
    - recebe partilhas do Android (prints e links) → abre o chat do Zé */
-const VERSION = 'ze-v57d';
+const VERSION = 'ze-v58';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 
 self.addEventListener('install', e => {
