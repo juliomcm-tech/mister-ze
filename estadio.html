@@ -14415,6 +14415,22 @@ body.rv .day-result{background:linear-gradient(180deg,rgba(32,22,58,.94),rgba(20
 body.rv .day-result h3{font:800 1.15rem var(--cond);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px;}
 body.rv #view-dia .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 
+
+/* v4: todas as caixas de jogo iguais (como o Verificar), mais claras e com volume */
+body.rv .vc-card{background:linear-gradient(180deg,#3b2f66 0%,#2c2350 55%,#251d44 100%) !important;border:1px solid #4e3f85 !important;border-bottom:4px solid #1a1333 !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 8px 16px rgba(0,0,0,.35) !important;overflow:hidden;}
+body.rv .vc-card:before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:var(--acc,linear-gradient(90deg,#c8f53c,#5aa9ff));}
+body.rv .vc-card .rv-team span{font:700 1rem/1.15 var(--cond);}
+body.rv .vc-top{background:linear-gradient(180deg,#4a3a7c,#2a1f4c) !important;border-color:#6a58a8 !important;top:4px !important;}
+.vc-info{font-size:.8rem;line-height:1.45;color:#ddd6f5;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:9px;padding:7px 10px;margin-bottom:10px;}
+.vc-info b{color:#fff;}
+.vc-info .wx{display:block;margin-top:4px;color:#9fd3ff;}
+.vc-star{position:absolute;right:10px;top:8px;font-size:1.1rem;filter:drop-shadow(0 2px 2px rgba(0,0,0,.5));}
+body.rv .rv-list{background:linear-gradient(180deg,#323b58,#262d45) !important;border:1px solid #46507a !important;border-bottom:4px solid #161b2c !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 6px 14px rgba(0,0,0,.35) !important;}
+body.rv .rv-lh{background:linear-gradient(180deg,#46507a,#343d5e) !important;color:#e6ebf7 !important;}
+body.rv .rv-row:nth-child(even){background:rgba(255,255,255,.045) !important;}
+body.rv .rv-comp{background:radial-gradient(ellipse 40% 60% at 14% 30%,rgba(255,255,255,.25),transparent 70%),linear-gradient(90deg,#3e3463 0%,#2c3150 45%,#232840 100%) !important;border-bottom:4px solid #151a2a !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 5px 12px rgba(0,0,0,.35) !important;}
+body.rv .day-result .day-meta{margin-bottom:12px;}
+
 body.rv #view-portal .portal-grid, body.rv #hojePanel, body.rv #view-portal > .screen-head{display:none !important;}
 `;
   try { const st = document.createElement('style'); st.id = 'rvSkin'; st.textContent = css; document.head.appendChild(st); } catch (e) {}
@@ -14567,7 +14583,9 @@ function rvCalRender() {
       return true;
     }).sort((a, b) => a.k - b.k);
   const name = (RV_COMPS.find(c => c[0] === f) || [0, 0, 'Todos os jogos'])[2];
-  box.innerHTML = `<div class="rv-h2">${esc(name)} <small>${list.length} jogo${list.length === 1 ? '' : 's'} · por dia e hora</small></div>` + (list.length ? rvGamesHTML(list, 200) : '<div class="rv-list"><div class="rv-more" style="color:var(--muted);cursor:default;">Sem jogos para este filtro.</div></div>');
+  let html = '', cur = null;
+  list.slice(0, 120).forEach(x => { const dh = rvDayHead(x.k); if (dh.txt !== cur) { html += `<div class="rv-h2" style="margin-top:14px;"><span style="${dh.today ? 'color:var(--lime);-webkit-text-fill-color:var(--lime);' : ''}">${esc(dh.txt)}</span></div>`; cur = dh.txt; } html += rvCard(x.m); });
+  box.innerHTML = `<div class="rv-h2">${esc(name)} <small>${list.length} jogo${list.length === 1 ? '' : 's'} · por dia e hora</small></div>` + (list.length ? html : '<div class="rv-list"><div class="rv-more" style="color:var(--muted);cursor:default;">Sem jogos para este filtro.</div></div>');
 }
 renderCalendar = (function (prev) { return function () { const r = prev.apply(this, arguments); try { rvCompsRender(); rvCalRender(); } catch (e) {} return r; }; })(renderCalendar);
 
@@ -14602,20 +14620,44 @@ renderPortal = (function (prev) { return function () { const r = prev.apply(this
   }, 1000);
 })();
 
-/* «Verificar»: cartões como os de jogo (liga com bandeira em cima, equipas com escudo, aposta lógica numa caixa, 4 botões alinhados) */
+/* ---------- a caixa de jogo única (Verificar, Análise do dia, Calendário) ---------- */
+const RV_ACC = { por: 'linear-gradient(90deg,#046a38 0 40%,#da291c 40%)', eng: 'linear-gradient(90deg,#fff 0 40%,#ce1124 40% 60%,#fff 60%)', esp: 'linear-gradient(90deg,#aa151b 0 25%,#f1bf00 25% 75%,#aa151b 75%)', ita: 'linear-gradient(90deg,#009246 0 33%,#fff 33% 66%,#ce2b37 66%)', ger: 'linear-gradient(90deg,#000 0 33%,#dd0000 33% 66%,#ffce00 66%)', fra: 'linear-gradient(90deg,#0055a4 0 33%,#fff 33% 66%,#ef4135 66%)', ned: 'linear-gradient(90deg,#ae1c28 0 33%,#fff 33% 66%,#21468b 66%)', uefa: 'linear-gradient(90deg,#003399,#ffcc00,#003399)' };
+function rvAcc(m) { const c = String((m.espn && m.espn.code) || '').split('.')[0]; if (RV_ACC[c]) return RV_ACC[c]; const f = rvFlag(null, m.league); const map = { '🇵🇹': 'por', '🇪🇸': 'esp', '🇮🇹': 'ita', '🇩🇪': 'ger', '🇫🇷': 'fra', '🇳🇱': 'ned', '🇪🇺': 'uefa' }; return RV_ACC[map[f]] || (f === RV_FLAGS.eng ? RV_ACC.eng : ''); }
+function rvIdx(m) { const i = matches.indexOf(m); if (i >= 0) return i; return matches.findIndex(x => x.home === m.home && x.away === m.away && x.date === m.date); }
+function rvCard(m, opts) {
+  opts = opts || {};
+  const i = rvIdx(m), mm = i >= 0 ? matches[i] : m;
+  const q = encodeURIComponent(m.home + ' vs ' + m.away), qRef = encodeURIComponent(m.home + ' ' + m.away + ' árbitro nomeado');
+  let info = '';
+  if (opts.info) {
+    try {
+      const r = modelo(mm), cs = r.mk.cs && r.mk.cs[0] ? r.mk.cs[0].s : null;
+      info = `🧠 <b>Zé</b>: 1 ${pct(r.mk['1'])} · X ${pct(r.mk.X)} · 2 ${pct(r.mk['2'])} · +2.5 ${pct(r.mk['O2.5'])} · Ambas ${pct(r.mk.BTTS)}${cs ? ` · placar ${cs}` : ''}${r.conf ? ` · confiança ${esc(r.conf)}` : ''}`;
+    } catch (e) {}
+    if (m.h2h && m.h2h !== '—' && m.h2h !== 'undefined') info += `<br>H2H: ${esc(m.h2h)}`;
+    if (opts.extra) info += `<span class="wx">${opts.extra}</span>`;
+  }
+  const acc = rvAcc(m);
+  return `<div class="vc-card" data-i="${i}" style="${acc ? `--acc:${acc}` : ''}">${opts.star ? '<span class="vc-star">⭐</span>' : ''}<div class="vc-top">${rvFlag(m.espn && m.espn.code, m.league)} ${esc(m.league || '')} · ${esc(m.date || '')}${m.kickoff ? ' · ' + esc(m.kickoff) : ''}</div>
+    <div class="vc-row" onclick="${i >= 0 ? `openMatchIdx(${i})` : ''}"><div class="rv-team">${rvCrest(m.home)}<span>${esc(m.home)}</span></div><span class="vs">VS</span><div class="rv-team">${rvCrest(m.away)}<span>${esc(m.away)}</span></div></div>
+    <div class="vc-bet">💡 Aposta lógica: ${deriveBet(mm)}</div>
+    ${info ? `<div class="vc-info">${info}</div>` : ''}
+    <div class="vc-btns"><a target="_blank" rel="noopener" href="https://www.google.com/search?q=${qRef}">🔎 Árbitro</a><a target="_blank" rel="noopener" href="https://www.google.com/search?q=${q}+antevisão+OR+preview">📊 Forma</a><a target="_blank" rel="noopener" href="https://www.flashscore.pt/">⚡ Live</a><a target="_blank" rel="noopener" href="https://www.google.com/search?q=meteorologia+${encodeURIComponent(m.home)}">🌤 Meteo</a></div></div>`;
+}
+/* Verificar: a caixa única */
 verificarAtualizacoes = (function (prev) {
   return function () {
     prev.apply(this, arguments);
-    try {
-      document.querySelectorAll('#dayResult .vc-card').forEach(card => {
-        const i = +card.dataset.i, m = matches[i]; if (!m) return;
-        const top = card.querySelector('.vc-top'); if (top) top.innerHTML = `${rvFlag(m.espn && m.espn.code, m.league)} ${esc(m.league || '')} · ${esc(m.date || '')}${m.kickoff ? ' · ' + esc(m.kickoff) : ''}`;
-        const t = card.querySelector('.vc-teams'); if (t) t.outerHTML = `<div class="vc-row" onclick="openMatchIdx(${i})"><div class="rv-team">${rvCrest(m.home)}<span>${esc(m.home)}</span></div><span class="vs">VS</span><div class="rv-team">${rvCrest(m.away)}<span>${esc(m.away)}</span></div></div>`;
-        const b = card.querySelector('.vc-bet'); if (b) b.innerHTML = b.innerHTML.replace('💡 <b>Aposta lógica:</b>', '💡 Aposta lógica:');
-      });
-    } catch (e) { console.warn(e); }
+    try { document.querySelectorAll('#dayResult .vc-card').forEach(card => { const m = matches[+card.dataset.i]; if (m) card.outerHTML = rvCard(m); }); } catch (e) { console.warn(e); }
   };
 })(verificarAtualizacoes);
+/* Análise do dia: a mesma caixa, com a leitura do Zé e o tempo */
+renderMatchBlock = function (m, isBest, wx) {
+  let extra = '';
+  if (wx) extra = `🌤 ${esc(wx.city || '')}: ${esc(wx.label || '')}${wx.tmax != null ? ` · ${Math.round(wx.tmin)}–${Math.round(wx.tmax)}°C` : ''}${wx.wind != null ? ` · vento ~${Math.round(wx.wind)} km/h` : ''}`;
+  if (m.fatores) extra += (extra ? '<br>' : '') + `📋 ${esc(m.fatores)}`;
+  return rvCard(m, { info: true, star: isBest, extra });
+};
 /* Definições: voltar ao layout normal */
 renderConfig = (function (prev) {
   return function () {
