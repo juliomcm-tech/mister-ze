@@ -1408,7 +1408,7 @@ select.inp { appearance: auto; }
   </section>
 </main>
 
-<div class="foot">Mister Zé é um modelo heurístico baseado no dossiê — não adivinha o futuro. Bancas virtuais, só para o duelo. 18+ · joga com responsabilidade.</div>
+<div class="foot">Mister Zé é um modelo estatístico (golos esperados + odds das casas) — não adivinha o futuro. Bancas virtuais, só para o duelo. 18+ · joga com responsabilidade.</div>
 
 <div class="modal-overlay" id="modal" onclick="closeModal(event)">
   <div class="modal" id="modal-content" onclick="event.stopPropagation()">
@@ -14258,8 +14258,8 @@ renderWallet(); renderUpdateInfo();
    LAYOUT DE TESTE «Estádio» — inspirado no estilo dos jogos de futebol mobile
    (fundo de estádio, barra de recursos, banner com contagem, mosaicos grandes,
    cartões de jogo com caixa de resultado, barra de baixo com ícones grandes).
-   Só existe em estadio.html. Usa a mesma app e os mesmos dados: nada no
-   layout normal (index.html) muda. Sem logótipos nem arte de terceiros.
+   Layout principal desde a v53 (index.html). O clássico fica em classico.html,
+   com os mesmos dados. Sem logótipos nem arte de terceiros.
    ===================================================================== */
 (function () {
   const css = `
@@ -14621,7 +14621,7 @@ renderConfig = (function (prev) {
   return function () {
     const r = prev.apply(this, arguments);
     try {
-      const grid = document.querySelector('#view-config .cfg-grid'); if (grid && !document.getElementById('rvCfg')) grid.insertAdjacentHTML('afterbegin', `<div class="panel" id="rvCfg"><div class="panel-h"><span>🎨 Layout de teste «Estádio»</span></div><div class="panel-b"><div class="hint" style="margin-bottom:8px;">Estás a ver o layout novo. Os dados são os mesmos (apostas, duelo, diário): só muda o aspeto.</div><a class="btn" href="./index.html">↩️ Voltar ao layout normal</a></div></div>`);
+      const grid = document.querySelector('#view-config .cfg-grid'); if (grid && !document.getElementById('rvCfg')) grid.insertAdjacentHTML('afterbegin', `<div class="panel" id="rvCfg"><div class="panel-h"><span>🎨 Layout «Estádio»</span></div><div class="panel-b"><div class="hint" style="margin-bottom:8px;">É o layout principal. O antigo continua disponível com os mesmos dados (apostas, duelo, diário): só muda o aspeto.</div><a class="btn" href="./classico.html">🗂️ Abrir o layout clássico</a></div></div>`);
     } catch (e) {}
     return r;
   };

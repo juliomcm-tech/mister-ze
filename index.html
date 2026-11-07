@@ -34,7 +34,7 @@ if (/^https?:/.test(location.protocol)) document.write('<link rel="manifest" hre
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
-<title>Mister Zé · Dossiê 2026/27</title>
+<title>Estádio · Mister Zé · Dossiê 2026/27</title>
 <style>
 :root {
   --bg: #0f0a1a;
@@ -1408,7 +1408,7 @@ select.inp { appearance: auto; }
   </section>
 </main>
 
-<div class="foot">Mister Zé é um modelo heurístico baseado no dossiê — não adivinha o futuro. Bancas virtuais, só para o duelo. 18+ · joga com responsabilidade.</div>
+<div class="foot">Mister Zé é um modelo estatístico (golos esperados + odds das casas) — não adivinha o futuro. Bancas virtuais, só para o duelo. 18+ · joga com responsabilidade.</div>
 
 <div class="modal-overlay" id="modal" onclick="closeModal(event)">
   <div class="modal" id="modal-content" onclick="event.stopPropagation()">
@@ -14251,6 +14251,382 @@ zeTalk = (function (prev) {
 })(zeTalk);
 
 renderWallet(); renderUpdateInfo();
+
+</script>
+<script>
+/* =====================================================================
+   LAYOUT DE TESTE «Estádio» — inspirado no estilo dos jogos de futebol mobile
+   (fundo de estádio, barra de recursos, banner com contagem, mosaicos grandes,
+   cartões de jogo com caixa de resultado, barra de baixo com ícones grandes).
+   Layout principal desde a v53 (index.html). O clássico fica em classico.html,
+   com os mesmos dados. Sem logótipos nem arte de terceiros.
+   ===================================================================== */
+(function () {
+  const css = `
+body.rv{
+  background:
+    radial-gradient(ellipse 60% 18% at 15% 0%, rgba(255,255,255,.16), transparent 70%),
+    radial-gradient(ellipse 60% 18% at 85% 0%, rgba(255,255,255,.16), transparent 70%),
+    radial-gradient(ellipse 120% 40% at 50% 22%, #3a1f63 0%, transparent 70%),
+    linear-gradient(180deg, #120a24 0%, #1c1036 26%, #24124a 40%, #1b3a22 62%, #17602e 78%, #1a7a36 100%) fixed !important;
+}
+body.rv:before{content:"";position:fixed;left:50%;bottom:-18vh;width:120vw;height:46vh;transform:translateX(-50%);border:3px solid rgba(255,255,255,.13);border-radius:50%;pointer-events:none;z-index:0;}
+body.rv .container{position:relative;z-index:1;}
+/* cabeçalho → barra de recursos */
+body.rv .fm-header{background:linear-gradient(180deg,rgba(8,4,18,.96),rgba(18,10,36,.92));border-bottom:2px solid rgba(200,245,60,.35);box-shadow:0 4px 16px rgba(0,0,0,.5);}
+body.rv .hdr-title .club{font-family:var(--cond);font-weight:800;text-transform:uppercase;letter-spacing:.04em;}
+body.rv .fm-ribbon{display:flex;gap:6px;overflow-x:auto;padding:6px 10px 8px;scrollbar-width:none;background:transparent;border:0;}
+body.rv .fm-ribbon::-webkit-scrollbar{display:none}
+body.rv .fm-ribbon > span{flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;background:linear-gradient(180deg,#2a1c4a,#170e2c);border:1px solid #4b3a74;border-radius:999px;padding:4px 10px 4px 6px;font-family:var(--cond);font-weight:700;font-size:.84rem;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 2px 4px rgba(0,0,0,.4);white-space:nowrap;}
+body.rv .fm-ribbon > span:before{font-size:1.05rem;filter:drop-shadow(0 1px 1px rgba(0,0,0,.6));}
+body.rv .fm-ribbon .you:before{content:"⭐";}
+body.rv .fm-ribbon .zz:before{content:"🤖";}
+body.rv #fmBankRoi:before{content:"⚡";}
+body.rv #fmLeader:before{content:"🏆";}
+body.rv .btn-continue{background:linear-gradient(180deg,#e2ff6e 0%,#c8f53c 45%,#9fcc1c 100%);color:#122000;border:0;border-bottom:3px solid #6f9410;border-radius:10px;font-family:var(--cond);font-weight:800;text-transform:uppercase;box-shadow:0 3px 8px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.6);}
+/* botões com volume */
+body.rv .btn{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.03em;border-radius:10px;border:1px solid #4d3b78;border-bottom-width:3px;background:linear-gradient(180deg,#3a2a62,#241844);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 2px 5px rgba(0,0,0,.35);}
+body.rv .btn:active{transform:translateY(1px);border-bottom-width:2px;}
+body.rv .btn-primary,body.rv .btn-lime{background:linear-gradient(180deg,#e2ff6e 0%,#c8f53c 45%,#9fcc1c 100%) !important;color:#122000 !important;border-color:#6f9410 !important;}
+/* painéis: cartões escuros com separador de título */
+body.rv .panel,body.rv .sc-card,body.rv .card{background:linear-gradient(180deg,rgba(32,22,58,.94),rgba(20,13,38,.94));border:1px solid #3d2d63;border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.35);}
+body.rv .panel-h{font-family:var(--cond);font-weight:800;text-transform:uppercase;letter-spacing:.05em;background:linear-gradient(180deg,rgba(255,255,255,.06),transparent);border-bottom:1px solid #3d2d63;}
+body.rv .screen-head h1,body.rv .screen-head h2{font-family:var(--cond);font-weight:800;text-transform:uppercase;letter-spacing:.04em;background:linear-gradient(180deg,#fff,#d9d0ff);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;}
+/* barra de baixo com ícones grandes */
+@media (max-width:760px){
+  body.rv #mNav{background:linear-gradient(180deg,#1b1230,#0b0616) !important;border-top:2px solid #3d2d63;padding-top:6px;}
+  body.rv #mNav button{font-family:var(--cond);font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;min-height:58px;}
+  body.rv #mNav button .i{font-size:1.75rem;filter:drop-shadow(0 2px 2px rgba(0,0,0,.7));transition:transform .15s;}
+  body.rv #mNav button.on{color:#fff;}
+  body.rv #mNav button.on .i{transform:translateY(-3px) scale(1.08);filter:drop-shadow(0 0 6px rgba(200,245,60,.8));}
+  body.rv #mNav button.on:after{content:"";position:absolute;bottom:0;left:22%;right:22%;height:3px;border-radius:3px;background:var(--lime);}
+}
+/* ---------- início ---------- */
+#rvHome{margin:0 0 14px;}
+.rv-banner{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;scrollbar-width:none;border-radius:16px;}
+.rv-banner::-webkit-scrollbar{display:none}
+.rv-slide{flex:0 0 100%;scroll-snap-align:center;position:relative;min-height:196px;border-radius:16px;overflow:hidden;padding:14px 14px 12px;border:2px solid rgba(255,214,90,.55);
+  background:radial-gradient(circle at 78% 40%,rgba(200,245,60,.35),transparent 55%),linear-gradient(135deg,#3b1a78 0%,#20103f 55%,#120a24 100%);box-shadow:0 8px 22px rgba(0,0,0,.5);}
+.rv-slide.s2{background:radial-gradient(circle at 80% 40%,rgba(90,169,255,.35),transparent 55%),linear-gradient(135deg,#123a7a,#0d1f45 60%,#0a1226);}
+.rv-slide.s3{background:radial-gradient(circle at 80% 40%,rgba(255,159,67,.35),transparent 55%),linear-gradient(135deg,#6a2a12,#3a160a 60%,#1a0a05);}
+.rv-tag{display:inline-block;background:linear-gradient(180deg,#ff4d6a,#c81e3c);color:#fff;font:800 .7rem/1 var(--cond);text-transform:uppercase;letter-spacing:.06em;padding:5px 9px;border-radius:7px;box-shadow:0 2px 6px rgba(0,0,0,.4);}
+.rv-big{font:800 1.55rem/1.02 var(--cond);text-transform:uppercase;margin:10px 0 4px;letter-spacing:.01em;color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.35);max-width:62%;overflow-wrap:anywhere;}
+.rv-sub{font-size:.84rem;color:#e9e3ff;max-width:56%;line-height:1.35;padding-bottom:4px;}
+.rv-timer{position:absolute;top:12px;right:14px;font:800 1.25rem/1 var(--cond);color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.4);letter-spacing:.03em;}
+.rv-art{position:absolute;right:14px;bottom:62px;font-size:3.6rem;filter:drop-shadow(0 6px 6px rgba(0,0,0,.55));transform:rotate(-8deg);}
+.rv-cta{position:absolute;right:12px;bottom:12px;background:linear-gradient(180deg,#e2ff6e 0%,#c8f53c 45%,#9fcc1c 100%);color:#122000;border:0;border-bottom:3px solid #6f9410;border-radius:10px;padding:10px 16px;font:800 .95rem/1 var(--cond);text-transform:uppercase;letter-spacing:.04em;box-shadow:0 4px 10px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.6);cursor:pointer;min-height:44px;}
+.rv-dots{display:flex;justify-content:center;gap:8px;margin:8px 0 12px;}
+.rv-dots i{width:11px;height:11px;border-radius:50%;background:rgba(255,255,255,.25);border:1px solid rgba(0,0,0,.5);box-shadow:inset 0 1px 2px rgba(0,0,0,.5);}
+.rv-dots i.on{background:#fff;}
+.rv-tiles{display:flex;gap:9px;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:4px;scrollbar-width:none;margin-bottom:14px;}
+.rv-tiles::-webkit-scrollbar{display:none}
+.rv-tile{flex:0 0 27%;min-width:104px;scroll-snap-align:start;aspect-ratio:3/4.4;border-radius:12px;position:relative;overflow:hidden;cursor:pointer;border:1px solid rgba(0,0,0,.6);
+  background:radial-gradient(ellipse 80% 30% at 50% 0%,rgba(255,255,255,.35),transparent 70%),linear-gradient(180deg,#3d2a5c 0%,#2a1c40 30%,#1d4d2a 62%,#145a26 100%);box-shadow:0 5px 12px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.15);}
+.rv-tile .rvic{position:absolute;left:0;right:0;top:22%;text-align:center;font-size:3rem;filter:drop-shadow(0 6px 5px rgba(0,0,0,.6));}
+.rv-tile .rvlb{position:absolute;left:0;right:0;bottom:0;padding:8px 4px 9px;text-align:center;font:800 .82rem/1.1 var(--cond);text-transform:uppercase;letter-spacing:.04em;background:linear-gradient(180deg,transparent,rgba(0,0,0,.85) 40%);color:#fff;}
+.rv-tile .rvnb{position:absolute;top:6px;right:6px;background:#ff4d6a;color:#fff;border-radius:10px;font:800 .7rem/1 var(--cond);padding:3px 6px;}
+.rv-duel{position:relative;border-radius:14px;overflow:hidden;min-height:130px;padding:40px 10px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;border:1px solid rgba(0,0,0,.6);
+  background:repeating-linear-gradient(135deg,rgba(255,255,255,.04) 0 14px,transparent 14px 28px),radial-gradient(circle at 20% 50%,rgba(200,245,60,.28),transparent 45%),radial-gradient(circle at 80% 50%,rgba(90,169,255,.28),transparent 45%),linear-gradient(180deg,#2a1a4c,#140c28);box-shadow:0 6px 16px rgba(0,0,0,.45);}
+.rv-pill{background:linear-gradient(180deg,#2a1c4a,#120a24);border:1px solid #4b3a74;border-radius:0 0 14px 14px;padding:5px 16px;font:800 .9rem/1 var(--cond);text-transform:uppercase;letter-spacing:.04em;position:absolute;top:0;left:50%;transform:translateX(-50%);white-space:nowrap;}
+.rv-go{background:linear-gradient(180deg,#7fc0ff 0%,#3d8bff 50%,#2463d6 100%);color:#fff;border:0;border-bottom:3px solid #173f8c;border-radius:10px;padding:12px 26px;font:800 1.15rem/1 var(--cond);text-transform:uppercase;letter-spacing:.05em;text-shadow:0 2px 0 rgba(0,0,0,.3);box-shadow:0 4px 10px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.5);cursor:pointer;margin-top:6px;}
+.rv-duel .rv-vs{display:flex;gap:18px;font:800 1rem/1 var(--cond);text-transform:uppercase;}
+.rv-mc{position:relative;background:linear-gradient(180deg,rgba(34,26,48,.96),rgba(22,16,32,.96));border:1px solid rgba(0,0,0,.6);border-radius:14px;padding:30px 10px 12px;margin-bottom:12px;box-shadow:0 6px 14px rgba(0,0,0,.4);cursor:pointer;}
+.rv-mc .row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;}
+.rv-team{display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;font:700 .98rem/1.15 var(--cond);min-width:0;}
+.rv-team span{max-width:100%;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.rv-team svg{width:46px;height:52px;filter:drop-shadow(0 3px 3px rgba(0,0,0,.55));}
+.rv-score{min-width:96px;text-align:center;font:800 1.9rem/1 var(--cond);letter-spacing:.04em;padding:10px 12px;border-radius:9px;background:linear-gradient(180deg,#3a3a46,#1a1a22);border:1px solid #000;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 3px 6px rgba(0,0,0,.5);}
+.rv-score.t{font-size:1.35rem;background:linear-gradient(180deg,#5aa9ff,#2463d6);border-color:#173f8c;}
+.rv-score.live{background:linear-gradient(180deg,#ff6b81,#c81e3c);border-color:#7a0f22;}
+.rv-mc .zv{margin-top:8px;text-align:center;font-size:.78rem;color:var(--muted);}
+.rv-mc .zv b{color:var(--lime);}
+.rv-h2{font:800 1.05rem/1.1 var(--cond);text-transform:uppercase;letter-spacing:.06em;margin:18px 2px 10px;color:#fff;-webkit-text-fill-color:#fff;-webkit-text-stroke:0;text-shadow:none;display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
+.rv-h2 small{font:600 .72rem var(--cond);color:var(--muted);-webkit-text-fill-color:var(--muted);letter-spacing:.03em;text-align:right;min-width:0;}
+
+/* v2: mais limpo e compacto */
+.rv-slide{min-height:150px !important;padding:12px 12px 10px !important;}
+.rv-big{font-size:1.32rem !important;margin:8px 0 3px !important;}
+.rv-art{font-size:2.8rem !important;bottom:56px !important;}
+.rv-cta{padding:9px 14px !important;font-size:.88rem !important;min-height:40px !important;}
+.rv-timer{font-size:1.05rem !important;}
+.rv-tiles{display:grid !important;grid-template-columns:repeat(4,1fr);gap:8px;overflow:visible !important;margin-bottom:12px;}
+.rv-tile{min-width:0 !important;aspect-ratio:1/1.08 !important;border-radius:11px !important;}
+.rv-tile .rvic{top:14% !important;font-size:1.85rem !important;}
+.rv-tile .rvlb{font-size:.68rem !important;padding:6px 2px 7px !important;letter-spacing:.02em !important;}
+.rv-strip{display:flex;align-items:center;gap:10px;border-radius:12px;padding:10px 12px;margin-bottom:12px;border:1px solid rgba(0,0,0,.6);background:radial-gradient(circle at 15% 50%,rgba(200,245,60,.22),transparent 45%),radial-gradient(circle at 85% 50%,rgba(90,169,255,.22),transparent 45%),linear-gradient(180deg,#2a1a4c,#140c28);box-shadow:0 4px 10px rgba(0,0,0,.4);}
+.rv-strip .t{flex:1;font:800 .95rem/1.15 var(--cond);text-transform:uppercase;letter-spacing:.03em;}
+.rv-strip .t small{display:block;font:600 .74rem var(--cond);color:var(--muted);text-transform:none;letter-spacing:0;}
+.rv-strip .rv-go{margin:0 !important;padding:9px 16px !important;font-size:.92rem !important;}
+.rv-list{background:linear-gradient(180deg,rgba(24,30,44,.97),rgba(16,20,30,.97));border:1px solid rgba(0,0,0,.6);border-radius:12px;overflow:hidden;box-shadow:0 6px 14px rgba(0,0,0,.4);margin-bottom:12px;}
+.rv-lh{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:linear-gradient(180deg,#2b3446,#1c2332);font:800 .8rem/1 var(--cond);text-transform:uppercase;letter-spacing:.06em;color:#cfd8ea;}
+.rv-lh .d{color:#fff;}
+.rv-lh .d.today{color:var(--lime);}
+.rv-row{display:grid;grid-template-columns:46px 1fr auto;align-items:center;gap:8px;padding:7px 12px;border-top:1px solid rgba(255,255,255,.05);cursor:pointer;}
+.rv-row:nth-child(even){background:rgba(255,255,255,.025);}
+.rv-row:active{background:rgba(200,245,60,.08);}
+.rv-tm{text-align:center;font:800 .95rem/1 var(--cond);color:#fff;}
+.rv-tm small{display:block;margin-top:3px;font:700 .58rem/1 var(--cond);color:var(--muted);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rv-tm.live{color:#ff6b81;}
+.rv-teams{min-width:0;display:flex;flex-direction:column;gap:3px;}
+.rv-tl{display:flex;align-items:center;gap:7px;min-width:0;font:600 .9rem/1.15 system-ui,sans-serif;}
+.rv-tl svg{width:18px;height:20px;flex:0 0 auto;}
+.rv-tl span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rv-tl b{margin-left:auto;font:800 .95rem var(--cond);padding-left:6px;}
+.rv-tl.win span{font-weight:800;}
+.rv-pick{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:48px;}
+.rv-pick i{font-style:normal;font:800 .78rem/1 var(--cond);background:#2b3446;border:1px solid #3d4a63;border-radius:6px;padding:4px 7px;color:#fff;}
+.rv-pick i.p1{background:linear-gradient(180deg,#d8ff5e,#a8d61e);color:#122000;border-color:#6f9410;}
+.rv-pick i.p2{background:linear-gradient(180deg,#7fc0ff,#2f74e0);color:#fff;border-color:#173f8c;}
+.rv-pick em{font-style:normal;font:700 .68rem var(--cond);color:var(--muted);}
+.rv-more{display:block;text-align:center;padding:10px;font:800 .8rem var(--cond);text-transform:uppercase;letter-spacing:.06em;color:var(--lime);border-top:1px solid rgba(255,255,255,.06);cursor:pointer;}
+/* competições (cartões largos) */
+.rv-comps{display:flex;flex-direction:column;gap:7px;margin:0 0 12px;}
+.rv-comp{position:relative;display:flex;align-items:center;min-height:56px;border-radius:11px;overflow:hidden;cursor:pointer;border:1px solid rgba(0,0,0,.6);padding:7px 12px 7px 66px;
+  background:radial-gradient(ellipse 40% 60% at 14% 30%,rgba(255,255,255,.22),transparent 70%),linear-gradient(90deg,#2b2440 0%,#1d2233 45%,#151a26 100%);box-shadow:0 5px 12px rgba(0,0,0,.4);}
+.rv-comp:after{content:"";position:absolute;left:0;right:0;bottom:0;height:34%;background:linear-gradient(180deg,transparent,rgba(30,110,50,.35));pointer-events:none;}
+.rv-comp .tr{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:1.9rem;filter:drop-shadow(0 5px 4px rgba(0,0,0,.6));}
+.rv-comp .tx{margin-left:auto;text-align:right;position:relative;z-index:1;}
+.rv-comp .tx b{display:block;font:800 1rem/1.05 var(--cond);text-transform:uppercase;letter-spacing:.03em;color:#fff;}
+.rv-comp .tx small{display:block;margin-top:3px;font:600 .74rem/1.2 var(--cond);color:#d6dbe8;}
+.rv-comp.off .tx b,.rv-comp.off .tx small{color:#7f8698;}
+.rv-comp.on{border-color:var(--lime);box-shadow:0 0 0 1px var(--lime),0 5px 12px rgba(0,0,0,.4);}
+body.rv #view-jogos > :not(.screen-head):not(#rvComps):not(#rvCal){display:none !important;}
+body.rv #view-jogos .screen-head p{display:none;}
+body.rv #view-jogos .screen-head .btn-row{flex-direction:row;flex-wrap:wrap;gap:6px;}
+body.rv .container{overflow-x:hidden;}
+#rvCal .rv-row .rv-tm small{max-width:46px;}
+
+
+/* v3: bandeiras, cartões do Verificar, escolha do Zé = aposta lógica */
+.rv-flag{font-size:.8em;margin-right:3px;}
+.rv-comp .tr .fl{position:absolute;right:-8px;bottom:-4px;font-size:1.05rem;filter:none;line-height:1;}
+.rv-pick i.p0{background:linear-gradient(180deg,#ffd66b,#e0a516);color:#2a1a00;border-color:#8a6408;}
+.rv-pick i{min-width:30px;text-align:center;}
+body.rv .vc-card{position:relative;background:linear-gradient(180deg,rgba(34,26,48,.97),rgba(22,16,32,.97));border:1px solid rgba(0,0,0,.6);border-radius:14px;padding:30px 12px 12px;margin-bottom:12px;box-shadow:0 6px 14px rgba(0,0,0,.4);}
+body.rv .vc-top{position:absolute;top:0;left:50%;transform:translateX(-50%);background:linear-gradient(180deg,#2a1c4a,#120a24);border:1px solid #4b3a74;border-top:0;border-radius:0 0 12px 12px;padding:5px 14px;font:800 .78rem/1 var(--cond);text-transform:uppercase;letter-spacing:.04em;color:#fff;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis;}
+.vc-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;margin:4px 0 10px;cursor:pointer;}
+.vc-row .rv-team svg{width:40px;height:45px;}
+.vc-row .vs{font:800 .9rem var(--cond);color:var(--muted);}
+body.rv .vc-bet{background:linear-gradient(180deg,#5aa9ff,#2463d6);border:1px solid #173f8c;color:#fff;border-radius:9px;padding:7px 10px;text-align:center;font:700 .9rem/1.25 var(--cond);letter-spacing:.02em;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 3px 6px rgba(0,0,0,.4);margin-bottom:10px;}
+body.rv .vc-bet b{color:#fff;}
+body.rv .vc-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+body.rv .vc-btns a{font:700 .74rem/1 var(--cond);text-transform:uppercase;letter-spacing:.02em;padding:9px 2px;background:linear-gradient(180deg,#3a2a62,#241844);border:1px solid #4d3b78;border-bottom-width:3px;border-radius:9px;color:#fff;text-align:center;}
+body.rv .day-result{background:linear-gradient(180deg,rgba(32,22,58,.94),rgba(20,13,38,.94));border:1px solid #3d2d63;border-radius:14px;padding:14px 12px;box-shadow:0 6px 18px rgba(0,0,0,.35);}
+body.rv .day-result h3{font:800 1.15rem var(--cond);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px;}
+body.rv #view-dia .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+
+body.rv #view-portal .portal-grid, body.rv #hojePanel, body.rv #view-portal > .screen-head{display:none !important;}
+`;
+  try { const st = document.createElement('style'); st.id = 'rvSkin'; st.textContent = css; document.head.appendChild(st); } catch (e) {}
+  document.body.classList.add('rv');
+})();
+
+/* escudo desenhado (sem logótipos): duas cores tiradas do nome + iniciais */
+function rvCrest(name) {
+  const s = String(name || '?');
+  let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  const pal = ['#d62839', '#1d4ed8', '#16a34a', '#f59e0b', '#7c3aed', '#0891b2', '#111827', '#dc2626', '#2563eb', '#059669', '#ea580c', '#9333ea'];
+  const a = pal[h % pal.length], b = pal[(h >> 4) % pal.length] === a ? '#f8fafc' : pal[(h >> 4) % pal.length];
+  const words = s.replace(/[^A-Za-zÀ-ÿ0-9 ]/g, ' ').split(/\s+/).filter(w => w && !/^(fc|sc|cf|cd|ac|as|sl|sv|vfl|vfb|fk|sk|club|de|da|do|the)$/i.test(w));
+  const ini = (words.length >= 2 ? words[0][0] + words[1][0] : (words[0] || s).slice(0, 2)).toUpperCase();
+  const style = h % 3;
+  const fill = style === 0 ? `<path d="M50 4 L92 16 L92 52 C92 80 72 98 50 108 C28 98 8 80 8 52 L8 16 Z" fill="${a}"/><path d="M50 4 L92 16 L92 52 C92 80 72 98 50 108 Z" fill="${b}" opacity=".9"/>`
+    : style === 1 ? `<path d="M50 4 L92 16 L92 52 C92 80 72 98 50 108 C28 98 8 80 8 52 L8 16 Z" fill="${a}"/><path d="M8 40 H92 V58 H8 Z" fill="${b}"/>`
+      : `<path d="M50 4 L92 16 L92 52 C92 80 72 98 50 108 C28 98 8 80 8 52 L8 16 Z" fill="${b}"/><path d="M38 6 H62 V104 C56 106 44 106 38 104 Z" fill="${a}"/>`;
+  return `<svg viewBox="0 0 100 112" aria-hidden="true"><defs><linearGradient id="rvg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>${fill}<path d="M50 4 L92 16 L92 52 C92 80 72 98 50 108 C28 98 8 80 8 52 L8 16 Z" fill="url(#rvg)" stroke="#f1f5f9" stroke-width="5"/><text x="50" y="66" text-anchor="middle" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="34" fill="#fff" stroke="#000" stroke-opacity=".45" stroke-width="2" paint-order="stroke">${esc(ini)}</text></svg>`;
+}
+function rvUpcoming(hours) {
+  const now = Date.now();
+  return matches.map((m, i) => ({ m, i, k: (typeof kickOf === 'function' && kickOf(m)) || null })).filter(x => x.m.live && !x.m.past && !x.m.aviso && x.k && x.k.getTime() > now - 2 * 3600e3 && x.k.getTime() < now + hours * 3600e3).sort((a, b) => a.k - b.k);
+}
+function rvResults(n) {
+  try { const L = lsGet(LIVE_KEY, null); return ((L && L.matches) || []).filter(x => x.status === 'FINISHED' && x.score && x.score.fullTime && x.score.fullTime.home != null).sort((a, b) => new Date(b.utcDate) - new Date(a.utcDate)).slice(0, n); } catch (e) { return []; }
+}
+function rvPickOfDay() {
+  const up = rvUpcoming(36); let best = null;
+  up.forEach(x => { try { const r = modelo(x.m), f = favOf(r.mk), p = r.mk[f]; if (f !== 'X' && (!best || p > best.p)) best = { ...x, r, f, p }; } catch (e) {} });
+  return best;
+}
+function rvClock(ms) { if (!(ms > 0)) return 'A JOGAR'; const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), ss = s % 60; return (h > 47 ? Math.floor(h / 24) + 'd ' : '') + String(h > 47 ? h % 24 : h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(ss).padStart(2, '0'); }
+function rvDayHead(d) {
+  const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+  const diff = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - t0) / 864e5);
+  const lab = d.toLocaleDateString('pt-PT', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '');
+  return { txt: diff === 0 ? 'Hoje · ' + lab : diff === 1 ? 'Amanhã · ' + lab : lab, today: diff === 0 };
+}
+const RV_SHORT = { 'Liga Portugal': 'POR', 'Premier League': 'ENG', 'Championship': 'ENG 2', 'La Liga': 'ESP', 'LaLiga': 'ESP', 'Serie A': 'ITA', 'Bundesliga': 'ALE', 'Ligue 1': 'FRA', 'Eredivisie': 'NED' };
+const RV_CODE = { 'por.1': 'POR', 'por.2': 'POR 2', 'eng.1': 'ENG', 'eng.2': 'ENG 2', 'esp.1': 'ESP', 'esp.2': 'ESP 2', 'ita.1': 'ITA', 'ita.2': 'ITA 2', 'ger.1': 'ALE', 'ger.2': 'ALE 2', 'fra.1': 'FRA', 'ned.1': 'NED', 'uefa.champions': 'UCL', 'uefa.europa': 'UEL', 'uefa.europa.conf': 'UECL' };
+function rvLg(name, code) { if (code && RV_CODE[code]) return RV_CODE[code]; const n = String(name || ''); if (/champions league|liga dos campe/i.test(n)) return 'UCL'; if (/conference/i.test(n)) return 'UECL'; if (/europa league|liga europa/i.test(n)) return 'UEL'; if (/championship/i.test(n)) return 'ENG 2'; return RV_SHORT[n] || n.slice(0, 6); }
+
+const RV_FLAGS = { por: '🇵🇹', eng: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', esp: '🇪🇸', ita: '🇮🇹', ger: '🇩🇪', fra: '🇫🇷', ned: '🇳🇱', uefa: '🇪🇺', sco: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', bel: '🇧🇪', tur: '🇹🇷', usa: '🇺🇸', bra: '🇧🇷' };
+function rvFlag(code, league) {
+  const c = String(code || '').split('.')[0];
+  if (RV_FLAGS[c]) return RV_FLAGS[c];
+  const n = String(league || '').toLowerCase();
+  if (/portugal/.test(n)) return RV_FLAGS.por; if (/premier|championship|fa cup|efl/.test(n)) return RV_FLAGS.eng; if (/la ?liga|copa del rey/.test(n)) return RV_FLAGS.esp;
+  if (/serie a|serie b|coppa italia/.test(n)) return RV_FLAGS.ita; if (/bundesliga|dfb/.test(n)) return RV_FLAGS.ger; if (/ligue 1|coupe de france/.test(n)) return RV_FLAGS.fra;
+  if (/eredivisie/.test(n)) return RV_FLAGS.ned; if (/champions|europa|conference|uefa/.test(n)) return RV_FLAGS.uefa; if (/nba/.test(n)) return RV_FLAGS.usa;
+  return '🌍';
+}
+function rvPickChip(m) {
+  try {
+    const z = zeLogical(m); if (!z) return '';
+    const cls = /^(1|1X)$/.test(z.k) ? 'p1' : /^(2|X2)$/.test(z.k) ? 'p2' : /^(X|12)$/.test(z.k) ? '' : 'p0';
+    return `<div class="rv-pick" title="${esc(z.label)}"><i class="${cls}">${esc(z.short)}</i><em>${Math.round(z.p * 100)}%</em></div>`;
+  } catch (e) { return ''; }
+}
+function rvRowUp(x) {
+  const pick = rvPickChip(x.m);
+  const live = x.k.getTime() <= Date.now();
+  return `<div class="rv-row" onclick="openMatchIdx(${x.i})"><div class="rv-tm${live ? ' live' : ''}">${live ? 'AO VIVO' : esc(x.m.kickoff || '—')}<small><span class="rv-flag">${rvFlag(x.m.espn && x.m.espn.code, x.m.league)}</span>${esc(rvLg(x.m.league, x.m.espn && x.m.espn.code))}</small></div>
+    <div class="rv-teams"><div class="rv-tl">${rvCrest(x.m.home)}<span>${esc(x.m.home)}</span></div><div class="rv-tl">${rvCrest(x.m.away)}<span>${esc(x.m.away)}</span></div></div>${pick}</div>`;
+}
+function rvRowRes(x) {
+  const h = x.score.fullTime.home, a = x.score.fullTime.away, hn = x.homeTeam.shortName || x.homeTeam.name, an = x.awayTeam.shortName || x.awayTeam.name;
+  const d = new Date(x.utcDate);
+  return `<div class="rv-row" style="cursor:default;"><div class="rv-tm">FIM<small><span class="rv-flag">${rvFlag(x.competition && x.competition.code, x.competition && x.competition.name)}</span>${esc(rvLg(x.competition && x.competition.name, x.competition && x.competition.code))} · ${d.getDate()}/${d.getMonth() + 1}</small></div>
+    <div class="rv-teams"><div class="rv-tl${h > a ? ' win' : ''}">${rvCrest(hn)}<span>${esc(hn)}</span><b>${h}</b></div><div class="rv-tl${a > h ? ' win' : ''}">${rvCrest(an)}<span>${esc(an)}</span><b>${a}</b></div></div><div></div></div>`;
+}
+function rvGamesHTML(list, max) {
+  let out = '', cur = null, n = 0;
+  for (const x of list) {
+    if (n >= max) break;
+    const dh = rvDayHead(x.k);
+    if (dh.txt !== cur) { if (cur !== null) out += '</div>'; out += `<div class="rv-list"><div class="rv-lh"><span class="d${dh.today ? ' today' : ''}">${esc(dh.txt)}</span><span>Aposta lógica</span></div>`; cur = dh.txt; }
+    out += rvRowUp(x); n++;
+  }
+  if (cur !== null) out += '</div>';
+  return out;
+}
+function rvHomeHTML() {
+  const b = loadBank(), pick = rvPickOfDay();
+  const openBets = b.bets.filter(x => x.status === 'open').length + b.zeBets.filter(x => x.status === 'open').length;
+  const slides = [];
+  if (pick) {
+    const team = pick.f === '1' ? pick.m.home : pick.m.away;
+    slides.push(`<div class="rv-slide"><span class="rv-tag">Jogo do dia</span><div class="rv-timer" data-ko="${pick.k.getTime()}">⏳ ${rvClock(pick.k - Date.now())}</div>
+      <div class="rv-big">${esc(pick.m.home)}<br>vs ${esc(pick.m.away)}</div><div class="rv-sub">${esc(pick.m.league || '')} · Zé: <b>${esc(team)}</b> ganha ${Math.round(pick.p * 100)}%</div>
+      <div class="rv-art">⚽</div><button class="rv-cta" onclick="openMatchIdx(${pick.i})">Ver análise</button></div>`);
+  }
+  slides.push(`<div class="rv-slide s2"><span class="rv-tag">Duelo</span><div class="rv-big">Tu ${esc(eur(b.you).replace(' €', ''))}€<br>Zé ${esc(eur(b.ze).replace(' €', ''))}€</div><div class="rv-sub">${openBets} aposta${openBets === 1 ? '' : 's'} em aberto.</div><div class="rv-art">⚔️</div><button class="rv-cta" onclick="prepararDuelo()">Jogar</button></div>`);
+  slides.push(`<div class="rv-slide s3"><span class="rv-tag">Boletim</span><div class="rv-big">Manda-me<br>o print</div><div class="rv-sub">O Zé lê e diz o que vale.</div><div class="rv-art">📸</div><button class="rv-cta" onclick="rvGo('boletim')">Carregar</button></div>`);
+  const tiles = [['jogos', '🏆', 'Jogos'], ['duelo', '🎯', 'Duelo', b.zeBets.filter(x => x.status === 'open').length], ['scout', '🔭', 'Scouting'], ['banca', '💰', 'Finanças'], ['raiox', '🩻', 'Raio-X'], ['boletim', '📸', 'Boletim'], ['ze', '🤖', 'Mister Zé'], ['refresh', '📡', 'Atualizar']];
+  const up = rvUpcoming(24 * 7), res = rvResults(6);
+  return `<div class="rv-banner" id="rvBanner">${slides.join('')}</div><div class="rv-dots" id="rvDots">${slides.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>
+    <div class="rv-tiles">${tiles.map(([k, ic, lb, nb]) => `<div class="rv-tile" onclick="rvGo('${k}')"><div class="rvic">${ic}</div><div class="rvlb">${lb}</div>${nb ? `<span class="rvnb">${nb}</span>` : ''}</div>`).join('')}</div>
+    <div class="rv-strip"><div class="t">⚔️ Duelo do dia<small>Tu ${esc(eur(b.you))} · Zé ${esc(eur(b.ze))}</small></div><button class="rv-go" onclick="prepararDuelo()">Começar</button></div>
+    ${up.length ? `<div class="rv-h2">Próximos jogos <small>${up.length} nos próximos 7 dias · por hora</small></div>${rvGamesHTML(up, 24)}${up.length > 24 ? `<div class="rv-list"><div class="rv-more" onclick="fmGo('jogos')">Ver todos os ${up.length} jogos ›</div></div>` : ''}` : ''}
+    ${res.length ? `<div class="rv-h2">Últimos resultados</div><div class="rv-list">${res.map(rvRowRes).join('')}</div>` : ''}
+    <div class="rv-h2">Caixa de entrada <small>avisos do Zé</small></div>`;
+}
+/* Competições: cartões largos no topo do calendário */
+const RV_COMPS = [['all', '🌍', 'Todos os jogos', null], ['portugal', '🏆', 'Liga Portugal', 'por.1'], ['premier', '🏆', 'Premier League', 'eng.1'], ['laliga', '🏆', 'La Liga', 'esp.1'], ['seriea', '🏆', 'Serie A', 'ita.1'], ['bundesliga', '🏆', 'Bundesliga', 'ger.1'], ['eredivisie', '🏆', 'Eredivisie', 'ned.1'], ['ucl', '🏆', 'Competições europeias', 'uefa.champions'], ['fav', '⭐', 'Favoráveis do Zé', null]];
+function rvCompsHTML() {
+  const now = Date.now(), wk = now + 7 * 864e5;
+  const up = matches.filter(m => m.live && !m.past && !m.aviso).map(m => ({ m, k: kickOf(m) })).filter(x => x.k && x.k.getTime() > now - 2 * 3600e3 && x.k.getTime() < wk);
+  let L = null; try { L = lsGet(LIVE_KEY, null); } catch (e) {}
+  const cur = typeof currentCalFilter !== 'undefined' ? currentCalFilter : 'all';
+  return `<div class="rv-comps">${RV_COMPS.map(([f, ic, name, code]) => {
+    const n = f === 'all' ? up.length : f === 'fav' ? null : up.filter(x => { try { return leagueMatchFilter(x.m, f); } catch (e) { return false; } }).length;
+    let lead = '';
+    const T = code && L && L.standings && L.standings[code] && L.standings[code][0] && L.standings[code][0].table;
+    if (T && T.length) { const top = T.slice().sort((a, b) => (b.points - a.points) || ((b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst)))[0]; if (top) lead = ` · líder ${esc(top.team.shortName || top.team.name)} (${top.points} pts)`; }
+    const sub = f === 'fav' ? 'Os jogos onde o Zé vê mais vantagem' : n ? `${n} jogo${n === 1 ? '' : 's'} nos próximos 7 dias${lead}` : `Sem jogos esta semana${lead}`;
+    if (n === 0 && cur !== f) return '';
+    return `<div class="rv-comp${n === 0 ? ' off' : ''}${cur === f ? ' on' : ''}" onclick="rvComp('${f}')"><span class="tr">${ic}${code ? `<span class="fl">${rvFlag(code)}</span>` : ''}</span><div class="tx"><b>${esc(name)}</b><small>${sub}</small></div></div>`;
+  }).join('')}</div>`;
+}
+function rvComp(f) {
+  try { filterCal(f); } catch (e) {}
+  rvCompsRender();
+  const list = document.getElementById('rvCal');
+  if (list) setTimeout(() => list.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+}
+function rvCompsRender() {
+  const view = document.getElementById('view-jogos'); if (!view) return;
+  let box = document.getElementById('rvComps');
+  if (!box) { box = document.createElement('div'); box.id = 'rvComps'; const head = view.querySelector('.screen-head'); if (head) head.insertAdjacentElement('afterend', box); else view.insertBefore(box, view.firstChild); }
+  try { box.innerHTML = rvCompsHTML(); } catch (e) { console.warn(e); }
+}
+fmGo = (function (prev) { return function (v) { const r = prev.apply(this, arguments); if (v === 'jogos') { try { rvCompsRender(); rvCalRender(); } catch (e) {} } return r; }; })(fmGo);
+/* Calendário: a mesma lista limpa do início, por dia e por hora, com o filtro da competição */
+function rvCalRender() {
+  const view = document.getElementById('view-jogos'); if (!view) return;
+  let box = document.getElementById('rvCal');
+  if (!box) { box = document.createElement('div'); box.id = 'rvCal'; const c = document.getElementById('rvComps'); if (c) c.insertAdjacentElement('afterend', box); else view.appendChild(box); }
+  const f = typeof currentCalFilter !== 'undefined' ? currentCalFilter : 'all';
+  const q = ((document.getElementById('searchInput') || {}).value || '').toLowerCase().trim();
+  const now = Date.now();
+  const list = matches.map((m, i) => ({ m, i, k: kickOf(m) })).filter(x => x.k && !x.m.past && !x.m.aviso && x.k.getTime() > now - 2 * 3600e3)
+    .filter(({ m }) => {
+      if (f === 'fav' && !m.fav) return false;
+      if (f === 'best' && m.type !== 'best') return false;
+      if (f === 'worst' && m.type !== 'worst') return false;
+      if (['portugal', 'premier', 'seriea', 'bundesliga', 'laliga', 'ucl', 'eredivisie'].includes(f)) { try { if (!leagueMatchFilter(m, f)) return false; } catch (e) { return false; } }
+      if (q && !(m.home + m.away + (m.team || '') + m.league).toLowerCase().includes(q)) return false;
+      return true;
+    }).sort((a, b) => a.k - b.k);
+  const name = (RV_COMPS.find(c => c[0] === f) || [0, 0, 'Todos os jogos'])[2];
+  box.innerHTML = `<div class="rv-h2">${esc(name)} <small>${list.length} jogo${list.length === 1 ? '' : 's'} · por dia e hora</small></div>` + (list.length ? rvGamesHTML(list, 200) : '<div class="rv-list"><div class="rv-more" style="color:var(--muted);cursor:default;">Sem jogos para este filtro.</div></div>');
+}
+renderCalendar = (function (prev) { return function () { const r = prev.apply(this, arguments); try { rvCompsRender(); rvCalRender(); } catch (e) {} return r; }; })(renderCalendar);
+
+function rvGo(k) {
+  if (k === 'boletim') { fmGo('banca'); try { wlSetTab('registar'); } catch (e) {} setTimeout(() => { const el = document.getElementById('boletimPanel'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150); return; }
+  if (k === 'raiox') { fmGo('banca'); try { wlSetTab('resumo'); } catch (e) {} setTimeout(() => { const el = document.getElementById('wlRaioX'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150); return; }
+  if (k === 'refresh') { try { atualizarTudo(); } catch (e) {} return; }
+  fmGo(k);
+}
+function rvRender() {
+  const view = document.getElementById('view-portal'); if (!view) return;
+  let box = document.getElementById('rvHome');
+  if (!box) { box = document.createElement('div'); box.id = 'rvHome'; const head = view.querySelector('.screen-head'); if (head) head.insertAdjacentElement('afterend', box); else view.insertBefore(box, view.firstChild); }
+  try { box.innerHTML = rvHomeHTML(); } catch (e) { console.warn(e); return; }
+  const ban = document.getElementById('rvBanner'), dots = document.getElementById('rvDots');
+  if (ban && dots) ban.addEventListener('scroll', () => { const i = Math.round(ban.scrollLeft / Math.max(1, ban.clientWidth)); [...dots.children].forEach((d, j) => d.classList.toggle('on', j === i)); }, { passive: true });
+}
+renderPortal = (function (prev) { return function () { const r = prev.apply(this, arguments); try { rvRender(); } catch (e) {} return r; }; })(renderPortal);
+/* contagens decrescentes + banner a rodar */
+(function () {
+  if (/jsdom/i.test(navigator.userAgent || '')) return;
+  setInterval(() => {
+    if (document.visibilityState !== 'visible') return;
+    document.querySelectorAll('#rvHome [data-ko]').forEach(el => { const ms = +el.dataset.ko - Date.now(); if (el.classList.contains('rv-timer')) el.textContent = '⏳ ' + rvClock(ms); });
+  }, 1000);
+  let tick = 0;
+  setInterval(() => {
+    const ban = document.getElementById('rvBanner'); if (!ban || document.visibilityState !== 'visible' || !document.getElementById('view-portal').classList.contains('active')) return;
+    if (++tick % 7) return;
+    const n = ban.children.length, i = Math.round(ban.scrollLeft / Math.max(1, ban.clientWidth));
+    ban.scrollTo({ left: ((i + 1) % n) * ban.clientWidth, behavior: 'smooth' });
+  }, 1000);
+})();
+
+/* «Verificar»: cartões como os de jogo (liga com bandeira em cima, equipas com escudo, aposta lógica numa caixa, 4 botões alinhados) */
+verificarAtualizacoes = (function (prev) {
+  return function () {
+    prev.apply(this, arguments);
+    try {
+      document.querySelectorAll('#dayResult .vc-card').forEach(card => {
+        const i = +card.dataset.i, m = matches[i]; if (!m) return;
+        const top = card.querySelector('.vc-top'); if (top) top.innerHTML = `${rvFlag(m.espn && m.espn.code, m.league)} ${esc(m.league || '')} · ${esc(m.date || '')}${m.kickoff ? ' · ' + esc(m.kickoff) : ''}`;
+        const t = card.querySelector('.vc-teams'); if (t) t.outerHTML = `<div class="vc-row" onclick="openMatchIdx(${i})"><div class="rv-team">${rvCrest(m.home)}<span>${esc(m.home)}</span></div><span class="vs">VS</span><div class="rv-team">${rvCrest(m.away)}<span>${esc(m.away)}</span></div></div>`;
+        const b = card.querySelector('.vc-bet'); if (b) b.innerHTML = b.innerHTML.replace('💡 <b>Aposta lógica:</b>', '💡 Aposta lógica:');
+      });
+    } catch (e) { console.warn(e); }
+  };
+})(verificarAtualizacoes);
+/* Definições: voltar ao layout normal */
+renderConfig = (function (prev) {
+  return function () {
+    const r = prev.apply(this, arguments);
+    try {
+      const grid = document.querySelector('#view-config .cfg-grid'); if (grid && !document.getElementById('rvCfg')) grid.insertAdjacentHTML('afterbegin', `<div class="panel" id="rvCfg"><div class="panel-h"><span>🎨 Layout «Estádio»</span></div><div class="panel-b"><div class="hint" style="margin-bottom:8px;">É o layout principal. O antigo continua disponível com os mesmos dados (apostas, duelo, diário): só muda o aspeto.</div><a class="btn" href="./classico.html">🗂️ Abrir o layout clássico</a></div></div>`);
+    } catch (e) {}
+    return r;
+  };
+})(renderConfig);
+try { rvRender(); } catch (e) {}
 
 </script>
 </body>
