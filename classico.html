@@ -15537,7 +15537,7 @@ zeChallenges = (function (prev) {
     const L = prev.apply(this, arguments) || [];
     L.forEach(c => { if (!c.selo) { try { c.selo = zeSelo(c.m, c.k2, c.p, c.odd); } catch (e) { c.selo = { grade: null, why: [], bad: [] }; } } });
     const rank = c => c.selo && c.selo.grade === 'ouro' ? 2 : c.selo && c.selo.grade === 'prata' ? 1 : 0;
-    const out = L.slice().sort((a, b) => rank(b) - rank(a) || b.score - a.score || a.k - b.k);
+    const out = L.slice().sort((a, b) => rank(b) - rank(a) || (b.p - a.p) || b.score - a.score || a.k - b.k);   // dentro do mesmo selo: o mais provável primeiro (falhar menos)
     try { goldSave(out.filter(c => c.selo && c.selo.grade === 'ouro')); } catch (e) {}
     return out;
   };
