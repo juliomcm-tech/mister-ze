@@ -14415,7 +14415,7 @@ applyLive = (function (prev) { return function (payload) { try { undoPostponed(p
    ===================================================================== */
 
 /* ---------- 1) ESPN: intervalo de datas → mês a mês ---------- */
-let ESPN_RANGE_BAD = false;
+let ESPN_RANGE_BAD = false, ESPN_RANGE_PROBED = false;
 function espnSplitUrls(url, d1, d2) {
   const p = s => new Date(+s.slice(0, 4), +s.slice(4, 6) - 1, +s.slice(6, 8));
   const a = p(d1), b = p(d2), days = Math.round((b - a) / 864e5);
@@ -14430,8 +14430,15 @@ fetchJSON = (function (prev) {
   return async function (url) {
     const m = /scoreboard\?.*dates=(\d{8})-(\d{8})/.exec(String(url || ''));
     if (!m) return prev.apply(this, arguments);
+    // já se sabe que os intervalos falham (preferência guardada = semana/dia): ir direto ao mês, que são 1–2 pedidos
+    if (!ESPN_RANGE_BAD && lsGet('ze_espn_variant', 0) >= 3) ESPN_RANGE_BAD = true;
+    if (ESPN_RANGE_BAD && !ESPN_RANGE_PROBED) {
+      // uma vez por sessão: a ESPN já voltou a aceitar intervalos?
+      ESPN_RANGE_PROBED = true;
+      try { const j = await getJSONany(url); lsSet('ze_espn_variant', 0); ESPN_RANGE_BAD = false; return j; } catch (e) { if (e && e.cool) throw e; }
+    }
     if (!ESPN_RANGE_BAD) {
-      try { return await prev.apply(this, arguments); } catch (e) { ESPN_RANGE_BAD = true; }
+      try { return await prev.apply(this, arguments); } catch (e) { if (e && e.cool) throw e; ESPN_RANGE_BAD = true; ESPN_RANGE_PROBED = true; lsSet('ze_espn_variant', 3); }
     }
     const urls = espnSplitUrls(url, m[1], m[2]);
     const res = await Promise.all(urls.map((u, k) => new Promise(r => setTimeout(r, k * 80)).then(() => prev(u)).catch(() => null)));
