@@ -14766,14 +14766,15 @@ async function lvScan() {
   const days = [ymd(new Date())];
   const t = new Date(); if (t.getHours() < 3) { const y = new Date(t); y.setDate(y.getDate() - 1); days.push(ymd(y)); }
   const evs = [];
-  await Promise.all(codes.flatMap(code => days.map(d => fetchJSON(`https://site.api.espn.com/apis/site/v2/sports/soccer/${code}/scoreboard?dates=${d}`).then(j => (j.events || []).forEach(ev => { const L = lvParse(ev); if (L) { L.code = code; evs.push(L); } })).catch(() => null))));
+  let fail = 0;
+  await Promise.all(codes.flatMap(code => days.map(d => fetchJSON(`https://site.api.espn.com/apis/site/v2/sports/soccer/${code}/scoreboard?dates=${d}`).then(j => (j.events || []).forEach(ev => { const L = lvParse(ev); if (L) { L.code = code; evs.push(L); } })).catch(() => { fail++; return null; }))));
   const out = [];
   evs.filter(L => L.state === 'in').forEach(L => {
     const m = pool.find(x => x.espn && String(x.espn.ev) === L.id) || pool.find(x => x.espn && String(x.espn.h) === L.hId && String(x.espn.a) === L.aId)
       || lvBuild({ id: L.id, utcDate: L.date, competition: { code: L.code, name: (typeof ESPN_LEAGUES !== 'undefined' && ESPN_LEAGUES[L.code]) || (typeof EXTRA_LEAGUES !== 'undefined' && EXTRA_LEAGUES[L.code]) || '' }, homeTeam: { id: L.hId, shortName: L.hn }, awayTeam: { id: L.aId, shortName: L.an } });
     if (m) { LV_REG[L.id] = m; out.push({ m, L, c: lvCalc(m, L) }); }
   });
-  LV_LAST = { t: Date.now(), out, codes: codes.length };
+  LV_LAST = { t: Date.now(), out, codes: codes.length, fail: codes.length && fail >= codes.length * days.length };
   return LV_LAST;
 }
 function lvCardHTML(o) {
@@ -14816,13 +14817,15 @@ async function zeLivePanel(boxId) {
   if (!LV_BUSY) setTimeout(() => { try { box.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {} }, 60);
   if (LV_BUSY) return; LV_BUSY = true;
   if (!box.querySelector('.lv-card')) box.innerHTML = `<h3>⚡ Ao vivo</h3><div class="muted">⏳ A ver os jogos a decorrer…</div>`;
-  let R = null; try { R = await lvScan(); } catch (e) {}
+  // dados com mais de 10 min: atualiza primeiro (assim aparecem os jogos que começaram entretanto)
+  try { const P = lsGet(LIVE_KEY, null), age = P && P.generatedAt ? Date.now() - new Date(P.generatedAt).getTime() : 1e12; if (age > 10 * 60e3 && !(typeof espnCooling === 'function' && espnCooling())) await atualizarTudo({ quiet: true }); } catch (e) {}
+  let R = null, err = null; try { R = await lvScan(); } catch (e) { err = e; }
   LV_BUSY = false;
   if (box.dataset.lv !== '1') return;
   const cards = R && R.out.filter(o => o.c);
   box.innerHTML = `<h3>⚡ Ao vivo</h3>
     <div class="day-meta">Probabilidade de golo daqui até ao fim, a partir do minuto, do resultado, das expulsões e do que o Zé esperava antes do jogo. Atualiza sozinho a cada minuto enquanto estiver aberto.</div>
-    ${cards && cards.length ? cards.map(lvCardHTML).join('') : `<div class="muted" style="padding:6px 0;">Agora não há jogos a decorrer nas ligas que o Zé segue${R && R.codes ? '' : ' (nenhum jogo começou nas últimas horas)'}.</div>`}
+    ${cards && cards.length ? cards.map(lvCardHTML).join('') : `<div class="muted" style="padding:6px 0;">${err || (R && R.fail) ? '📡 Não consegui ligar à ESPN agora — tenta daqui a um minuto.' : `Agora não há jogos a decorrer nas ligas que o Zé segue${R && R.codes ? ' (os que estavam a decorrer já acabaram)' : ''}.`}</div>`}
     <div class="hint" style="margin-top:10px;">🧪 Testado em 949 jogos desta época: ao intervalo, «mais golos» acontece 83% das vezes (o Zé dava 80%); aos 75', 53% (dava 48%). A equipa a perder marca um pouco mais do que a conta simples — mas forçar esse ajuste não acertou melhor nos jogos seguintes, por isso o Zé não o força. Expulsões: −25% para quem fica com 10, +15% para o outro.</div>`;
   clearTimeout(LV_TIMER);
   LV_TIMER = setTimeout(() => { if (box.dataset.lv === '1' && box.offsetParent && !document.hidden) zeLivePanel(box.id); }, 60e3);
@@ -14841,7 +14844,7 @@ async function lvModalBlock(m) {
     el.innerHTML = o && o.c ? `<div class="rz-head">⚡ Ao vivo</div>${lvCardHTML(o)}<button class="btn btn-sm" onclick="closeModal && closeModal(); fmGo('jogos'); setTimeout(()=>zeLivePanel('scorersBox'),80)">Ver todos os jogos ao vivo</button>` : '<div class="rz-head">⚡ Ao vivo</div><div class="muted">Este jogo não aparece a decorrer na ESPN (pode já ter acabado ou ainda não começou).</div>';
   } catch (e) { el.innerHTML = '<div class="rz-head">⚡ Ao vivo</div><div class="muted">Não consegui ligar agora.</div>'; }
 }
-function lvCount() { try { const ids = new Set(); matches.filter(m => m.espn && m.live && lvIsLive(m)).concat(LV_MATCHES).forEach(m => ids.add(String(m.espn.ev || m.home + m.away))); return ids.size; } catch (e) { return 0; } }
+function lvCount() { try { const ids = new Set(), now = Date.now(); matches.filter(m => m.espn && m.live && lvIsLive(m)).concat(LV_MATCHES).filter(m => { const k = kickOf(m); return k && now - k.getTime() < 2.1 * 3600e3; }).forEach(m => ids.add(String(m.espn.ev || m.home + m.away))); return ids.size; } catch (e) { return 0; } }
 
 /* zeTalk: «marcadores», «ao vivo», «h2h» */
 zeTalk = (function (prev) {
@@ -15196,6 +15199,32 @@ zeDecidirUI = (function (prev) {
     return r;
   };
 })(zeDecidirUI);
+
+/* ---------- desafio aceite sai da lista ---------- */
+const CH_DONE_KEY = 'ze_ch_done_v1';
+function chKeyOf(m) { return m ? normTxt(m.home + ' vs ' + m.away) + '|' + (m.date || '') : ''; }
+function chIsDone(m, D, zb) {
+  try {
+    D = D || lsGet(CH_DONE_KEY, {}); zb = zb || loadBank().zeBets;
+    const k = chKeyOf(m);
+    if (D[k] && Date.now() - D[k] < 4 * 864e5) return true;
+    const mk = m.home + ' vs ' + m.away;
+    return zb.some(x => x.match === mk && (x.status === 'open' || Date.now() - Date.parse(x.at || 0) < 2 * 864e5));
+  } catch (e) { return false; }
+}
+function chMarkDone(m) {
+  try { const D = lsGet(CH_DONE_KEY, {}); D[chKeyOf(m)] = Date.now(); Object.keys(D).forEach(k => { if (Date.now() - D[k] > 5 * 864e5) delete D[k]; }); lsSet(CH_DONE_KEY, D); } catch (e) {}
+  CH_MEM = null;
+}
+zeChallenges = (function (prev) { return function () { const L = prev.apply(this, arguments) || []; if (!L.length) return L; const D = lsGet(CH_DONE_KEY, {}), zb = loadBank().zeBets; return L.filter(c => !chIsDone(c.m, D, zb)); }; })(zeChallenges);
+aceitarDesafio = (function (prev) {
+  return function (i) {
+    const r = prev.apply(this, arguments);
+    try { const c = CH_ACCEPTED; if (c && c.m) chMarkDone(c.m); else if (matches[i]) chMarkDone(matches[i]); setTimeout(() => { try { updateContinue(); } catch (e) {} }, 50); } catch (e) {}
+    return r;
+  };
+})(aceitarDesafio);
+confirmarDueloZe = (function (prev) { return function () { const r = prev.apply(this, arguments); CH_MEM = null; try { updateContinue(); } catch (e) {} return r; }; })(confirmarDueloZe);
 
 renderWallet(); renderUpdateInfo();
 
