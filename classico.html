@@ -15412,7 +15412,7 @@ zeTalk = (function (prev) {
         if (!C.length) return { mood: 'pensativo', html: 'Hoje não tenho nenhuma aposta que valha a pena (nas próximas 36 h não há nada seguro nem com valor acima de 1.25). Às vezes a melhor aposta é não apostar.' };
         const c = C[0], o = c.odd > 1 ? `${esc(c.book || 'casa')} ${(+c.odd).toFixed(2)}` : `justa ${fairOdd(c.p)}`;
         setTimeout(() => { fmGo('duelo'); zeChallengesToggle(true); }, 400);
-        return { mood: 'gozao', html: `🎯 A minha de hoje: <b>${esc(marketName(c.k2, c.m))}</b> em ${esc(c.m.home)} vs ${esc(c.m.away)} (${esc(c.m.kickoff || '')}) — dou-lhe ${pct(c.p)} · ${o}.${C.length > 1 ? `<br>Tenho mais ${C.length - 1} na lista de desafios (abri-a no Duelo).` : ''}<br><span class="muted">Provável não é certo: confirma a odd na tua casa.</span>` };
+        return { mood: 'gozao', html: `🎯 A minha de hoje: <b>${esc(marketName(c.k2, c.m))}</b> em ${esc(c.m.home)} vs ${esc(c.m.away)} (${esc(c.m.date || '')} ${esc(c.m.kickoff || '')}) — dou-lhe ${pct(c.p)} · ${o}.${C.length > 1 ? `<br>Tenho mais ${C.length - 1} na lista de desafios (abri-a no Duelo).` : ''}<br><span class="muted">Provável não é certo: confirma a odd na tua casa.</span>` };
       }
       if (/(o ze|tu) acerta(s)? quanto|quanto (e que )?(o ze |tu )?acerta|quantas (e que )?acert|percentagem/.test(q) && !/banca/.test(q)) {
         const rows = Object.values(zarchSync().rows), ap = rows.filter(r => r.t === 'aposta'), g = zstAgg(ap), sc = zstAgg(rows.filter(r => r.t === 'marcador'));
