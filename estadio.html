@@ -14107,7 +14107,61 @@ body.rv .screen-head h1,body.rv .screen-head h2{font-family:var(--cond);font-wei
 .rv-mc .zv{margin-top:8px;text-align:center;font-size:.78rem;color:var(--muted);}
 .rv-mc .zv b{color:var(--lime);}
 .rv-h2{font:800 1.05rem/1.1 var(--cond);text-transform:uppercase;letter-spacing:.06em;margin:18px 2px 10px;color:#fff;-webkit-text-fill-color:#fff;-webkit-text-stroke:0;text-shadow:none;display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
-.rv-h2 small{font:600 .74rem var(--cond);color:var(--muted);-webkit-text-fill-color:var(--muted);letter-spacing:.03em;white-space:nowrap;}
+.rv-h2 small{font:600 .72rem var(--cond);color:var(--muted);-webkit-text-fill-color:var(--muted);letter-spacing:.03em;text-align:right;min-width:0;}
+
+/* v2: mais limpo e compacto */
+.rv-slide{min-height:150px !important;padding:12px 12px 10px !important;}
+.rv-big{font-size:1.32rem !important;margin:8px 0 3px !important;}
+.rv-art{font-size:2.8rem !important;bottom:56px !important;}
+.rv-cta{padding:9px 14px !important;font-size:.88rem !important;min-height:40px !important;}
+.rv-timer{font-size:1.05rem !important;}
+.rv-tiles{display:grid !important;grid-template-columns:repeat(4,1fr);gap:8px;overflow:visible !important;margin-bottom:12px;}
+.rv-tile{min-width:0 !important;aspect-ratio:1/1.08 !important;border-radius:11px !important;}
+.rv-tile .rvic{top:14% !important;font-size:1.85rem !important;}
+.rv-tile .rvlb{font-size:.68rem !important;padding:6px 2px 7px !important;letter-spacing:.02em !important;}
+.rv-strip{display:flex;align-items:center;gap:10px;border-radius:12px;padding:10px 12px;margin-bottom:12px;border:1px solid rgba(0,0,0,.6);background:radial-gradient(circle at 15% 50%,rgba(200,245,60,.22),transparent 45%),radial-gradient(circle at 85% 50%,rgba(90,169,255,.22),transparent 45%),linear-gradient(180deg,#2a1a4c,#140c28);box-shadow:0 4px 10px rgba(0,0,0,.4);}
+.rv-strip .t{flex:1;font:800 .95rem/1.15 var(--cond);text-transform:uppercase;letter-spacing:.03em;}
+.rv-strip .t small{display:block;font:600 .74rem var(--cond);color:var(--muted);text-transform:none;letter-spacing:0;}
+.rv-strip .rv-go{margin:0 !important;padding:9px 16px !important;font-size:.92rem !important;}
+.rv-list{background:linear-gradient(180deg,rgba(24,30,44,.97),rgba(16,20,30,.97));border:1px solid rgba(0,0,0,.6);border-radius:12px;overflow:hidden;box-shadow:0 6px 14px rgba(0,0,0,.4);margin-bottom:12px;}
+.rv-lh{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:linear-gradient(180deg,#2b3446,#1c2332);font:800 .8rem/1 var(--cond);text-transform:uppercase;letter-spacing:.06em;color:#cfd8ea;}
+.rv-lh .d{color:#fff;}
+.rv-lh .d.today{color:var(--lime);}
+.rv-row{display:grid;grid-template-columns:46px 1fr auto;align-items:center;gap:8px;padding:7px 12px;border-top:1px solid rgba(255,255,255,.05);cursor:pointer;}
+.rv-row:nth-child(even){background:rgba(255,255,255,.025);}
+.rv-row:active{background:rgba(200,245,60,.08);}
+.rv-tm{text-align:center;font:800 .95rem/1 var(--cond);color:#fff;}
+.rv-tm small{display:block;margin-top:3px;font:700 .58rem/1 var(--cond);color:var(--muted);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rv-tm.live{color:#ff6b81;}
+.rv-teams{min-width:0;display:flex;flex-direction:column;gap:3px;}
+.rv-tl{display:flex;align-items:center;gap:7px;min-width:0;font:600 .9rem/1.15 system-ui,sans-serif;}
+.rv-tl svg{width:18px;height:20px;flex:0 0 auto;}
+.rv-tl span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rv-tl b{margin-left:auto;font:800 .95rem var(--cond);padding-left:6px;}
+.rv-tl.win span{font-weight:800;}
+.rv-pick{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:48px;}
+.rv-pick i{font-style:normal;font:800 .78rem/1 var(--cond);background:#2b3446;border:1px solid #3d4a63;border-radius:6px;padding:4px 7px;color:#fff;}
+.rv-pick i.p1{background:linear-gradient(180deg,#d8ff5e,#a8d61e);color:#122000;border-color:#6f9410;}
+.rv-pick i.p2{background:linear-gradient(180deg,#7fc0ff,#2f74e0);color:#fff;border-color:#173f8c;}
+.rv-pick em{font-style:normal;font:700 .68rem var(--cond);color:var(--muted);}
+.rv-more{display:block;text-align:center;padding:10px;font:800 .8rem var(--cond);text-transform:uppercase;letter-spacing:.06em;color:var(--lime);border-top:1px solid rgba(255,255,255,.06);cursor:pointer;}
+/* competições (cartões largos) */
+.rv-comps{display:flex;flex-direction:column;gap:7px;margin:0 0 12px;}
+.rv-comp{position:relative;display:flex;align-items:center;min-height:56px;border-radius:11px;overflow:hidden;cursor:pointer;border:1px solid rgba(0,0,0,.6);padding:7px 12px 7px 66px;
+  background:radial-gradient(ellipse 40% 60% at 14% 30%,rgba(255,255,255,.22),transparent 70%),linear-gradient(90deg,#2b2440 0%,#1d2233 45%,#151a26 100%);box-shadow:0 5px 12px rgba(0,0,0,.4);}
+.rv-comp:after{content:"";position:absolute;left:0;right:0;bottom:0;height:34%;background:linear-gradient(180deg,transparent,rgba(30,110,50,.35));pointer-events:none;}
+.rv-comp .tr{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:1.9rem;filter:drop-shadow(0 5px 4px rgba(0,0,0,.6));}
+.rv-comp .tx{margin-left:auto;text-align:right;position:relative;z-index:1;}
+.rv-comp .tx b{display:block;font:800 1rem/1.05 var(--cond);text-transform:uppercase;letter-spacing:.03em;color:#fff;}
+.rv-comp .tx small{display:block;margin-top:3px;font:600 .74rem/1.2 var(--cond);color:#d6dbe8;}
+.rv-comp.off .tx b,.rv-comp.off .tx small{color:#7f8698;}
+.rv-comp.on{border-color:var(--lime);box-shadow:0 0 0 1px var(--lime),0 5px 12px rgba(0,0,0,.4);}
+body.rv #view-jogos > :not(.screen-head):not(#rvComps):not(#rvCal){display:none !important;}
+body.rv #view-jogos .screen-head p{display:none;}
+body.rv #view-jogos .screen-head .btn-row{flex-direction:row;flex-wrap:wrap;gap:6px;}
+body.rv .container{overflow-x:hidden;}
+#rvCal .rv-row .rv-tm small{max-width:46px;}
+
 body.rv #view-portal .portal-grid, body.rv #hojePanel, body.rv #view-portal > .screen-head{display:none !important;}
 `;
   try { const st = document.createElement('style'); st.id = 'rvSkin'; st.textContent = css; document.head.appendChild(st); } catch (e) {}
@@ -14141,6 +14195,38 @@ function rvPickOfDay() {
   return best;
 }
 function rvClock(ms) { if (!(ms > 0)) return 'A JOGAR'; const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), ss = s % 60; return (h > 47 ? Math.floor(h / 24) + 'd ' : '') + String(h > 47 ? h % 24 : h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(ss).padStart(2, '0'); }
+function rvDayHead(d) {
+  const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+  const diff = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - t0) / 864e5);
+  const lab = d.toLocaleDateString('pt-PT', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '');
+  return { txt: diff === 0 ? 'Hoje · ' + lab : diff === 1 ? 'Amanhã · ' + lab : lab, today: diff === 0 };
+}
+const RV_SHORT = { 'Liga Portugal': 'POR', 'Premier League': 'ENG', 'Championship': 'ENG 2', 'La Liga': 'ESP', 'LaLiga': 'ESP', 'Serie A': 'ITA', 'Bundesliga': 'ALE', 'Ligue 1': 'FRA', 'Eredivisie': 'NED' };
+function rvLg(name) { const n = String(name || ''); if (/champions/i.test(n)) return 'UCL'; if (/conference/i.test(n)) return 'UECL'; if (/europa/i.test(n)) return 'UEL'; return RV_SHORT[n] || n.slice(0, 6); }
+function rvRowUp(x) {
+  let pick = '';
+  try { const r = modelo(x.m), f = favOf(r.mk); pick = `<div class="rv-pick"><i class="${f === '1' ? 'p1' : f === '2' ? 'p2' : ''}">${f}</i><em>${Math.round(r.mk[f] * 100)}%</em></div>`; } catch (e) {}
+  const live = x.k.getTime() <= Date.now();
+  return `<div class="rv-row" onclick="openMatchIdx(${x.i})"><div class="rv-tm${live ? ' live' : ''}">${live ? 'AO VIVO' : esc(x.m.kickoff || '—')}<small>${esc(rvLg(x.m.league))}</small></div>
+    <div class="rv-teams"><div class="rv-tl">${rvCrest(x.m.home)}<span>${esc(x.m.home)}</span></div><div class="rv-tl">${rvCrest(x.m.away)}<span>${esc(x.m.away)}</span></div></div>${pick}</div>`;
+}
+function rvRowRes(x) {
+  const h = x.score.fullTime.home, a = x.score.fullTime.away, hn = x.homeTeam.shortName || x.homeTeam.name, an = x.awayTeam.shortName || x.awayTeam.name;
+  const d = new Date(x.utcDate);
+  return `<div class="rv-row" style="cursor:default;"><div class="rv-tm">FIM<small>${esc(rvLg(x.competition && x.competition.name))} · ${d.getDate()}/${d.getMonth() + 1}</small></div>
+    <div class="rv-teams"><div class="rv-tl${h > a ? ' win' : ''}">${rvCrest(hn)}<span>${esc(hn)}</span><b>${h}</b></div><div class="rv-tl${a > h ? ' win' : ''}">${rvCrest(an)}<span>${esc(an)}</span><b>${a}</b></div></div><div></div></div>`;
+}
+function rvGamesHTML(list, max) {
+  let out = '', cur = null, n = 0;
+  for (const x of list) {
+    if (n >= max) break;
+    const dh = rvDayHead(x.k);
+    if (dh.txt !== cur) { if (cur !== null) out += '</div>'; out += `<div class="rv-list"><div class="rv-lh"><span class="d${dh.today ? ' today' : ''}">${esc(dh.txt)}</span><span>Zé</span></div>`; cur = dh.txt; }
+    out += rvRowUp(x); n++;
+  }
+  if (cur !== null) out += '</div>';
+  return out;
+}
 function rvHomeHTML() {
   const b = loadBank(), pick = rvPickOfDay();
   const openBets = b.bets.filter(x => x.status === 'open').length + b.zeBets.filter(x => x.status === 'open').length;
@@ -14151,29 +14237,69 @@ function rvHomeHTML() {
       <div class="rv-big">${esc(pick.m.home)}<br>vs ${esc(pick.m.away)}</div><div class="rv-sub">${esc(pick.m.league || '')} · Zé: <b>${esc(team)}</b> ganha ${Math.round(pick.p * 100)}%</div>
       <div class="rv-art">⚽</div><button class="rv-cta" onclick="openMatchIdx(${pick.i})">Ver análise</button></div>`);
   }
-  slides.push(`<div class="rv-slide s2"><span class="rv-tag">Duelo</span><div class="rv-big">Tu ${esc(eur(b.you).replace(' €', ''))}€<br>Zé ${esc(eur(b.ze).replace(' €', ''))}€</div><div class="rv-sub">${openBets} aposta${openBets === 1 ? '' : 's'} em aberto. Quem acaba a época com mais banca?</div><div class="rv-art">⚔️</div><button class="rv-cta" onclick="prepararDuelo()">Jogar</button></div>`);
-  slides.push(`<div class="rv-slide s3"><span class="rv-tag">Boletim</span><div class="rv-big">Manda-me<br>o print</div><div class="rv-sub">Betano, Placard, apps de dicas: o Zé lê e diz o que vale.</div><div class="rv-art">📸</div><button class="rv-cta" onclick="rvGo('boletim')">Carregar</button></div>`);
-  const tiles = [['jogos', '🏆', 'Calendário'], ['duelo', '🎯', 'Duelo', b.zeBets.filter(x => x.status === 'open').length], ['scout', '🔭', 'Scouting'], ['banca', '💰', 'Finanças'], ['raiox', '🩻', 'Raio-X'], ['boletim', '📸', 'Boletim'], ['ze', '🤖', 'Mister Zé'], ['dia', '🔮', 'Match Day'], ['refresh', '📡', 'Atualizar'], ['config', '⚙️', 'Definições']];
-  const up = rvUpcoming(72).slice(0, 8), res = rvResults(4);
-  const mc = up.map(x => {
-    let zv = ''; try { const r = modelo(x.m), f = favOf(r.mk); zv = `Zé: <b>${esc(f === 'X' ? 'empate' : f === '1' ? x.m.home : x.m.away)}</b> ${Math.round(r.mk[f] * 100)}%`; } catch (e) {}
-    const started = x.k.getTime() <= Date.now();
-    return `<div class="rv-mc" onclick="openMatchIdx(${x.i})"><div class="rv-pill">🏆 ${esc(x.m.league || 'Jogo')} · ${esc(x.m.date || '')}</div><div class="row">
-      <div class="rv-team">${rvCrest(x.m.home)}<span>${esc(x.m.home)}</span></div>
-      <div class="rv-score t${started ? ' live' : ''}" ${started ? '' : `data-ko="${x.k.getTime()}"`}>${started ? 'AO VIVO' : '🕐 ' + esc(x.m.kickoff || '')}</div>
-      <div class="rv-team">${rvCrest(x.m.away)}<span>${esc(x.m.away)}</span></div></div>${zv ? `<div class="zv">${zv}</div>` : ''}</div>`;
-  }).join('');
-  const rc = res.map(x => `<div class="rv-mc" style="cursor:default;"><div class="rv-pill">🏆 ${esc(x.competition && x.competition.name || '')}</div><div class="row">
-      <div class="rv-team">${rvCrest(x.homeTeam.shortName || x.homeTeam.name)}<span>${esc(x.homeTeam.shortName || x.homeTeam.name)}</span></div>
-      <div class="rv-score">${x.score.fullTime.home} - ${x.score.fullTime.away}</div>
-      <div class="rv-team">${rvCrest(x.awayTeam.shortName || x.awayTeam.name)}<span>${esc(x.awayTeam.shortName || x.awayTeam.name)}</span></div></div></div>`).join('');
+  slides.push(`<div class="rv-slide s2"><span class="rv-tag">Duelo</span><div class="rv-big">Tu ${esc(eur(b.you).replace(' €', ''))}€<br>Zé ${esc(eur(b.ze).replace(' €', ''))}€</div><div class="rv-sub">${openBets} aposta${openBets === 1 ? '' : 's'} em aberto.</div><div class="rv-art">⚔️</div><button class="rv-cta" onclick="prepararDuelo()">Jogar</button></div>`);
+  slides.push(`<div class="rv-slide s3"><span class="rv-tag">Boletim</span><div class="rv-big">Manda-me<br>o print</div><div class="rv-sub">O Zé lê e diz o que vale.</div><div class="rv-art">📸</div><button class="rv-cta" onclick="rvGo('boletim')">Carregar</button></div>`);
+  const tiles = [['jogos', '🏆', 'Jogos'], ['duelo', '🎯', 'Duelo', b.zeBets.filter(x => x.status === 'open').length], ['scout', '🔭', 'Scouting'], ['banca', '💰', 'Finanças'], ['raiox', '🩻', 'Raio-X'], ['boletim', '📸', 'Boletim'], ['ze', '🤖', 'Mister Zé'], ['refresh', '📡', 'Atualizar']];
+  const up = rvUpcoming(24 * 7), res = rvResults(6);
   return `<div class="rv-banner" id="rvBanner">${slides.join('')}</div><div class="rv-dots" id="rvDots">${slides.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>
     <div class="rv-tiles">${tiles.map(([k, ic, lb, nb]) => `<div class="rv-tile" onclick="rvGo('${k}')"><div class="rvic">${ic}</div><div class="rvlb">${lb}</div>${nb ? `<span class="rvnb">${nb}</span>` : ''}</div>`).join('')}</div>
-    <div class="rv-duel"><div class="rv-pill">⚔️ Duelo do dia</div><div class="rv-vs"><span style="color:var(--lime)">Tu</span><span class="muted">vs</span><span style="color:var(--blue)">Mister Zé</span></div><button class="rv-go" onclick="prepararDuelo()">Começar</button></div>
-    ${mc ? `<div class="rv-h2">Próximos jogos <small>toca para a análise</small></div>${mc}` : ''}
-    ${rc ? `<div class="rv-h2">Últimos resultados</div>${rc}` : ''}
+    <div class="rv-strip"><div class="t">⚔️ Duelo do dia<small>Tu ${esc(eur(b.you))} · Zé ${esc(eur(b.ze))}</small></div><button class="rv-go" onclick="prepararDuelo()">Começar</button></div>
+    ${up.length ? `<div class="rv-h2">Próximos jogos <small>${up.length} nos próximos 7 dias · por hora</small></div>${rvGamesHTML(up, 24)}${up.length > 24 ? `<div class="rv-list"><div class="rv-more" onclick="fmGo('jogos')">Ver todos os ${up.length} jogos ›</div></div>` : ''}` : ''}
+    ${res.length ? `<div class="rv-h2">Últimos resultados</div><div class="rv-list">${res.map(rvRowRes).join('')}</div>` : ''}
     <div class="rv-h2">Caixa de entrada <small>avisos do Zé</small></div>`;
 }
+/* Competições: cartões largos no topo do calendário */
+const RV_COMPS = [['all', '🏆', 'Todos os jogos', null], ['portugal', '🏆', 'Liga Portugal', 'por.1'], ['premier', '🏆', 'Premier League', 'eng.1'], ['laliga', '🏆', 'La Liga', 'esp.1'], ['seriea', '🏆', 'Serie A', 'ita.1'], ['bundesliga', '🏆', 'Bundesliga', 'ger.1'], ['eredivisie', '🏆', 'Eredivisie', 'ned.1'], ['ucl', '🌍', 'Competições europeias', null], ['fav', '⭐', 'Favoráveis do Zé', null]];
+function rvCompsHTML() {
+  const now = Date.now(), wk = now + 7 * 864e5;
+  const up = matches.filter(m => m.live && !m.past && !m.aviso).map(m => ({ m, k: kickOf(m) })).filter(x => x.k && x.k.getTime() > now - 2 * 3600e3 && x.k.getTime() < wk);
+  let L = null; try { L = lsGet(LIVE_KEY, null); } catch (e) {}
+  const cur = typeof currentCalFilter !== 'undefined' ? currentCalFilter : 'all';
+  return `<div class="rv-comps">${RV_COMPS.map(([f, ic, name, code]) => {
+    const n = f === 'all' ? up.length : f === 'fav' ? null : up.filter(x => { try { return leagueMatchFilter(x.m, f); } catch (e) { return false; } }).length;
+    let lead = '';
+    const T = code && L && L.standings && L.standings[code] && L.standings[code][0] && L.standings[code][0].table;
+    if (T && T.length) { const top = T.slice().sort((a, b) => (b.points - a.points) || ((b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst)))[0]; if (top) lead = ` · líder ${esc(top.team.shortName || top.team.name)} (${top.points} pts)`; }
+    const sub = f === 'fav' ? 'Os jogos onde o Zé vê mais vantagem' : n ? `${n} jogo${n === 1 ? '' : 's'} nos próximos 7 dias${lead}` : `Sem jogos esta semana${lead}`;
+    if (n === 0 && cur !== f) return '';
+    return `<div class="rv-comp${n === 0 ? ' off' : ''}${cur === f ? ' on' : ''}" onclick="rvComp('${f}')"><span class="tr">${ic}</span><div class="tx"><b>${esc(name)}</b><small>${sub}</small></div></div>`;
+  }).join('')}</div>`;
+}
+function rvComp(f) {
+  try { filterCal(f); } catch (e) {}
+  rvCompsRender();
+  const list = document.getElementById('rvCal');
+  if (list) setTimeout(() => list.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+}
+function rvCompsRender() {
+  const view = document.getElementById('view-jogos'); if (!view) return;
+  let box = document.getElementById('rvComps');
+  if (!box) { box = document.createElement('div'); box.id = 'rvComps'; const head = view.querySelector('.screen-head'); if (head) head.insertAdjacentElement('afterend', box); else view.insertBefore(box, view.firstChild); }
+  try { box.innerHTML = rvCompsHTML(); } catch (e) { console.warn(e); }
+}
+fmGo = (function (prev) { return function (v) { const r = prev.apply(this, arguments); if (v === 'jogos') { try { rvCompsRender(); rvCalRender(); } catch (e) {} } return r; }; })(fmGo);
+/* Calendário: a mesma lista limpa do início, por dia e por hora, com o filtro da competição */
+function rvCalRender() {
+  const view = document.getElementById('view-jogos'); if (!view) return;
+  let box = document.getElementById('rvCal');
+  if (!box) { box = document.createElement('div'); box.id = 'rvCal'; const c = document.getElementById('rvComps'); if (c) c.insertAdjacentElement('afterend', box); else view.appendChild(box); }
+  const f = typeof currentCalFilter !== 'undefined' ? currentCalFilter : 'all';
+  const q = ((document.getElementById('searchInput') || {}).value || '').toLowerCase().trim();
+  const now = Date.now();
+  const list = matches.map((m, i) => ({ m, i, k: kickOf(m) })).filter(x => x.k && !x.m.past && !x.m.aviso && x.k.getTime() > now - 2 * 3600e3)
+    .filter(({ m }) => {
+      if (f === 'fav' && !m.fav) return false;
+      if (f === 'best' && m.type !== 'best') return false;
+      if (f === 'worst' && m.type !== 'worst') return false;
+      if (['portugal', 'premier', 'seriea', 'bundesliga', 'laliga', 'ucl', 'eredivisie'].includes(f)) { try { if (!leagueMatchFilter(m, f)) return false; } catch (e) { return false; } }
+      if (q && !(m.home + m.away + (m.team || '') + m.league).toLowerCase().includes(q)) return false;
+      return true;
+    }).sort((a, b) => a.k - b.k);
+  const name = (RV_COMPS.find(c => c[0] === f) || [0, 0, 'Todos os jogos'])[2];
+  box.innerHTML = `<div class="rv-h2">${esc(name)} <small>${list.length} jogo${list.length === 1 ? '' : 's'} · por dia e hora</small></div>` + (list.length ? rvGamesHTML(list, 200) : '<div class="rv-list"><div class="rv-more" style="color:var(--muted);cursor:default;">Sem jogos para este filtro.</div></div>');
+}
+renderCalendar = (function (prev) { return function () { const r = prev.apply(this, arguments); try { rvCompsRender(); rvCalRender(); } catch (e) {} return r; }; })(renderCalendar);
+
 function rvGo(k) {
   if (k === 'boletim') { fmGo('banca'); try { wlSetTab('registar'); } catch (e) {} setTimeout(() => { const el = document.getElementById('boletimPanel'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150); return; }
   if (k === 'raiox') { fmGo('banca'); try { wlSetTab('resumo'); } catch (e) {} setTimeout(() => { const el = document.getElementById('wlRaioX'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150); return; }
