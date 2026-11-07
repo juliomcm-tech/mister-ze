@@ -65,7 +65,6 @@ body {
   font-family: 'Barlow', 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
   background: var(--bg);
   background-image: radial-gradient(1100px 480px at 85% -8%, rgba(124,77,255,.20), transparent 60%);
-  background-attachment: fixed;
   color: var(--text);
   min-height: 100vh;
   line-height: 1.45;
@@ -11205,7 +11204,7 @@ zeTalk = (function (prev) {
   .btn-install { display: none !important; }
   body { padding-bottom: calc(66px + env(safe-area-inset-bottom)); }
   #mNav { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 800; background: rgba(14,8,26,.97); border-top: 1px solid var(--line2);
-    padding: 4px 4px calc(4px + env(safe-area-inset-bottom)); backdrop-filter: blur(8px); }
+    padding: 4px 4px calc(4px + env(safe-area-inset-bottom)); }
   #mNav button { flex: 1; background: none; border: 0; color: var(--muted); font: 600 .66rem/1.1 inherit; padding: 6px 0 4px; display: flex; flex-direction: column; align-items: center; gap: 3px; position: relative; min-height: 50px; }
   #mNav button .i { font-size: 1.3rem; line-height: 1; }
   #mNav button.on { color: var(--lime); }
@@ -14713,7 +14712,7 @@ function lvParse(ev) {
   const det = c.details || [];
   const red = tid => det.filter(d => (d.redCard || /red card/i.test((d.type && d.type.text) || '')) && String((d.team && d.team.id) || '') === String(tid)).length;
   const goals = det.filter(d => (d.scoringPlay || /goal/i.test((d.type && d.type.text) || ''))).map(d => ({ min: (d.clock && d.clock.displayValue) || '', team: String((d.team && d.team.id) || ''), who: ((d.athletesInvolved || [])[0] || {}).displayName || '', og: !!d.ownGoal, pen: !!d.penaltyKick }));
-  return { id: String(ev.id), state: st.state, done: !!st.completed, hId: String(H.team.id), aId: String(A.team.id), hn: H.team.shortDisplayName || H.team.displayName, an: A.team.shortDisplayName || A.team.displayName,
+  return { id: String(ev.id), date: ev.date, state: st.state, done: !!st.completed, hId: String(H.team.id), aId: String(A.team.id), hn: H.team.shortDisplayName || H.team.displayName, an: A.team.shortDisplayName || A.team.displayName,
     hs: Number(scoreVal(H.score)) || 0, as: Number(scoreVal(A.score)) || 0, rh: red(H.team.id), ra: red(A.team.id), goals, clock: lvClock(Object.assign({}, ev, { status: c.status || ev.status })) };
 }
 function lvPois(l, k) { let p = Math.exp(-l); for (let i = 1; i <= k; i++) p *= l / i; return p; }
@@ -14732,25 +14731,54 @@ function lvCalc(m, L) {
   const tot = L.hs + L.as;
   return { r, rem, eh, ea, pH: 1 - Math.exp(-eh), pA: 1 - Math.exp(-ea), pMore: 1 - Math.exp(-eh - ea), p2more: 1 - Math.exp(-eh - ea) * (1 + eh + ea), p1: p1 / s, pX: pX / s, p2: p2 / s, line: tot + 0.5, line2: tot + 1.5 };
 }
-let LV_TIMER = null, LV_LAST = null, LV_BUSY = false;
+let LV_TIMER = null, LV_LAST = null, LV_BUSY = false, LV_MATCHES = [], LV_STR = {}, LV_REG = {};
+function lvStrengths() {
+  const P = lsGet(LIVE_KEY, null), k = P && P.generatedAt;
+  if (LV_STR.k !== k) { LV_STR = { k, s: {} }; Object.keys((P && P.standings) || {}).forEach(c => { try { LV_STR.s[c] = computeStrengths(P.standings[c]); } catch (e) {} }); }
+  return LV_STR.s;
+}
+/* um jogo a decorrer volta a ser «jogo do Zé» com as mesmas contas de antes do apito (tabelas + estudo, se houver) */
+function lvBuild(x) {
+  try {
+    const comp = (x.competition && x.competition.code) || '', d = new Date(x.utcDate);
+    const home = x.homeTeam.shortName || x.homeTeam.name, away = x.awayTeam.shortName || x.awayTeam.name;
+    let lam = null; try { const S = lvStrengths()[comp]; if (S) lam = lambdasLive(S, x.homeTeam.id, x.awayTeam.id); } catch (e) {}
+    const m = { phase: 'imediato', type: 'best', live: true, inplay: true, home, away, date: `${WD[d.getDay()]} ${d.getDate()} ${MO[d.getMonth()]}`,
+      league: (x.competition && x.competition.name) || FD_COMPS[comp] || comp, h2h: '—', prob: '', analysis: '', note: '', stats: '', team: home,
+      lambdas: lam, espn: { h: String(x.homeTeam.id), a: String(x.awayTeam.id), code: comp, ev: String(x.id || '') },
+      kickoff: d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) };
+    if (!lam && !studyFor(m)) return null;
+    return m;
+  } catch (e) { return null; }
+}
+applyLive = (function (prev) {
+  return function (payload) {
+    const r = prev.apply(this, arguments);
+    try { LV_MATCHES = ((payload && payload.matches) || []).filter(x => x && x.status === 'IN_PLAY' && x.homeTeam && x.awayTeam && !/nba/i.test((x.competition && x.competition.code) || '')).map(lvBuild).filter(Boolean); } catch (e) {}
+    return r;
+  };
+})(applyLive);
+function lvOpen(id) { const m = LV_REG[id]; if (m) openModal(m); }
 function lvIsLive(m) { const k = kickOf(m); return !!(k && k.getTime() <= Date.now() && k.getTime() > Date.now() - 2.6 * 3600e3 && !m.past); }
 async function lvScan() {
-  const codes = [...new Set(matches.filter(m => m.espn && m.live && lvIsLive(m) && !/nba/i.test(m.espn.code || '')).map(m => m.espn.code))];
+  const pool = matches.filter(m => m.espn && m.live && lvIsLive(m) && !/nba/i.test(m.espn.code || '')).concat(LV_MATCHES);
+  const codes = [...new Set(pool.map(m => m.espn.code))];
   const days = [ymd(new Date())];
   const t = new Date(); if (t.getHours() < 3) { const y = new Date(t); y.setDate(y.getDate() - 1); days.push(ymd(y)); }
   const evs = [];
   await Promise.all(codes.flatMap(code => days.map(d => fetchJSON(`https://site.api.espn.com/apis/site/v2/sports/soccer/${code}/scoreboard?dates=${d}`).then(j => (j.events || []).forEach(ev => { const L = lvParse(ev); if (L) { L.code = code; evs.push(L); } })).catch(() => null))));
   const out = [];
   evs.filter(L => L.state === 'in').forEach(L => {
-    const m = matches.find(x => x.espn && String(x.espn.ev) === L.id) || matches.find(x => x.espn && String(x.espn.h) === L.hId && String(x.espn.a) === L.aId && lvIsLive(x));
-    if (m) out.push({ m, L, c: lvCalc(m, L) });
+    const m = pool.find(x => x.espn && String(x.espn.ev) === L.id) || pool.find(x => x.espn && String(x.espn.h) === L.hId && String(x.espn.a) === L.aId)
+      || lvBuild({ id: L.id, utcDate: L.date, competition: { code: L.code, name: (typeof ESPN_LEAGUES !== 'undefined' && ESPN_LEAGUES[L.code]) || (typeof EXTRA_LEAGUES !== 'undefined' && EXTRA_LEAGUES[L.code]) || '' }, homeTeam: { id: L.hId, shortName: L.hn }, awayTeam: { id: L.aId, shortName: L.an } });
+    if (m) { LV_REG[L.id] = m; out.push({ m, L, c: lvCalc(m, L) }); }
   });
   LV_LAST = { t: Date.now(), out, codes: codes.length };
   return LV_LAST;
 }
 function lvCardHTML(o) {
   const { m, L, c } = o; if (!c) return '';
-  const i = matchIndex(m);
+  LV_REG[L.id] = m;
   const red = (n) => n ? ` <span title="expulsões" style="display:inline-block;width:9px;height:12px;background:#ff4d5e;border-radius:2px;vertical-align:-1px;"></span>${n > 1 ? '×' + n : ''}` : '';
   const trail = L.hs === L.as ? null : (L.hs < L.as ? 'h' : 'a');
   let note = '';
@@ -14765,7 +14793,7 @@ function lvCardHTML(o) {
     `🏁 Final: 1 ${pct(c.p1)} · X ${pct(c.pX)} · 2 ${pct(c.p2)}`
   ];
   return `<div class="vc-card lv-card" data-ev="${esc(L.id)}"><div class="vc-top">${esc(m.league || '')} · <b style="color:#ff6b7d;">● ${esc(L.clock.label)}</b> · faltam ~${Math.round(c.rem * 100)}% dos golos de um jogo</div>
-    <div class="vc-teams" onclick="openMatchIdx(${i})">${esc(m.home)}${red(L.rh)} <b style="font-size:1.15em;">${L.hs}-${L.as}</b> ${esc(m.away)}${red(L.ra)}</div>
+    <div class="vc-teams" onclick="lvOpen('${esc(L.id)}')">${esc(m.home)}${red(L.rh)} <b style="font-size:1.15em;">${L.hs}-${L.as}</b> ${esc(m.away)}${red(L.ra)}</div>
     <div style="font-size:.84rem;line-height:1.6;">${lines.join('<br>')}</div>
     ${note ? `<div class="muted" style="font-size:.78rem;margin-top:4px;">💭 ${note}</div>` : ''}
     <div class="muted" style="font-size:.74rem;margin-top:4px;">Antes do jogo o Zé esperava ${c.r.lh.toFixed(1).replace('.', ',')}–${c.r.la.toFixed(1).replace('.', ',')} golos.${L.goals.length ? ' Golos: ' + L.goals.map(g => `${esc(g.min)} ${esc(g.who)}${g.og ? ' (p.b.)' : g.pen ? ' (pen.)' : ''}`).join(', ') : ''}</div>
@@ -14813,7 +14841,7 @@ async function lvModalBlock(m) {
     el.innerHTML = o && o.c ? `<div class="rz-head">⚡ Ao vivo</div>${lvCardHTML(o)}<button class="btn btn-sm" onclick="closeModal && closeModal(); fmGo('jogos'); setTimeout(()=>zeLivePanel('scorersBox'),80)">Ver todos os jogos ao vivo</button>` : '<div class="rz-head">⚡ Ao vivo</div><div class="muted">Este jogo não aparece a decorrer na ESPN (pode já ter acabado ou ainda não começou).</div>';
   } catch (e) { el.innerHTML = '<div class="rz-head">⚡ Ao vivo</div><div class="muted">Não consegui ligar agora.</div>'; }
 }
-function lvCount() { try { return matches.filter(m => m.espn && m.live && lvIsLive(m)).length; } catch (e) { return 0; } }
+function lvCount() { try { const ids = new Set(); matches.filter(m => m.espn && m.live && lvIsLive(m)).concat(LV_MATCHES).forEach(m => ids.add(String(m.espn.ev || m.home + m.away))); return ids.size; } catch (e) { return 0; } }
 
 /* zeTalk: «marcadores», «ao vivo», «h2h» */
 zeTalk = (function (prev) {
@@ -15117,6 +15145,57 @@ zeChallenges = function (hours) {
   if (CH_MEM && CH_MEM.key === key && Date.now() - CH_MEM.t < 5 * 60e3) return CH_MEM.v;
   const v = zeChallengesRaw(hours); CH_MEM = { key, t: Date.now(), v }; return v;
 };
+
+/* ---------- regra do duelo: o Zé nunca aposta abaixo de 1.25 ---------- */
+const ZE_MIN_ODD = 1.25;
+function chOddOf(m, k, p) {
+  try { const st = studyFor(m), o = st && st.books && st.books[0] && st.books[0].odds[k]; if (o > 1) return { odd: +o, est: false, book: st.books[0].provider }; } catch (e) {}
+  return { odd: p > 0 ? 0.95 / p : 0, est: true, book: null };   // sem odd da casa: estimativa com a margem normal
+}
+function chFixMinOdd(c) {
+  const o = c.odd > 1 ? { odd: +c.odd, est: false } : chOddOf(c.m, c.k2, c.p);
+  if (o.odd >= ZE_MIN_ODD) return c;
+  // a escolha mais provável paga pouco: procura a seguinte mais provável que pague pelo menos 1.25
+  let r = null; try { r = modelo(c.m); } catch (e) {}
+  if (!r) return null;
+  const alt = ['1', '2', 'O1.5', '1X', 'X2', 'O2.5', 'U3.5', 'BTTS', 'U2.5'].filter(k => k !== c.k2 && r.mk[k] >= 0.6)
+    .map(k => ({ k, p: r.mk[k], o: chOddOf(c.m, k, r.mk[k]) })).filter(x => x.o.odd >= ZE_MIN_ODD).sort((a, b) => b.p - a.p)[0];
+  if (!alt) return null;
+  return Object.assign({}, c, { k2: alt.k, p: alt.p, odd: alt.o.est ? null : alt.o.odd, book: alt.o.book, cat: alt.p >= 0.7 ? 'segura' : 'dia', ev: null, score: (alt.p >= 0.7 ? 1 : 0.5) + alt.p });
+}
+const _zeChallengesV55 = zeChallenges;
+zeChallenges = function (hours) {
+  const key = (hours || 36) + '|' + matches.length + '|' + Object.keys(STUDY).length + '|' + matchVer();
+  if (CH_MEM && CH_MEM.key === key && Date.now() - CH_MEM.t < 5 * 60e3) return CH_MEM.v;
+  const v = zeChallengesRaw(hours).map(c => { try { return chFixMinOdd(c); } catch (e) { return c; } }).filter(Boolean).sort((a, b) => b.score - a.score || a.k - b.k);
+  CH_MEM = { key, t: Date.now(), v }; return v;
+};
+/* em qualquer duelo, odds abaixo de 1.25 não entram na decisão do Zé */
+zeDecide = (function (prev) {
+  return function (m, odds, bankAvail) {
+    const o = {}; let cut = 0;
+    Object.keys(odds || {}).forEach(k => { if (+odds[k] >= ZE_MIN_ODD) o[k] = odds[k]; else cut++; });
+    if (!Object.keys(o).length) { const d = prev(m, odds, bankAvail); d.pick = null; d.stake = 0; d.lowOdd = true; return d; }
+    const d = prev(m, cut ? o : odds, bankAvail);
+    if (cut) { d.lowOdd = true; try { const full = prev(m, odds, bankAvail); d.rows = full.rows; } catch (e) {} }
+    return d;
+  };
+})(zeDecide);
+zeDecidirUI = (function (prev) {
+  return function () {
+    const r = prev.apply(this, arguments);
+    try {
+      const d = dueloAtual && dueloAtual.decision, el = document.getElementById('zeDecision');
+      if (d && el && d.pick && d.pick.odd < ZE_MIN_ODD) {   // desafio com odd baixa: não joga
+        d.pick = null; d.stake = 0;
+        const sp = el.querySelector('.speech'); if (sp) sp.innerHTML = `${zeFace('pensativo', 46)}<div><b>Passo.</b> A odd é abaixo de ${ZE_MIN_ODD.toFixed(2)} — regra do duelo: o Zé não aposta abaixo de ${ZE_MIN_ODD.toFixed(2)} (arrisca muito para ganhar quase nada).</div>`;
+      } else if (d && el && d.lowOdd && !d.pick) {
+        el.querySelectorAll('.speech').forEach(sp => sp.insertAdjacentHTML('beforeend', `<div class="muted" style="font-size:.76rem;margin-top:4px;">Odds abaixo de ${ZE_MIN_ODD.toFixed(2)} ficam sempre de fora (regra do duelo).</div>`));
+      }
+    } catch (e) {}
+    return r;
+  };
+})(zeDecidirUI);
 
 renderWallet(); renderUpdateInfo();
 
