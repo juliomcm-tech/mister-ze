@@ -10731,6 +10731,12 @@ accBadge();
    aceita um dia (AAAAMMDD), um mês (AAAAMM) e um ano (AAAA). Pedimos por mês (ou ano) e filtramos cá.
    ===================================================================== */
 const ESPN_MONTH_CACHE = new Map();
+/* v59: quanto tempo guardar a resposta de um mês/ano: acabado há mais de 3 dias → 12 h; o mês atual → 90 s */
+function espnMonthTTL(k) {
+  const now = new Date(), y = +String(k).slice(0, 4), mo = String(k).length >= 6 ? +String(k).slice(4, 6) : 12;
+  const end = new Date(y, mo, 1);   // primeiro dia do mês seguinte (ou do ano seguinte)
+  return now.getTime() - end.getTime() > 3 * 864e5 ? 12 * 3600e3 : 90e3;
+}
 async function espnByMonths(base, a, b) {
   const A = ymdParse(a), Bd = ymdParse(b);
   const end = new Date(Bd.getTime() + 864e5);
@@ -10743,7 +10749,7 @@ async function espnByMonths(base, a, b) {
     res.push(...await Promise.all(keys.slice(i, i + 4).map(async k => {
       const url = `${base}?dates=${k}&limit=1000`;
       const c = ESPN_MONTH_CACHE.get(url);
-      if (c && Date.now() - c.t < 90e3) return c.j;          // o mesmo «Atualizar» não pede o mesmo mês duas vezes
+      if (c && Date.now() - c.t < espnMonthTTL(k)) return c.j;   // v59: meses já acabados não mudam → não se pedem outra vez nesta sessão
       const j = await getJSONany(url);
       ESPN_MONTH_CACHE.set(url, { t: Date.now(), j });
       return j;
@@ -10779,7 +10785,7 @@ netTest = (function (prev) {
   };
 })(netTest);
 /* a memória dos meses só vale dentro do mesmo «Atualizar» (o seguinte pede tudo de novo) */
-atualizarTudo = (function (prev) { return async function (opts) { if (!(opts && opts._retry)) ESPN_MONTH_CACHE.clear(); return prev.apply(this, arguments); }; })(atualizarTudo);
+atualizarTudo = (function (prev) { return async function (opts) { if (!(opts && opts._retry)) [...ESPN_MONTH_CACHE.keys()].forEach(u => { const m = /dates=(\d{4,6})/.exec(u); if (!m || espnMonthTTL(m[1]) < 3600e3) ESPN_MONTH_CACHE.delete(u); }); return prev.apply(this, arguments); }; })(atualizarTudo);
 
 /* Mercado: além do canal do YouTube, as notícias com «here we go» do Fabrizio Romano (feed público do Google Notícias) */
 ytFetch = (function (prev) {
@@ -11372,7 +11378,7 @@ try { updateContinue(); } catch (e) {}
    - chat novo: classificação de qualquer liga, «transferências benfica», «mercado»
    - a app atualiza-se sozinha quando há versão nova
    ===================================================================== */
-const APP_VER = 'v58';
+const APP_VER = 'v59';
 
 /* ---------- 1) notícias e YouTube sem falhar ---------- */
 const FEED_LS = 'ze_feed_cache_v1';
@@ -14452,7 +14458,11 @@ fetchJSON = (function (prev) {
       try { return await prev.apply(this, arguments); } catch (e) { if (e && e.cool) throw e; ESPN_RANGE_BAD = true; ESPN_RANGE_PROBED = true; lsSet('ze_espn_variant', 3); }
     }
     const urls = espnSplitUrls(url, m[1], m[2]);
-    const res = await Promise.all(urls.map((u, k) => new Promise(r => setTimeout(r, k * 80)).then(() => prev(u)).catch(() => null)));
+    const res = await Promise.all(urls.map((u, k) => {
+      const mk = /dates=(\d{6,8})/.exec(u), c = ESPN_MONTH_CACHE.get(u);
+      if (c && mk && Date.now() - c.t < espnMonthTTL(mk[1].slice(0, 6))) return Promise.resolve(c.j);
+      return new Promise(r => setTimeout(r, k * 80)).then(() => prev(u)).then(j => { if (j && mk) ESPN_MONTH_CACHE.set(u, { t: Date.now(), j }); return j; }).catch(() => null);
+    }));
     const ok = res.filter(Boolean);
     if (!ok.length) throw new Error('ESPN sem resposta');
     const seen = new Set(), events = [];
@@ -15656,15 +15666,15 @@ setTimeout(() => { try { if (/jsdom/i.test(navigator.userAgent || '')) return; c
 let SELO_STUDY_AT = 0, SELO_STUDY_RUN = false;
 async function seloAutoStudy(force) {
   if (SELO_STUDY_RUN || /jsdom/i.test(navigator.userAgent || '') || window.__ZE_LAB || navigator.onLine === false) return 0;
-  if (!force && Date.now() - SELO_STUDY_AT < 30 * 60e3) return 0;
+  if (!force && Date.now() - SELO_STUDY_AT < 60 * 60e3) return 0;   // v59: de hora a hora (menos pedidos à ESPN)
   if (typeof espnCooling === 'function' && espnCooling()) return 0;
   SELO_STUDY_RUN = true; SELO_STUDY_AT = Date.now(); let n = 0;
   try {
-    const C = zeChallenges(36).filter(c => c.m.espn && c.m.espn.ev && !(studyFor(c.m) && studyFor(c.m).books && studyFor(c.m).books.length) && !(studyFor(c.m) && studyFor(c.m).oddsTried && Date.now() - studyFor(c.m).oddsTried < 3 * 3600e3)).slice(0, 5);
+    const C = zeChallenges(36).filter(c => c.m.espn && c.m.espn.ev && !(studyFor(c.m) && studyFor(c.m).books && studyFor(c.m).books.length) && !(studyFor(c.m) && studyFor(c.m).oddsTried && Date.now() - studyFor(c.m).oddsTried < 3 * 3600e3)).slice(0, 3);
     for (const c of C) {
       try { await zeStudy(c.m); n++; } catch (e) {}
       if (typeof espnCooling === 'function' && espnCooling()) break;
-      await new Promise(r => setTimeout(r, 700));
+      await new Promise(r => setTimeout(r, 2500));
     }
   } finally { SELO_STUDY_RUN = false; }
   if (n) {
@@ -15876,6 +15886,143 @@ renderZeStats = (function (prev) {
     return r;
   };
 })(renderZeStats);
+
+
+/* =====================================================================
+   v59 · 🔥 onde o Zé está quente / ❄️ onde falha (com contas de «é sorte ou é real?»)
+   - Agrupa as previsões decididas por competição e por tipo de aposta.
+   - Quente: ≥ 8 jogos, acerta pelo menos o que promete e ≥ 75%.
+   - Frio: ≥ 10 jogos e falha tanto que já não parece azar (z ≤ −1.8, ≥ 10 pontos abaixo).
+   - Liga Europa e Conference contam também juntas («Europa secundária»): no telemóvel do Júlio
+     acertaram 60% para 78% prometidos (35 jogos) — e são jogos entre ligas diferentes, onde o modelo
+     sabe menos. Ficam fora do selo de ouro.
+   - O travão automático passa a apanhar também competições inteiras (≥ 12 jogos, z ≤ −2).
+   ===================================================================== */
+const EU2_CODES = ['uefa.europa', 'uefa.europa.conf'];
+let HC_MEM = null;
+function zeHotCold() {
+  if (HC_MEM && Date.now() - HC_MEM.t < 3 * 60e3) return HC_MEM.v;
+  const rows = Object.values(zarchLoad().rows).filter(r => r.t === 'aposta');
+  const grp = (keyFn) => { const G = {}; rows.forEach(r => { const k = keyFn(r); if (!k) return; const g = G[k] = G[k] || { k, n: 0, w: 0, p: 0, v: 0, codes: new Set() }; g.n++; g.w += r.w ? 1 : 0; g.p += r.p; g.v += r.p * (1 - r.p); if (r.c) g.codes.add(r.c); }); return Object.values(G).map(g => ({ ...g, codes: [...g.codes], hit: g.w / g.n, exp: g.p / g.n, z: (g.w - g.p) / Math.sqrt(Math.max(1e-6, g.v)) })); };
+  const lg = grp(r => r.lg || null), fam = grp(r => PICK_FAMILY(r.k));
+  const eu2 = grp(r => EU2_CODES.includes(r.c) ? 'Europa secundária (Liga Europa + Conference)' : null);
+  const hot = L => L.filter(g => g.n >= 8 && g.hit >= g.exp && g.hit >= 0.75).sort((a, b) => (b.hit - b.exp) - (a.hit - a.exp));
+  const cold = L => L.filter(g => g.n >= 10 && g.z <= -1.8 && g.hit - g.exp <= -0.10).sort((a, b) => a.z - b.z);
+  const few = L => L.filter(g => g.n < 8).length;
+  let lc = cold(lg.concat(eu2)); if (lc.some(g => /Europa secundária/.test(g.k))) lc = lc.filter(g => /Europa secundária/.test(g.k) || !g.codes.every(c => EU2_CODES.includes(c)));
+  const v = { lgHot: hot(lg), lgCold: lc, famHot: hot(fam), famCold: cold(fam), nRows: rows.length, fewLg: few(lg), all: { lg, fam, eu2 } };
+  HC_MEM = { t: Date.now(), v };
+  return v;
+}
+applyLive = (function (prev) { return function () { const r = prev.apply(this, arguments); HC_MEM = null; return r; }; })(applyLive);
+function hcOfMatch(m) {
+  try {
+    const H = zeHotCold(), name = m.league || '';
+    const hot = H.lgHot.find(g => g.k === name), cold = H.lgCold.find(g => g.k === name || (m.espn && g.codes.includes(m.espn.code) && /Europa secundária/.test(g.k)));
+    return { hot, cold };
+  } catch (e) { return {}; }
+}
+/* o travão passa a apanhar também competições inteiras */
+zeBraked = (function (prev) {
+  return function (m, k) {
+    const r = prev.apply(this, arguments); if (r) return r;
+    try {
+      if (!m || !m.espn) return null;
+      const H = zeHotCold(), c = H.lgCold.find(g => (g.k === m.league || g.codes.includes(m.espn.code)) && g.n >= 12 && g.z <= -2);
+      return c ? { lg: c.k, fam: 'todas as apostas', n: c.n, w: c.w, hit: c.hit, exp: c.exp, z: c.z, c: m.espn.code } : null;
+    } catch (e) { return null; }
+  };
+})(zeBraked);
+zeBrakes = (function (prev) {
+  return function () {
+    const L = prev.apply(this, arguments) || [];
+    try { zeHotCold().lgCold.filter(g => g.n >= 12 && g.z <= -2).forEach(g => { if (!L.some(b => b.lg === g.k && b.fam === 'todas as apostas')) L.push({ lg: g.k, fam: 'todas as apostas', n: g.n, w: g.w, hit: g.hit, exp: g.exp, z: g.z, c: g.codes[0] || '' }); }); } catch (e) {}
+    return L;
+  };
+})(zeBrakes);
+/* selo de ouro: fora da Liga Europa / Conference (jogos entre ligas — o Zé sabe menos e falha mais) */
+zeSelo = (function (prev) {
+  return function (m) {
+    const s = prev.apply(this, arguments);
+    try { if (m && m.espn && EU2_CODES.includes(m.espn.code)) { s.bad = (s.bad || []).concat(['Liga Europa/Conference — o Zé falha mais aqui (jogos entre ligas)']); s.grade = null; } } catch (e) {}
+    return s;
+  };
+})(zeSelo);
+
+/* ---------- painel nas Estatísticas ---------- */
+function hcRow(g, kind) {
+  const d = Math.round((g.hit - g.exp) * 100);
+  return `<div class="zst-row"><span>${kind === 'hot' ? '🔥' : '❄️'} ${esc(g.k)}</span><span><b style="color:${kind === 'hot' ? 'var(--lime)' : '#ff7a8f'}">${g.w}/${g.n} · ${Math.round(g.hit * 100)}%</b> <span class="muted">prometia ${Math.round(g.exp * 100)}% (${d >= 0 ? '+' : ''}${d})</span></span></div>`;
+}
+function zeHotColdHTML() {
+  const H = zeHotCold();
+  if (!H.nRows) return '';
+  const hot = H.lgHot.slice(0, 4).map(g => hcRow(g, 'hot')).concat(H.famHot.slice(0, 3).map(g => hcRow(g, 'hot')));
+  const cold = H.lgCold.slice(0, 4).map(g => hcRow(g, 'cold')).concat(H.famCold.slice(0, 3).map(g => hcRow(g, 'cold')));
+  return `<div class="panel"><div class="panel-h"><span>🔥 Onde o Zé acerta · ❄️ onde falha</span><span class="muted">${H.nRows} previsões</span></div><div class="panel-b">
+    ${hot.length ? `<div class="rx-h">Confiar mais</div>${hot.join('')}` : '<div class="muted" style="margin-bottom:6px;">Ainda nenhuma liga ou tipo de aposta com 8+ jogos acima do prometido.</div>'}
+    ${cold.length ? `<div class="rx-h">Evitar</div>${cold.join('')}` : '<div class="muted">Nenhuma liga ou tipo de aposta a falhar de forma clara (já descontado o azar).</div>'}
+    <div class="muted" style="font-size:.72rem;margin-top:6px;">Só entram ligas/tipos com jogos suficientes: «quente» com 8+ jogos; «evitar» com 10+ e falhas grandes demais para ser azar. ${H.fewLg ? `${H.fewLg} liga${H.fewLg > 1 ? 's' : ''} ainda com menos de 8 jogos — não tiro conclusões.` : ''} O que está em «evitar» com 12+ jogos sai sozinho dos desafios e do boletim seguro.</div>
+  </div></div>`;
+}
+renderZeStats = (function (prev) {
+  return function () {
+    const r = prev.apply(this, arguments);
+    try {
+      const box = document.getElementById('zeStatsBox'); if (!box) return r;
+      const html = zeHotColdHTML(); if (!html) return r;
+      const health = box.querySelector('.panel'); if (health) health.insertAdjacentHTML('afterend', html); else box.insertAdjacentHTML('afterbegin', html);
+    } catch (e) { console.warn(e); }
+    return r;
+  };
+})(renderZeStats);
+/* resumo de uma linha (Início) */
+function zeHotColdLine() {
+  try {
+    const H = zeHotCold(); if (!H.nRows) return '';
+    const h = H.lgHot.slice(0, 2).map(g => g.k).concat(H.famHot.slice(0, 1).map(g => g.k)), c = H.lgCold.slice(0, 2).map(g => g.k.replace(/ \(.*\)/, '')).concat(H.famCold.slice(0, 1).map(g => g.k));
+    if (!h.length && !c.length) return '';
+    return `${h.length ? '🔥 ' + h.map(esc).join(' · ') : ''}${h.length && c.length ? '  —  ' : ''}${c.length ? '❄️ evitar: ' + c.map(esc).join(' · ') : ''}`;
+  } catch (e) { return ''; }
+}
+/* desafios: etiqueta liga quente / fria */
+chPanelDone = (function (prev) {
+  return function (box) {
+    const r = prev.apply(this, arguments);
+    try {
+      box = box || document.getElementById('zeChallenges'); if (!box) return r;
+      const L = (typeof CH_RENDERED !== 'undefined' && CH_RENDERED.length ? CH_RENDERED : zeChallenges(36));
+      box.querySelectorAll('.ch-card[data-i]').forEach(card => {
+        if (card.querySelector('.ch-hc')) return;
+        const c = L.find(x => String(x.i) === card.dataset.i); if (!c) return;
+        const hc = hcOfMatch(c.m); if (!hc.hot && !hc.cold) return;
+        const t = hc.cold ? `❄️ ${esc(hc.cold.k.replace(/ \(.*\)/, ''))}: o Zé acerta ${hc.cold.w}/${hc.cold.n} (prometia ${Math.round(hc.cold.exp * 100)}%)` : `🔥 ${esc(hc.hot.k)}: o Zé acerta ${hc.hot.w}/${hc.hot.n} aqui`;
+        const sel = card.querySelector('.ch-selo'); const html = `<div class="ch-hc ${hc.cold ? 'c' : 'h'}">${t}</div>`;
+        if (sel) sel.insertAdjacentHTML('afterend', html); else card.insertAdjacentHTML('beforeend', html);
+      });
+    } catch (e) {}
+    return r;
+  };
+})(chPanelDone);
+zeTalk = (function (prev) {
+  return function (q0) {
+    try {
+      const q = normTxt(String(q0 || ''));
+      if (/(onde|em que liga|que liga|que aposta).*(acerta|ganha|falha|sucesso)|liga (quente|fria)|onde (e que )?(es|estas) (melhor|pior)/.test(q)) {
+        const l = zeHotColdLine(); setTimeout(() => fmGo('stats'), 400);
+        return { mood: 'pensativo', html: l ? `📊 ${l}<br><span class="muted">Abri as estatísticas com os números todos.</span>` : '📊 Ainda não tenho jogos suficientes por liga para te dizer com confiança (preciso de 8+ por liga). Abri as estatísticas.' };
+      }
+    } catch (e) {}
+    return prev.apply(this, arguments);
+  };
+})(zeTalk);
+(function () {
+  try {
+    const css = document.createElement('style');
+    css.textContent = `.ch-hc{font-size:.74rem;margin:4px 0 2px;padding:5px 8px;border-radius:8px}.ch-hc.h{background:rgba(200,245,60,.10);border:1px solid rgba(200,245,60,.35)}.ch-hc.c{background:rgba(255,90,110,.10);border:1px solid rgba(255,90,110,.4)}`;
+    document.head.appendChild(css);
+  } catch (e) {}
+})();
 
 renderWallet(); renderUpdateInfo();
 
@@ -16229,6 +16376,7 @@ function rvHomeHTML() {
     <div class="rv-tiles">${tiles.map(([k, ic, lb, nb]) => `<div class="rv-tile" onclick="rvGo('${k}')"><div class="rvic">${ic}</div><div class="rvlb">${lb}</div>${nb ? `<span class="rvnb">${nb}</span>` : ''}</div>`).join('')}</div>
     <div class="rv-strip"><div class="t">🎯 Desafios do Zé<small>Tu ${esc(eur(b.you))} · Zé ${esc(eur(b.ze))}</small></div><button class="rv-go" onclick="fmGo('duelo'); zeChallengesToggle(true)">Desafios</button></div>
     ${(typeof lvCount === 'function' && lvCount()) ? `<div class="rv-strip"><div class="t">⚡ ${lvCount()} jogo${lvCount() === 1 ? '' : 's'} a decorrer<small>hipótese de golo daqui até ao fim, minuto a minuto</small></div><button class="rv-go" onclick="fmGo('jogos'); setTimeout(() => zeLivePanel('scorersBox'), 80)">Ao vivo</button></div>` : ''}
+    ${(typeof zeHotColdLine === 'function' && zeHotColdLine()) ? `<div class="rv-strip"><div class="t">📊 Onde o Zé acerta<small>${zeHotColdLine()}</small></div><button class="rv-go" onclick="fmGo('stats')">Ver</button></div>` : ''}
     <div class="rv-strip"><div class="t">⚽ Marcadores de hoje<small>quem tem mais hipótese de marcar hoje</small></div><button class="rv-go" onclick="fmGo('jogos'); setTimeout(() => zeScorersToday('scorersBox'), 80)">Ver</button></div>
     ${up.length ? `<div class="rv-h2">Próximos jogos <small>${up.length} nos próximos 7 dias ${rvSortChip()}</small></div>${rvGamesHTML(up, 24)}${up.length > 24 ? `<div class="rv-list"><div class="rv-more" onclick="fmGo('jogos')">Ver todos os ${up.length} jogos ›</div></div>` : ''}` : ''}
     ${res.length ? rvResultsHTML(res) : ''}
