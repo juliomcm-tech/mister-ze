@@ -15682,7 +15682,7 @@ function rvCard(m, opts) {
 /* botões: jogo a decorrer → «Ao vivo» do Zé + Flashscore ao vivo; antes do jogo → Flashscore do jogo + Meteo */
 function rvLiveBtns(m, i) {
   const live = typeof lvIsLive === 'function' && lvIsLive(m);
-  const fs = 'https://www.flashscore.pt/pesquisa/?q=' + encodeURIComponent(m.home);
+  const fs = 'https://www.flashscore.pt/';   // a pesquisa do Flashscore não abre por link direto: vai à página principal (abre logo)
   if (live) return `<a class="vc-live" onclick="${i >= 0 ? `openMatchIdx(${i})` : ''}">🔴 Ao vivo</a><a target="_blank" rel="noopener" href="https://www.flashscore.pt/">📺 Flashscore</a>`;
   return `<a target="_blank" rel="noopener" href="${fs}">📺 Flashscore</a><a target="_blank" rel="noopener" href="https://www.google.com/search?q=meteorologia+${encodeURIComponent(m.home)}">🌤 Meteo</a>`;
 }
