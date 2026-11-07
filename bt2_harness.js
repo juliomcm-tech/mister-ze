@@ -28,7 +28,7 @@
       DATA = { ALL: [...byId.values()].sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate)), ODDS: {} };
     }
     const ALL = DATA.ALL;
-    const NOW = Date.UTC(2026, 10, 4);
+    const NOW = window.__BT_NOW || Date.UTC(2026, 10, 4), FROM = window.__BT_FROM || 0;
     const tableBefore = (code, t) => {
       const rows = {};
       ALL.forEach(x => {
@@ -50,7 +50,7 @@
     const domMap = {}; Object.keys(DOMC).forEach(id => { domMap[id] = domLeague(id); });
     if (typeof zeEuroSetData === 'function') zeEuroSetData([...EU], domMap);
     const cand = ALL.filter(x => {
-      const t = new Date(x.utcDate).getTime(); if (t > NOW) return false;
+      const t = new Date(x.utcDate).getTime(); if (t > NOW || t < FROM) return false;
       const code = x.competition.code;
       if (/uefa/.test(code)) return new Date(x.utcDate) >= new Date('2026-09-10');
       return gamesOf(x.homeTeam.id, t, code).length >= 4 && gamesOf(x.awayTeam.id, t, code).length >= 4;
