@@ -4436,12 +4436,14 @@ function normalizeEspn(ev, code, leagueName) {
   const H = c.competitors.find(x => x.homeAway === 'home'), A = c.competitors.find(x => x.homeAway === 'away');
   if (!H || !A || !H.team || !A.team) return null;
   const st = ((c.status || ev.status || {}).type) || {};
-  const done = !!(st.completed || st.state === 'post');
+  // v53d: adiado/cancelado/abandonado vem como «post» sem estar acabado — não é resultado (antes aparecia como 0-0)
+  const off = /POSTPON|CANCEL|ABANDON|SUSPEND|FORFEIT|DELAY/i.test(String(st.name || '') + ' ' + String(st.description || ''));
+  const done = !off && !!(st.completed || st.state === 'post');
   const scorers = (c.details || []).filter(d => (d.scoringPlay || /goal/i.test((d.type && d.type.text) || '')) && !d.ownGoal)
     .flatMap(d => (d.athletesInvolved || []).map(a => a.displayName || a.shortName || '')).filter(Boolean);
   const tm = t => ({ id: String(t.id), name: t.displayName || t.name, shortName: t.shortDisplayName || t.displayName || t.name, abbr: t.abbreviation || '', color: t.color || '', alt: t.alternateColor || '' });
   return {
-    id: String(ev.id), status: done ? 'FINISHED' : st.state === 'in' ? 'IN_PLAY' : 'TIMED', utcDate: ev.date,
+    id: String(ev.id), status: off ? 'POSTPONED' : done ? 'FINISHED' : st.state === 'in' ? 'IN_PLAY' : 'TIMED', utcDate: ev.date,
     competition: { code, name: leagueName }, homeTeam: tm(H.team), awayTeam: tm(A.team),
     score: { fullTime: { home: done ? scoreVal(H.score) : null, away: done ? scoreVal(A.score) : null } },
     scorers, sport: code === 'nba' ? 'nba' : 'soccer'
@@ -11354,7 +11356,7 @@ try { updateContinue(); } catch (e) {}
    - chat novo: classificação de qualquer liga, «transferências benfica», «mercado»
    - a app atualiza-se sozinha quando há versão nova
    ===================================================================== */
-const APP_VER = 'v53';
+const APP_VER = 'v54';
 
 /* ---------- 1) notícias e YouTube sem falhar ---------- */
 const FEED_LS = 'ze_feed_cache_v1';
@@ -12013,7 +12015,7 @@ async function allRecent(id) {
   const v = {
     games: fin.slice(0, 10).map(x => { const home = x.homeTeam.id === String(id); return { home, gf: home ? x.score.fullTime.home : x.score.fullTime.away, ga: home ? x.score.fullTime.away : x.score.fullTime.home, d: x.utcDate, opp: home ? x.awayTeam.shortName : x.homeTeam.shortName }; }),
     last: fin[0] ? fin[0].utcDate : null,
-    upcoming: evs.filter(x => x.status !== 'FINISHED').map(x => x.utcDate).sort()
+    upcoming: evs.filter(x => x.status === 'TIMED' || x.status === 'IN_PLAY').map(x => x.utcDate).sort()
   };
   ALL_RECENT.set(id, { t: Date.now(), v });
   return v;
@@ -13502,7 +13504,7 @@ loadLeagueScorers = async function (code) {
     const comp = ev.competitions && ev.competitions[0];
     if (!comp) return;
     const st = ((comp.status || ev.status || {}).type) || {};
-    if (!(st.completed || st.state === 'post')) return;
+    if (!(st.completed || st.state === 'post') || /POSTPON|CANCEL|ABANDON|SUSPEND/i.test(String(st.name || '') + String(st.description || ''))) return;
     (comp.competitors || []).forEach(cp => { const t = T(String(cp.team.id)); t.games++; t.teamGoals += scoreVal(cp.score) || 0; t.dates.push(ev.date); });
     (comp.details || []).forEach(d => {
       if (!(d.scoringPlay || /goal/i.test((d.type && d.type.text) || '')) || d.ownGoal) return;
@@ -14250,6 +14252,146 @@ zeTalk = (function (prev) {
   };
 })(zeTalk);
 
+
+/* =====================================================================
+   v53d · desafios do Zé + jogos adiados
+   1) 🎯 Desafios do Zé (no Duelo): o Zé mostra as opções do dia já escolhidas — valor (com odds), seguras e
+      o jogo do dia. «Aceitar» abre o duelo nesse jogo com as odds das casas e a decisão do Zé feita.
+   2) Jogos adiados/cancelados deixam de contar como 0-0: desfaz o que foi decidido com esse 0-0 falso
+      (diário, seleções seguras e apostas liquidadas sozinhas).
+   ===================================================================== */
+/* ---------- 1) desafios ---------- */
+let CH_MEM = null;
+function zeChallenges(hours) {
+  const key = (hours || 36) + '|' + matches.length + '|' + Object.keys(STUDY).length;
+  if (CH_MEM && CH_MEM.key === key && Date.now() - CH_MEM.t < 60e3) return CH_MEM.v;
+  const v = zeChallengesRaw(hours); CH_MEM = { key, t: Date.now(), v }; return v;
+}
+function zeChallengesRaw(hours) {
+  const now = Date.now(), out = [], seen = new Set();
+  const list = matches.map((m, i) => ({ m, i, k: kickOf(m) })).filter(x => x.m.live && x.m.espn && !x.m.past && !x.m.aviso && x.k && x.k.getTime() > now + 5 * 60e3 && x.k.getTime() < now + (hours || 36) * 3600e3);
+  // valor (só jogos já estudados com odds; regras da simulação)
+  list.forEach(x => {
+    const st = studyFor(x.m); if (!st || !st.books || !st.books.length) return;
+    let v = null;
+    try { v = oddsValue(x.m).filter(o => o.ev > zeEdgeFor(0.03, o.o) && o.o <= 6 && o.p >= 0.2 && !o.doubt && !o.gate).sort((a, b) => b.ev - a.ev)[0]; } catch (e) {}
+    if (v) { out.push({ ...x, cat: 'valor', k2: v.k, p: v.p, odd: v.o, book: v.book, ev: v.ev, score: 2 + v.ev }); seen.add(x.i); }
+  });
+  // seguras (aposta lógica forte)
+  list.forEach(x => {
+    if (seen.has(x.i)) return;
+    const z = zeLogical(x.m); if (!z || z.fallback || z.p < 0.75) return;
+    const st = studyFor(x.m), o = st && st.books && st.books[0] && st.books[0].odds[z.k];
+    out.push({ ...x, cat: 'segura', k2: z.k, p: z.p, odd: o > 1 ? o : null, book: o > 1 ? st.books[0].provider : null, score: 1 + z.p });
+    seen.add(x.i);
+  });
+  // jogo do dia (favorito mais forte), se ainda não estiver
+  try {
+    let best = null; list.forEach(x => { if (seen.has(x.i)) return; const r = modelo(x.m), f = favOf(r.mk); if (f !== 'X' && r.mk[f] >= 0.5 && (!best || r.mk[f] > best.p)) best = { ...x, cat: 'dia', k2: f, p: r.mk[f], odd: null, score: 0.5 + r.mk[f] }; });
+    if (best) out.push(best);
+  } catch (e) {}
+  return out.sort((a, b) => b.score - a.score || a.k - b.k).slice(0, 8);
+}
+const CH_TAG = { valor: ['💶', 'Valor', 'odd acima do que o Zé acha justo'], segura: ['🛡️', 'Segura', 'a aposta mais provável do jogo'], dia: ['⭐', 'Jogo do dia', 'o favorito mais forte'] };
+function zeChallengesHTML() {
+  const C = zeChallenges(36);
+  if (!C.length) return `<div class="muted" style="padding:6px 0;">Hoje o Zé não tem desafios: nas próximas 36 horas não há jogos com aposta segura forte nem valor. Carrega em 📡 Atualizar mais logo.</div>`;
+  return C.map((c, n) => {
+    const t = CH_TAG[c.cat];
+    return `<div class="vc-card ch-card" data-i="${c.i}"><div class="vc-top">${esc(c.m.league || '')} · ${esc(c.m.date || '')}${c.m.kickoff ? ' · ' + esc(c.m.kickoff) : ''}</div>
+      <div class="vc-teams" onclick="openMatchIdx(${c.i})">${esc(c.m.home)} vs ${esc(c.m.away)}</div>
+      <div class="vc-bet">${t[0]} <b>${t[1]}:</b> ${esc(marketName(c.k2, c.m))} · Zé ${pct(c.p)}${c.odd ? ` · ${esc(c.book || 'casa')} ${(+c.odd).toFixed(2)}` : ` · justa ${fairOdd(c.p)}`}${c.ev ? ` · valor +${Math.round(c.ev * 100)}%` : ''}</div>
+      <div class="ch-acts"><button class="btn btn-lime" onclick="aceitarDesafio(${c.i})">⚔️ Aceitar desafio</button><span class="muted" style="font-size:.74rem;">${esc(t[2])}</span></div></div>`;
+  }).join('') + `<div class="muted" style="font-size:.74rem;margin-top:4px;">As odds são da Bet365/DraftKings quando o Zé já estudou o jogo. A tua casa pode pagar diferente — confirma antes de apostar.</div>`;
+}
+function zeChallengesToggle(force) {
+  const box = document.getElementById('zeChallenges'); if (!box) return;
+  const open = force != null ? force : box.hidden;
+  box.hidden = !open;
+  const b = document.getElementById('btnChallenges'); if (b) b.textContent = open ? '🎯 Esconder desafios' : '🎯 Desafios do Zé';
+  if (open) { box.innerHTML = `<div class="panel-h" style="margin:-14px -14px 12px;"><span>🎯 Desafios do Zé</span><span class="muted">as opções dele para hoje e amanhã</span></div>${zeChallengesHTML()}`; }
+}
+let DUEL_AUTO = null;
+function aceitarDesafio(i) {
+  DUEL_AUTO = i;
+  zeChallengesToggle(false);
+  prepararDuelo(i);
+  setTimeout(() => { const el = document.getElementById('dueloBox'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120);
+  // se o jogo já estava estudado, as odds já foram preenchidas: decide já
+  setTimeout(duelAutoDecide, 400);
+}
+function duelAutoDecide() {
+  if (DUEL_AUTO == null || !dueloAtual || matchIndex(dueloAtual.m) !== DUEL_AUTO) return;
+  const filled = [...document.querySelectorAll('#dueloBox .oddin')].some(el => +el.value > 1);
+  if (!filled) return;
+  DUEL_AUTO = null;
+  try { zeDecidirUI(); setTimeout(() => { const d = document.getElementById('zeDecision'); if (d) d.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150); } catch (e) {}
+}
+prefillMarketOdds = (function (prev) { return function (m) { const r = prev.apply(this, arguments); setTimeout(duelAutoDecide, 50); return r; }; })(prefillMarketOdds);
+/* o duelo abre no primeiro desafio (em vez de um jogo qualquer) */
+pickDueloMatch = (function (prev) { return function () { try { const c = zeChallenges(36)[0]; if (c) return c.m; } catch (e) {} return prev.apply(this, arguments); }; })(pickDueloMatch);
+(function () {
+  try {
+    const css = document.createElement('style');
+    css.textContent = `.ch-acts{display:flex;align-items:center;gap:10px;flex-wrap:wrap;} #zeChallenges{padding:14px;margin-bottom:14px;}`;
+    document.head.appendChild(css);
+    const view = document.getElementById('view-duelo'); if (!view) return;
+    const head = view.querySelector('.screen-head .btn-row');
+    if (head && !document.getElementById('btnChallenges')) head.insertAdjacentHTML('afterbegin', '<button class="btn btn-lime" id="btnChallenges" onclick="zeChallengesToggle()">🎯 Desafios do Zé</button>');
+    const db = document.getElementById('dueloBox');
+    if (db && !document.getElementById('zeChallenges')) db.insertAdjacentHTML('beforebegin', '<div id="zeChallenges" class="panel" hidden></div>');
+  } catch (e) {}
+})();
+fmGo = (function (prev) {
+  return function (v) {
+    const r = prev.apply(this, arguments);
+    // ao entrar no Duelo sem duelo aberto, mostra logo os desafios
+    if (v === 'duelo') { try { const db = document.getElementById('dueloBox'); if (!db || db.style.display === 'none' || !db.innerHTML.trim()) zeChallengesToggle(true); } catch (e) {} }
+    return r;
+  };
+})(fmGo);
+zeTalk = (function (prev) {
+  return function (raw, opts) {
+    try { const q = normTxt(raw); if (/desafio|desafia-me|o que apostas hoje|qual e a tua aposta|em que jogo apostas/.test(q)) { setTimeout(() => { fmGo('duelo'); zeChallengesToggle(true); }, 300); const c = zeChallenges(36); return { mood: 'gozao', html: c.length ? `🎯 Hoje desafio-te nisto: <b>${esc(marketName(c[0].k2, c[0].m))}</b> em ${esc(c[0].m.home)} vs ${esc(c[0].m.away)} (${pct(c[0].p)}). Abri a lista no Duelo — tens mais ${c.length - 1}.` : 'Hoje não tenho desafio que valha a pena. Às vezes a melhor aposta é não apostar.' }; } } catch (e) {}
+    return prev.apply(this, arguments);
+  };
+})(zeTalk);
+
+/* ---------- 2) jogos adiados: desfazer o 0-0 falso ---------- */
+function undoPostponed(payload) {
+  const P = ((payload && payload.matches) || []).filter(x => x && x.status === 'POSTPONED');
+  if (!P.length) return 0;
+  const ids = new Set(P.map(x => String(x.id))); let n = 0;
+  try {
+    const D = diaryLoad(); let ch = false;
+    Object.values(D.items).forEach(it => { if (it.res && ids.has(String(it.ev))) { delete it.res; delete it.g; delete it.graded; ch = true; n++; } });
+    if (ch) { diarySave(D); try { DIARY_FIX_CACHE = null; } catch (e) {} }
+  } catch (e) {}
+  try {
+    const L = safeLog(); let ch = false;
+    Object.values(L.legs).forEach(l => { if (l.w != null && ids.has(String(l.ev))) { delete l.w; delete l.res; ch = true; n++; } });
+    if (ch) lsSet(SAFE_KEY, L);
+  } catch (e) {}
+  try {
+    const fake = P.map(x => ({ ...x, score: { fullTime: { home: 0, away: 0 } } }));
+    const b = loadBank(); let ch = false;
+    const fix = (bet, who) => {
+      if (!bet.autoSettled || (bet.status !== 'win' && bet.status !== 'loss')) return;
+      if (!/\b0-0\b/.test(bet.finalScores || '')) return;
+      const legs = Array.isArray(bet.legs) && bet.legs.length ? bet.legs : [legFromBet(bet)];
+      if (!legs[0] || !legs.some(l => resolveLeg(l, fake, bet.at))) return;
+      if (bet.status === 'win') { const ret = Math.round(bet.stake * bet.odd * 100) / 100; if (who === 'ze') b.ze = Math.round((b.ze - ret) * 100) / 100; else b.you = Math.round((b.you - ret) * 100) / 100; }
+      bet.status = 'open'; delete bet.settledAt; delete bet.autoSettled; delete bet.finalScores; bet.note = 'Jogo adiado — voltou a ficar em aberto';
+      ch = true; n++;
+    };
+    b.bets.forEach(x => fix(x, 'you')); b.zeBets.forEach(x => fix(x, 'ze'));
+    if (ch) saveBank(b);
+  } catch (e) { console.warn(e); }
+  if (n) { try { toast(`↩️ ${n} registo${n > 1 ? 's' : ''} desfeito${n > 1 ? 's' : ''}: jogo adiado não é 0-0.`); } catch (e) {} }
+  return n;
+}
+applyLive = (function (prev) { return function (payload) { try { undoPostponed(payload); } catch (e) {} return prev.apply(this, arguments); }; })(applyLive);
+
 renderWallet(); renderUpdateInfo();
 
 </script>
@@ -14438,18 +14580,22 @@ body.rv #view-portal .portal-grid, body.rv #hojePanel, body.rv #view-portal > .s
 })();
 
 /* escudo desenhado (sem logótipos): duas cores tiradas do nome + iniciais */
+const RV_CREST_MEM = new Map();
 function rvCrest(name) {
   const s = String(name || '?');
+  if (RV_CREST_MEM.has(s)) return RV_CREST_MEM.get(s);
   let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
   const pal = ['#d62839', '#1d4ed8', '#16a34a', '#f59e0b', '#7c3aed', '#0891b2', '#111827', '#dc2626', '#2563eb', '#059669', '#ea580c', '#9333ea'];
   const a = pal[h % pal.length], b = pal[(h >> 4) % pal.length] === a ? '#f8fafc' : pal[(h >> 4) % pal.length];
   const words = s.replace(/[^A-Za-zÀ-ÿ0-9 ]/g, ' ').split(/\s+/).filter(w => w && !/^(fc|sc|cf|cd|ac|as|sl|sv|vfl|vfb|fk|sk|club|de|da|do|the)$/i.test(w));
   const ini = (words.length >= 2 ? words[0][0] + words[1][0] : (words[0] || s).slice(0, 2)).toUpperCase();
-  const style = h % 3;
-  const fill = style === 0 ? `<path d="M50 4 L92 16 L92 52 C92 80 72 98 50 108 C28 98 8 80 8 52 L8 16 Z" fill="${a}"/><path d="M50 4 L92 16 L92 52 C92 80 72 98 50 108 Z" fill="${b}" opacity=".9"/>`
-    : style === 1 ? `<path d="M50 4 L92 16 L92 52 C92 80 72 98 50 108 C28 98 8 80 8 52 L8 16 Z" fill="${a}"/><path d="M8 40 H92 V58 H8 Z" fill="${b}"/>`
-      : `<path d="M50 4 L92 16 L92 52 C92 80 72 98 50 108 C28 98 8 80 8 52 L8 16 Z" fill="${b}"/><path d="M38 6 H62 V104 C56 106 44 106 38 104 Z" fill="${a}"/>`;
-  return `<svg viewBox="0 0 100 112" aria-hidden="true"><defs><linearGradient id="rvg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>${fill}<path d="M50 4 L92 16 L92 52 C92 80 72 98 50 108 C28 98 8 80 8 52 L8 16 Z" fill="url(#rvg)" stroke="#f1f5f9" stroke-width="5"/><text x="50" y="66" text-anchor="middle" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="34" fill="#fff" stroke="#000" stroke-opacity=".45" stroke-width="2" paint-order="stroke">${esc(ini)}</text></svg>`;
+  const style = h % 3, S = 'M50 4 L92 16 L92 52 C92 80 72 98 50 108 C28 98 8 80 8 52 L8 16 Z';
+  const fill = style === 0 ? `<path d="${S}" fill="${a}"/><path d="M50 4 L92 16 L92 52 C92 80 72 98 50 108 Z" fill="${b}" opacity=".9"/>`
+    : style === 1 ? `<path d="${S}" fill="${a}"/><path d="M8 40 H92 V58 H8 Z" fill="${b}"/>`
+      : `<path d="${S}" fill="${b}"/><path d="M38 6 H62 V104 C56 106 44 106 38 104 Z" fill="${a}"/>`;
+  const out = `<svg viewBox="0 0 100 112" aria-hidden="true">${fill}<path d="M8 16 L50 4 L92 16 L92 46 L8 46 Z" fill="#fff" opacity=".16"/><path d="${S}" fill="none" stroke="#f1f5f9" stroke-width="5"/><text x="50" y="66" text-anchor="middle" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="34" fill="#fff" stroke="#000" stroke-opacity=".45" stroke-width="2" paint-order="stroke">${esc(ini)}</text></svg>`;
+  RV_CREST_MEM.set(s, out);
+  return out;
 }
 function rvUpcoming(hours) {
   const now = Date.now();
@@ -14459,6 +14605,8 @@ function rvResults(n) {
   try { const L = lsGet(LIVE_KEY, null); return ((L && L.matches) || []).filter(x => x.status === 'FINISHED' && x.score && x.score.fullTime && x.score.fullTime.home != null).sort((a, b) => new Date(b.utcDate) - new Date(a.utcDate)).slice(0, n); } catch (e) { return []; }
 }
 function rvPickOfDay() {
+  // o jogo do dia é o 1.º desafio do Zé (igual no banner, no Duelo e na Análise do dia)
+  try { const c = zeChallenges(36)[0]; if (c) return { m: c.m, i: c.i, k: c.k, r: null, f: c.k2, p: c.p, label: marketName(c.k2, c.m), cat: c.cat }; } catch (e) {}
   const up = rvUpcoming(36); let best = null;
   up.forEach(x => { try { const r = modelo(x.m), f = favOf(r.mk), p = r.mk[f]; if (f !== 'X' && (!best || p > best.p)) best = { ...x, r, f, p }; } catch (e) {} });
   return best;
@@ -14519,9 +14667,9 @@ function rvHomeHTML() {
   const openBets = b.bets.filter(x => x.status === 'open').length + b.zeBets.filter(x => x.status === 'open').length;
   const slides = [];
   if (pick) {
-    const team = pick.f === '1' ? pick.m.home : pick.m.away;
+    const lab = pick.label || (pick.f === '1' ? pick.m.home + ' vence' : pick.m.away + ' vence');
     slides.push(`<div class="rv-slide"><span class="rv-tag">Jogo do dia</span><div class="rv-timer" data-ko="${pick.k.getTime()}">⏳ ${rvClock(pick.k - Date.now())}</div>
-      <div class="rv-big">${esc(pick.m.home)}<br>vs ${esc(pick.m.away)}</div><div class="rv-sub">${esc(pick.m.league || '')} · Zé: <b>${esc(team)}</b> ganha ${Math.round(pick.p * 100)}%</div>
+      <div class="rv-big">${esc(pick.m.home)}<br>vs ${esc(pick.m.away)}</div><div class="rv-sub">${esc(pick.m.league || '')} · Zé: <b>${esc(lab)}</b> ${Math.round(pick.p * 100)}%</div>
       <div class="rv-art">⚽</div><button class="rv-cta" onclick="openMatchIdx(${pick.i})">Ver análise</button></div>`);
   }
   slides.push(`<div class="rv-slide s2"><span class="rv-tag">Duelo</span><div class="rv-big">Tu ${esc(eur(b.you).replace(' €', ''))}€<br>Zé ${esc(eur(b.ze).replace(' €', ''))}€</div><div class="rv-sub">${openBets} aposta${openBets === 1 ? '' : 's'} em aberto.</div><div class="rv-art">⚔️</div><button class="rv-cta" onclick="prepararDuelo()">Jogar</button></div>`);
@@ -14530,7 +14678,7 @@ function rvHomeHTML() {
   const up = rvUpcoming(24 * 7), res = rvResults(6);
   return `<div class="rv-banner" id="rvBanner">${slides.join('')}</div><div class="rv-dots" id="rvDots">${slides.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>
     <div class="rv-tiles">${tiles.map(([k, ic, lb, nb]) => `<div class="rv-tile" onclick="rvGo('${k}')"><div class="rvic">${ic}</div><div class="rvlb">${lb}</div>${nb ? `<span class="rvnb">${nb}</span>` : ''}</div>`).join('')}</div>
-    <div class="rv-strip"><div class="t">⚔️ Duelo do dia<small>Tu ${esc(eur(b.you))} · Zé ${esc(eur(b.ze))}</small></div><button class="rv-go" onclick="prepararDuelo()">Começar</button></div>
+    <div class="rv-strip"><div class="t">🎯 Desafios do Zé<small>Tu ${esc(eur(b.you))} · Zé ${esc(eur(b.ze))}</small></div><button class="rv-go" onclick="fmGo('duelo'); zeChallengesToggle(true)">Desafios</button></div>
     ${up.length ? `<div class="rv-h2">Próximos jogos <small>${up.length} nos próximos 7 dias · por hora</small></div>${rvGamesHTML(up, 24)}${up.length > 24 ? `<div class="rv-list"><div class="rv-more" onclick="fmGo('jogos')">Ver todos os ${up.length} jogos ›</div></div>` : ''}` : ''}
     ${res.length ? `<div class="rv-h2">Últimos resultados</div><div class="rv-list">${res.map(rvRowRes).join('')}</div>` : ''}
     <div class="rv-h2">Caixa de entrada <small>avisos do Zé</small></div>`;
@@ -14583,9 +14731,23 @@ function rvCalRender() {
       return true;
     }).sort((a, b) => a.k - b.k);
   const name = (RV_COMPS.find(c => c[0] === f) || [0, 0, 'Todos os jogos'])[2];
-  let html = '', cur = null;
-  list.slice(0, 120).forEach(x => { const dh = rvDayHead(x.k); if (dh.txt !== cur) { html += `<div class="rv-h2" style="margin-top:14px;"><span style="${dh.today ? 'color:var(--lime);-webkit-text-fill-color:var(--lime);' : ''}">${esc(dh.txt)}</span></div>`; cur = dh.txt; } html += rvCard(x.m); });
-  box.innerHTML = `<div class="rv-h2">${esc(name)} <small>${list.length} jogo${list.length === 1 ? '' : 's'} · por dia e hora</small></div>` + (list.length ? html : '<div class="rv-list"><div class="rv-more" style="color:var(--muted);cursor:default;">Sem jogos para este filtro.</div></div>');
+  // aos bocados: 24 caixas de cada vez (o telemóvel não desenha 120 de uma vez)
+  RV_CAL_STATE = { list, n: 0, cur: null };
+  box.innerHTML = `<div class="rv-h2">${esc(name)} <small>${list.length} jogo${list.length === 1 ? '' : 's'} · por dia e hora</small></div>` + (list.length ? '<div id="rvCalBody"></div><div id="rvCalMore"></div>' : '<div class="rv-list"><div class="rv-more" style="color:var(--muted);cursor:default;">Sem jogos para este filtro.</div></div>');
+  if (list.length) rvCalMore();
+}
+let RV_CAL_STATE = null, RV_CAL_OBS = null;
+function rvCalMore() {
+  const S = RV_CAL_STATE, body = document.getElementById('rvCalBody'), more = document.getElementById('rvCalMore'); if (!S || !body) return;
+  let html = '';
+  S.list.slice(S.n, S.n + 24).forEach(x => { const dh = rvDayHead(x.k); if (dh.txt !== S.cur) { html += `<div class="rv-h2" style="margin-top:14px;"><span style="${dh.today ? 'color:var(--lime);-webkit-text-fill-color:var(--lime);' : ''}">${esc(dh.txt)}</span></div>`; S.cur = dh.txt; } html += rvCard(x.m); });
+  S.n = Math.min(S.list.length, S.n + 24);
+  body.insertAdjacentHTML('beforeend', html);
+  if (!more) return;
+  if (S.n < S.list.length) {
+    more.innerHTML = `<div class="rv-list"><div class="rv-more" onclick="rvCalMore()">Mostrar mais ${Math.min(24, S.list.length - S.n)} de ${S.list.length - S.n} ›</div></div>`;
+    try { if (RV_CAL_OBS) RV_CAL_OBS.disconnect(); RV_CAL_OBS = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) rvCalMore(); }, { rootMargin: '600px' }); RV_CAL_OBS.observe(more); } catch (e) {}
+  } else { more.innerHTML = ''; try { if (RV_CAL_OBS) RV_CAL_OBS.disconnect(); } catch (e) {} }
 }
 renderCalendar = (function (prev) { return function () { const r = prev.apply(this, arguments); try { rvCompsRender(); rvCalRender(); } catch (e) {} return r; }; })(renderCalendar);
 
@@ -14656,8 +14818,21 @@ renderMatchBlock = function (m, isBest, wx) {
   let extra = '';
   if (wx) extra = `🌤 ${esc(wx.city || '')}: ${esc(wx.label || '')}${wx.tmax != null ? ` · ${Math.round(wx.tmin)}–${Math.round(wx.tmax)}°C` : ''}${wx.wind != null ? ` · vento ~${Math.round(wx.wind)} km/h` : ''}`;
   if (m.fatores) extra += (extra ? '<br>' : '') + `📋 ${esc(m.fatores)}`;
-  return rvCard(m, { info: true, star: isBest, extra });
+  let star = false; try { const c = zeChallenges(36)[0]; star = !!c && c.m.home === m.home && c.m.away === m.away; } catch (e) { star = isBest; }
+  return rvCard(m, { info: true, star, extra });
 };
+
+/* desafios do Zé com a caixa de jogo (escudos, bandeira, faixa de cor) */
+function rvEnhance(root) {
+  (root || document).querySelectorAll('.vc-card[data-i]').forEach(card => {
+    if (card.dataset.rv) return; const m = matches[+card.dataset.i]; if (!m) return;
+    card.dataset.rv = '1';
+    const acc = rvAcc(m); if (acc) card.style.setProperty('--acc', acc);
+    const top = card.querySelector('.vc-top'); if (top && !/^\S*\p{Extended_Pictographic}/u.test(top.textContent.trim())) top.innerHTML = `${rvFlag(m.espn && m.espn.code, m.league)} ${top.innerHTML}`;
+    const t = card.querySelector('.vc-teams'); if (t) t.outerHTML = `<div class="vc-row" onclick="openMatchIdx(${+card.dataset.i})"><div class="rv-team">${rvCrest(m.home)}<span>${esc(m.home)}</span></div><span class="vs">VS</span><div class="rv-team">${rvCrest(m.away)}<span>${esc(m.away)}</span></div></div>`;
+  });
+}
+zeChallengesToggle = (function (prev) { return function () { const r = prev.apply(this, arguments); try { rvEnhance(document.getElementById('zeChallenges')); } catch (e) {} return r; }; })(zeChallengesToggle);
 /* Definições: voltar ao layout normal */
 renderConfig = (function (prev) {
   return function () {
