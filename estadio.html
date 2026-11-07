@@ -11299,10 +11299,11 @@ const calTrusted = m => m.calSt === 'ok' || m.calSt === 'moved' || m.calSt === '
 function calGate() {
   if (typeof CAL_STATIC === 'undefined') return 0;
   CAL_STATIC.forEach(m => { if (!m.calSt) { m.calSt = 'pending'; m.calNote = CAL_PENDING_TXT; if (!m.aviso) m.aviso = CAL_PENDING_TXT; } });
-  if (CAL_SHOW_ALL) CAL_STATIC.forEach(m => { if (/missing|dup|unknown/.test(m.calSt || '') && !matches.includes(m)) matches.push(m); });
-  let n = 0;
+  let n = 0, add = 0;
+  if (CAL_SHOW_ALL) CAL_STATIC.forEach(m => { if (/missing|dup|unknown/.test(m.calSt || '') && !matches.includes(m)) { matches.push(m); add++; } });
   for (let k = matches.length - 1; k >= 0; k--) { const m = matches[k]; if (CAL_STATIC.includes(m) && !calTrusted(m) && !(CAL_SHOW_ALL && m.calSt !== 'pending')) { matches.splice(k, 1); n++; } }
-  try { MODEL_CACHE.clear(); ZE_MODEL_CACHE.clear(); } catch (e) {}
+  // v56b: só limpa as contas guardadas se a lista mudou (antes limpava em cada abertura do Calendário → tudo recalculado)
+  if (n || add) { try { MODEL_CACHE.clear(); ZE_MODEL_CACHE.clear(); } catch (e) {} }
   return n;
 }
 function calUngate() { CAL_STATIC.forEach(m => { if (!matches.includes(m)) matches.push(m); if (m.calSt === 'pending') { delete m.calSt; delete m.calNote; if (m.aviso === CAL_PENDING_TXT) m.aviso = m._orig.aviso || null; } }); }
@@ -15272,7 +15273,7 @@ function zarchSync() {
     Object.entries(safeLog().legs).forEach(([id, x]) => { if (x.w == null) return; put('b|' + id, { t: 'seguro', d: new Date(x.d).toISOString().slice(0, 10), lg: x.lg || '', c: '', j: `${x.h} vs ${x.a}`, k: x.k, s: x.k, p: x.p, w: x.w, r: x.res || '' }); });
   } catch (e) {}
   const ids = Object.keys(A.rows);
-  if (ids.length > 6000) { ids.sort((a, b) => A.rows[a].d.localeCompare(A.rows[b].d)).slice(0, ids.length - 6000).forEach(id => delete A.rows[id]); ch = true; }
+  if (ids.length > 3000) { ids.sort((a, b) => A.rows[a].d.localeCompare(A.rows[b].d)).slice(0, ids.length - 3000).forEach(id => delete A.rows[id]); ch = true; }
   if (ch) lsSet(ZARCH_KEY, A);
   return A;
 }
@@ -15404,10 +15405,74 @@ fmGo = (function (prev) { return function (v) { const r = prev.apply(this, argum
 })();
 zeTalk = (function (prev) {
   return function (q0) {
-    try { const q = normTxt(String(q0 || '')); if (/estatistic|quanto (e que )?acert|percentagem de acert|onde (e que )?falh/.test(q)) { setTimeout(() => fmGo('stats'), 300); return { mood: 'pensativo', html: '📊 Abri as minhas estatísticas: acertos por dia e mês, onde falho mais (liga e tipo de aposta), travão automático e exportar para Excel.' }; } } catch (e) {}
+    try {
+      const q = normTxt(String(q0 || ''));
+      if (/melhor aposta|aposta (do|de) (dia|hoje)|o que (e que )?(devo )?apostar|em que (jogo )?(devo )?apostar|qual (e )?a tua aposta/.test(q)) {
+        const C = zeChallenges(36);
+        if (!C.length) return { mood: 'pensativo', html: 'Hoje não tenho nenhuma aposta que valha a pena (nas próximas 36 h não há nada seguro nem com valor acima de 1.25). Às vezes a melhor aposta é não apostar.' };
+        const c = C[0], o = c.odd > 1 ? `${esc(c.book || 'casa')} ${(+c.odd).toFixed(2)}` : `justa ${fairOdd(c.p)}`;
+        setTimeout(() => { fmGo('duelo'); zeChallengesToggle(true); }, 400);
+        return { mood: 'gozao', html: `🎯 A minha de hoje: <b>${esc(marketName(c.k2, c.m))}</b> em ${esc(c.m.home)} vs ${esc(c.m.away)} (${esc(c.m.kickoff || '')}) — dou-lhe ${pct(c.p)} · ${o}.${C.length > 1 ? `<br>Tenho mais ${C.length - 1} na lista de desafios (abri-a no Duelo).` : ''}<br><span class="muted">Provável não é certo: confirma a odd na tua casa.</span>` };
+      }
+      if (/(o ze|tu) acerta(s)? quanto|quanto (e que )?(o ze |tu )?acerta|quantas (e que )?acert|percentagem/.test(q) && !/banca/.test(q)) {
+        const rows = Object.values(zarchSync().rows), ap = rows.filter(r => r.t === 'aposta'), g = zstAgg(ap), sc = zstAgg(rows.filter(r => r.t === 'marcador'));
+        setTimeout(() => fmGo('stats'), 400);
+        return { mood: 'pensativo', html: g.n ? `📊 Aposta lógica: acertei <b>${g.w} de ${g.n}</b> (${Math.round(g.hit * 100)}%) e prometia ${Math.round(g.exp * 100)}%.${sc.n ? ` Marcadores: ${sc.w}/${sc.n}.` : ''} Abri as estatísticas completas.` : '📊 Ainda não tenho previsões decididas — dá-me uns dias de jogos. Abri as estatísticas.' };
+      }
+      if (/estatistic|quanto (e que )?acert|percentagem de acert|onde (e que )?falh/.test(q)) { setTimeout(() => fmGo('stats'), 300); return { mood: 'pensativo', html: '📊 Abri as minhas estatísticas: acertos por dia e mês, onde falho mais (liga e tipo de aposta), travão automático e exportar para Excel.' }; } } catch (e) {}
     return prev.apply(this, arguments);
   };
 })(zeTalk);
+
+
+/* =====================================================================
+   v56b · auditoria: rapidez do Calendário
+   - O Calendário era desenhado 2 vezes ao abrir (o Estádio e o clássico pediam os dois) → agora 1.
+   - As contas do Zé para os jogos da semana são feitas aos bocadinhos quando o telemóvel está parado
+     (depois de abrir a app e de cada Atualizar). Ao abrir Jogos ordenados por %, já está tudo pronto.
+   ===================================================================== */
+let ZW_RUN = 0;
+function zeWarm() {
+  if (/jsdom/i.test(navigator.userAgent || '') || window.__ZE_LAB) return;
+  const run = ++ZW_RUN, now = Date.now(), wk = now + 7 * 864e5;
+  const list = matches.filter(m => !m.past && !m.aviso).map(m => ({ m, k: kickOf(m) })).filter(x => x.k && x.k.getTime() > now - 2 * 3600e3).sort((a, b) => (a.k.getTime() < wk ? 0 : 1) - (b.k.getTime() < wk ? 0 : 1) || a.k - b.k).slice(0, 400).map(x => x.m);   // os mesmos jogos que o Calendário mostra (primeiro a semana)
+  let i = 0;
+  const idle = window.requestIdleCallback || (f => setTimeout(() => f({ timeRemaining: () => 8 }), 60));
+  const step = dl => {
+    if (run !== ZW_RUN) return;                       // houve dados novos: recomeça
+    const t0 = performance.now();
+    while (i < list.length && (dl.timeRemaining() > 4 || performance.now() - t0 < 6)) { try { zeLogical(list[i]); } catch (e) {} i++; if (performance.now() - t0 > 12) break; }
+    if (i < list.length) idle(step, { timeout: 1500 });
+  };
+  idle(step, { timeout: 1500 });
+}
+applyLive = (function (prev) { return function () { const r = prev.apply(this, arguments); setTimeout(zeWarm, 1500); return r; }; })(applyLive);
+setTimeout(zeWarm, 2500);
+
+/* O «modelo» lia e recalculava a memória de aprendizagem (e o diário) em cada chamada, mesmo com a
+   resposta já guardada: ~1,2 ms × centenas de chamadas por ecrã. Agora reaproveita durante 5 s ou até mudar. */
+const LS_VER = {};
+lsSet = (function (prev) { return function (k) { LS_VER[k] = (LS_VER[k] || 0) + 1; return prev.apply(this, arguments); }; })(lsSet);
+let LW_IN = 0, LW_MEMO = null, DP_MEMO = null;
+learnLoad = (function (prev) {
+  return function () {
+    if (!LW_IN) return prev.apply(this, arguments);
+    const v = LS_VER[LEARN_KEY] || 0;
+    if (LW_MEMO && LW_MEMO.v === v && Date.now() - LW_MEMO.t < 5000) return LW_MEMO.r;
+    const r = prev.apply(this, arguments); LW_MEMO = { v, t: Date.now(), r }; return r;
+  };
+})(learnLoad);
+if (typeof diaryPro === 'function') diaryPro = (function (prev) {
+  return function () {
+    if (!LW_IN) return prev.apply(this, arguments);
+    const v = (LS_VER[DIARY_KEY] || 0) + '|' + (LS_VER[LEARN_KEY] || 0);
+    if (DP_MEMO && DP_MEMO.v === v && Date.now() - DP_MEMO.t < 5000) return DP_MEMO.r;
+    const r = prev.apply(this, arguments); DP_MEMO = { v, t: Date.now(), r }; return r;
+  };
+})(diaryPro);
+learnWeights = (function (prev) { return function () { LW_IN++; try { return prev.apply(this, arguments); } finally { LW_IN--; } }; })(learnWeights);
+/* depois de estudar jogos (odds novas), volta a preparar as contas aos bocadinhos */
+zeStudy = (function (prev) { return async function () { const r = await prev.apply(this, arguments); clearTimeout(window.__zwT); window.__zwT = setTimeout(zeWarm, 2500); return r; }; })(zeStudy);
 
 renderWallet(); renderUpdateInfo();
 
@@ -15798,8 +15863,11 @@ function rvCompsRender() {
 }
 fmGo = (function (prev) { return function (v) { const r = prev.apply(this, arguments); if (v === 'jogos') { try { rvCompsRender(); rvCalRender(); } catch (e) {} } return r; }; })(fmGo);
 /* Calendário: a mesma lista limpa do início, por dia e por hora, com o filtro da competição */
+let RV_CAL_LAST = null;
 function rvCalRender() {
   const view = document.getElementById('view-jogos'); if (!view) return;
+  // pedido duas vezes seguidas para o mesmo estado (fmGo + renderCalendar): só desenha uma vez
+  try { const key = [typeof currentCalFilter !== 'undefined' ? currentCalFilter : 'all', ((document.getElementById('searchInput') || {}).value || ''), matches.length, rvSortMode(), Object.keys(STUDY).length].join('|'); if (RV_CAL_LAST && RV_CAL_LAST.key === key && Date.now() - RV_CAL_LAST.t < 400 && document.getElementById('rvCalBody')) return; RV_CAL_LAST = { key, t: Date.now() }; } catch (e) {}
   let box = document.getElementById('rvCal');
   if (!box) { box = document.createElement('div'); box.id = 'rvCal'; const c = document.getElementById('rvComps'); if (c) c.insertAdjacentElement('afterend', box); else view.appendChild(box); }
   const f = typeof currentCalFilter !== 'undefined' ? currentCalFilter : 'all';
