@@ -15646,6 +15646,31 @@ setTimeout(() => { try { if (/jsdom/i.test(navigator.userAgent || '')) return; c
   } catch (e) {}
 })();
 
+/* o selo precisa das odds das casas: o Zé estuda sozinho (em segundo plano) os desafios ainda sem odds — no máximo 5, de 30 em 30 min */
+let SELO_STUDY_AT = 0, SELO_STUDY_RUN = false;
+async function seloAutoStudy(force) {
+  if (SELO_STUDY_RUN || /jsdom/i.test(navigator.userAgent || '') || window.__ZE_LAB || navigator.onLine === false) return 0;
+  if (!force && Date.now() - SELO_STUDY_AT < 30 * 60e3) return 0;
+  if (typeof espnCooling === 'function' && espnCooling()) return 0;
+  SELO_STUDY_RUN = true; SELO_STUDY_AT = Date.now(); let n = 0;
+  try {
+    const C = zeChallenges(36).filter(c => c.m.espn && c.m.espn.ev && !(studyFor(c.m) && studyFor(c.m).books && studyFor(c.m).books.length) && !(studyFor(c.m) && studyFor(c.m).oddsTried && Date.now() - studyFor(c.m).oddsTried < 3 * 3600e3)).slice(0, 5);
+    for (const c of C) {
+      try { await zeStudy(c.m); n++; } catch (e) {}
+      if (typeof espnCooling === 'function' && espnCooling()) break;
+      await new Promise(r => setTimeout(r, 700));
+    }
+  } finally { SELO_STUDY_RUN = false; }
+  if (n) {
+    CH_MEM = null;
+    try { const box = document.getElementById('zeChallenges'); if (box && !box.hidden) { box.hidden = true; zeChallengesToggle(true); } } catch (e) {}
+    try { if (currentView === 'portal') renderPortal(); updateContinue(); } catch (e) {}
+  }
+  return n;
+}
+applyLive = (function (prev) { return function () { const r = prev.apply(this, arguments); setTimeout(() => seloAutoStudy().catch(() => {}), 9000); return r; }; })(applyLive);
+setTimeout(() => seloAutoStudy().catch(() => {}), 15000);
+
 renderWallet(); renderUpdateInfo();
 
 </script>
