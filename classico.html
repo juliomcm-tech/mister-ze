@@ -15484,6 +15484,7 @@ zeStudy = (function (prev) { return async function () { const r = await prev.app
      - confiança do modelo não é baixa; probabilidade ≥ 70%; odd entre 1.25 e 2.20;
      - não está no travão automático.
    O selo é guardado e conferido com o resultado: nas Estatísticas vês quanto acerta e o lucro a 1 € por aposta.
+   v57d (simulação desta época + da época passada): odd máxima 1.40, sem «vitória» simples nem «ambas marcam»; sem prata.
    ===================================================================== */
 function seloMktProb(m, k) {
   try {
@@ -15504,6 +15505,7 @@ function seloHist(m, k) {
     const g = zstAgg(rows); return { n: g.n, w: g.w, hit: g.hit, exp: g.exp, d: g.hit - g.exp };
   } catch (e) { return null; }
 }
+const SELO_MAX_ODD = 1.40, SELO_NO_FAM = ['vitória', 'ambas marcam', 'ambas marcam — não', 'empate'];
 function zeSelo(m, k, p, odd) {
   const why = [], bad = [];
   let pts = 0;
@@ -15518,9 +15520,13 @@ function zeSelo(m, k, p, odd) {
   if (p >= 0.7) { pts++; why.push(`🎯 ${Math.round(p * 100)}%`); }
   const o = odd > 1 ? odd : (q ? 0.95 / q : 0.95 / p);
   if (o < ZE_MIN_ODD) bad.push(`odd baixa (${o.toFixed(2)})`);
-  if (o > 2.2) bad.push(`odd alta (${o.toFixed(2)})`);
+  // simulação (547 jogos desta época, sem ver o futuro): ouro com odd até 1.40 acertou 75% (prometia 72%);
+  // acima de 1.40 e em «vitória» simples o Zé prometia demais → ficam sem selo
+  if (o > SELO_MAX_ODD) bad.push(`odd acima de ${SELO_MAX_ODD.toFixed(2)} (${o.toFixed(2)})`);
+  const fam = PICK_FAMILY(k);
+  if (SELO_NO_FAM.includes(fam)) bad.push(`«${fam}» — na simulação o Zé promete demais aqui`);
   if (zeBraked(m, k)) bad.push('⛔ no travão automático');
-  const grade = !bad.length && pts >= 2 ? 'ouro' : (!bad.some(b => /falha|travão|odd baixa|odd alta|discorda|confiança baixa/.test(b)) && pts >= 1 ? 'prata' : null);
+  const grade = !bad.length && pts >= 2 ? 'ouro' : null;   // a «prata» saiu: na simulação não acertava mais do que os jogos sem selo
   return { grade, pts, why, bad, q, odd: o };
 }
 /* os desafios levam selo; os de ouro passam para a frente (e o «jogo do dia» passa a ser o melhor ouro) */
@@ -15536,7 +15542,7 @@ zeChallenges = (function (prev) {
   return function () {
     const L = prev.apply(this, arguments) || [];
     L.forEach(c => { if (!c.selo) { try { c.selo = zeSelo(c.m, c.k2, c.p, c.odd); } catch (e) { c.selo = { grade: null, why: [], bad: [] }; } } });
-    const rank = c => c.selo && c.selo.grade === 'ouro' ? 2 : c.selo && c.selo.grade === 'prata' ? 1 : 0;
+    const rank = c => c.selo && c.selo.grade === 'ouro' ? 1 : 0;
     const out = L.slice().sort((a, b) => rank(b) - rank(a) || (b.p - a.p) || b.score - a.score || a.k - b.k);   // dentro do mesmo selo: o mais provável primeiro (falhar menos)
     try { goldSave(out.filter(c => c.selo && c.selo.grade === 'ouro')); } catch (e) {}
     return out;
