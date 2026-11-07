@@ -14202,18 +14202,19 @@ function rvDayHead(d) {
   return { txt: diff === 0 ? 'Hoje · ' + lab : diff === 1 ? 'Amanhã · ' + lab : lab, today: diff === 0 };
 }
 const RV_SHORT = { 'Liga Portugal': 'POR', 'Premier League': 'ENG', 'Championship': 'ENG 2', 'La Liga': 'ESP', 'LaLiga': 'ESP', 'Serie A': 'ITA', 'Bundesliga': 'ALE', 'Ligue 1': 'FRA', 'Eredivisie': 'NED' };
-function rvLg(name) { const n = String(name || ''); if (/champions/i.test(n)) return 'UCL'; if (/conference/i.test(n)) return 'UECL'; if (/europa/i.test(n)) return 'UEL'; return RV_SHORT[n] || n.slice(0, 6); }
+const RV_CODE = { 'por.1': 'POR', 'por.2': 'POR 2', 'eng.1': 'ENG', 'eng.2': 'ENG 2', 'esp.1': 'ESP', 'esp.2': 'ESP 2', 'ita.1': 'ITA', 'ita.2': 'ITA 2', 'ger.1': 'ALE', 'ger.2': 'ALE 2', 'fra.1': 'FRA', 'ned.1': 'NED', 'uefa.champions': 'UCL', 'uefa.europa': 'UEL', 'uefa.europa.conf': 'UECL' };
+function rvLg(name, code) { if (code && RV_CODE[code]) return RV_CODE[code]; const n = String(name || ''); if (/champions league|liga dos campe/i.test(n)) return 'UCL'; if (/conference/i.test(n)) return 'UECL'; if (/europa league|liga europa/i.test(n)) return 'UEL'; if (/championship/i.test(n)) return 'ENG 2'; return RV_SHORT[n] || n.slice(0, 6); }
 function rvRowUp(x) {
   let pick = '';
   try { const r = modelo(x.m), f = favOf(r.mk); pick = `<div class="rv-pick"><i class="${f === '1' ? 'p1' : f === '2' ? 'p2' : ''}">${f}</i><em>${Math.round(r.mk[f] * 100)}%</em></div>`; } catch (e) {}
   const live = x.k.getTime() <= Date.now();
-  return `<div class="rv-row" onclick="openMatchIdx(${x.i})"><div class="rv-tm${live ? ' live' : ''}">${live ? 'AO VIVO' : esc(x.m.kickoff || '—')}<small>${esc(rvLg(x.m.league))}</small></div>
+  return `<div class="rv-row" onclick="openMatchIdx(${x.i})"><div class="rv-tm${live ? ' live' : ''}">${live ? 'AO VIVO' : esc(x.m.kickoff || '—')}<small>${esc(rvLg(x.m.league, x.m.espn && x.m.espn.code))}</small></div>
     <div class="rv-teams"><div class="rv-tl">${rvCrest(x.m.home)}<span>${esc(x.m.home)}</span></div><div class="rv-tl">${rvCrest(x.m.away)}<span>${esc(x.m.away)}</span></div></div>${pick}</div>`;
 }
 function rvRowRes(x) {
   const h = x.score.fullTime.home, a = x.score.fullTime.away, hn = x.homeTeam.shortName || x.homeTeam.name, an = x.awayTeam.shortName || x.awayTeam.name;
   const d = new Date(x.utcDate);
-  return `<div class="rv-row" style="cursor:default;"><div class="rv-tm">FIM<small>${esc(rvLg(x.competition && x.competition.name))} · ${d.getDate()}/${d.getMonth() + 1}</small></div>
+  return `<div class="rv-row" style="cursor:default;"><div class="rv-tm">FIM<small>${esc(rvLg(x.competition && x.competition.name, x.competition && x.competition.code))} · ${d.getDate()}/${d.getMonth() + 1}</small></div>
     <div class="rv-teams"><div class="rv-tl${h > a ? ' win' : ''}">${rvCrest(hn)}<span>${esc(hn)}</span><b>${h}</b></div><div class="rv-tl${a > h ? ' win' : ''}">${rvCrest(an)}<span>${esc(an)}</span><b>${a}</b></div></div><div></div></div>`;
 }
 function rvGamesHTML(list, max) {
