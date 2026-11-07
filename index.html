@@ -14921,21 +14921,18 @@ async function betCardImages(bet, who) {
 async function shareOutMany(text, blobs, base) {
   const files = blobs.map((bl, i) => new File([bl], `${base}${blobs.length > 1 ? '-' + (i + 1) : ''}.png`, { type: 'image/png' }));
   try {
-    if (files.length && navigator.canShare && navigator.canShare({ files })) { await navigator.share({ files, text }); return; }
-    if (files.length > 1 && navigator.canShare && navigator.canShare({ files: [files[0]] })) { await navigator.share({ files: [files[0]], text }); toast(`Este telemóvel só partilha 1 imagem de cada vez — as outras ${files.length - 1} ficam para guardar.`); shareSheetMany(text, files.slice(1)); return; }
-    if (navigator.share) { await navigator.share({ text }); return; }
+    // só a imagem (o texto já está todo na imagem)
+    if (files.length && navigator.canShare && navigator.canShare({ files })) { await navigator.share({ files }); return; }
+    if (files.length > 1 && navigator.canShare && navigator.canShare({ files: [files[0]] })) { await navigator.share({ files: [files[0]] }); toast(`Este telemóvel só partilha 1 imagem de cada vez — as outras ${files.length - 1} ficam para guardar.`); shareSheetMany(text, files.slice(1)); return; }
   } catch (e) { if (e && e.name === 'AbortError') return; }
   shareSheetMany(text, files);
 }
 function shareSheetMany(text, files) {
   const urls = files.map(f => URL.createObjectURL(f));
   const html = `<h3>📤 Partilhar</h3>
-    <div class="modal-meta">${files.length > 1 ? `${files.length} imagens (a múltipla não cabia numa só).` : 'Escolhe:'}</div>
+    <div class="modal-meta">${files.length > 1 ? `${files.length} imagens (a múltipla não cabia numa só).` : 'A imagem da aposta:'}</div>
     ${urls.map((u, i) => `<img src="${u}" alt="Cartão ${i + 1}" style="width:100%;border-radius:10px;margin-bottom:8px;border:1px solid var(--line2);"><a class="btn btn-sm" href="${u}" download="${esc(files[i].name)}" style="margin-bottom:12px;">🖼️ Guardar imagem ${files.length > 1 ? i + 1 : ''}</a>`).join('')}
-    <div class="btn-row">
-      <a class="btn btn-lime" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">💬 Abrir no WhatsApp</a>
-      <button class="btn" onclick="copyText(${JSON.stringify(text).replace(/"/g, '&quot;')}).then(()=>toast('📋 Texto copiado'))">📋 Copiar texto</button>
-    </div>`;
+    <div class="muted" style="font-size:.78rem;">Guarda a imagem e envia-a no WhatsApp.</div>`;
   const m = document.getElementById('modal-content'); if (m) m.classList.remove('worst-modal');
   setHTML('modal-body', html);
   const o = document.getElementById('modal'); if (o) o.classList.add('open');
@@ -15032,6 +15029,94 @@ addBet = (function (prev) {
   };
 })(addBet);
 prepararDuelo = (function (prev) { return function (idx) { const r = prev.apply(this, arguments); try { if (CH_ACCEPTED && dueloAtual && !chSame(dueloAtual.m, CH_ACCEPTED.m)) CH_ACCEPTED = null; } catch (e) {} return r; }; })(prepararDuelo);
+
+
+/* =====================================================================
+   v55c · rapidez (sem mudar contas)
+   Medido no telemóvel simulado (CPU 4× mais lenta, 450 apostas, 120 jogos): entrar no Duelo levava ~4,5 s.
+   - 3,2 s eram o Raio-X das tuas apostas, que é calculado mesmo estando escondido (fica em Finanças).
+     Agora só se calcula quando abres Finanças, e fica guardado até mudarem as apostas ou os jogos.
+   - a procura «que jogo é esta seleção?» repetia-se centenas de vezes: agora fica em memória.
+   - os desafios do Zé aparecem a seguir ao ecrã abrir (o ecrã muda logo).
+   ===================================================================== */
+let MATCH_VER = 0, MATCH_LEN = -1;
+function matchVer() { if (matches.length !== MATCH_LEN) { MATCH_LEN = matches.length; MATCH_VER++; } return MATCH_VER; }
+applyLive = (function (prev) { return function () { MATCH_VER++; return prev.apply(this, arguments); }; })(applyLive);
+const FML_MEM = new Map(); let FML_VER = -1, FML_DAY = '';
+findMatchForLeg = (function (prev) {
+  return function (leg) {
+    if (!leg) return prev.apply(this, arguments);
+    const v = matchVer(), day = new Date().toDateString();
+    if (v !== FML_VER || day !== FML_DAY) { FML_MEM.clear(); FML_VER = v; FML_DAY = day; }
+    const k = (leg.home || '') + '|' + (leg.away || '') + '|' + (leg.sel || '');
+    if (FML_MEM.has(k)) return FML_MEM.get(k);
+    const r = prev.apply(this, arguments);
+    if (FML_MEM.size > 2000) FML_MEM.clear();
+    FML_MEM.set(k, r);
+    return r;
+  };
+})(findMatchForLeg);
+/* liga de cada seleção para o Raio-X: guardada no aparelho (a liga de um jogo não muda) e no máximo 25 procuras novas de cada vez */
+const LEGLG_KEY = 'ze_leg_league_v1';
+let RX_MODE = false, RX_BUDGET = 0, RX_LG = null, RX_LG_DIRTY = false;
+findMatchForLeg = (function (prev) {
+  return function (leg) {
+    if (!RX_MODE || !leg) return prev.apply(this, arguments);
+    const k = normTxt((leg.home || '') + '|' + (leg.away || '') + '|' + (leg.home && leg.away ? '' : leg.sel || ''));
+    const hit = RX_LG[k];
+    if (hit && (hit.lg || Date.now() - hit.t < 3 * 864e5)) return hit.lg ? { league: hit.lg } : null;
+    if (RX_BUDGET <= 0) return null;
+    RX_BUDGET--;
+    const m = prev.apply(this, arguments);
+    RX_LG[k] = { lg: (m && m.league) || null, t: Date.now() }; RX_LG_DIRTY = true;
+    return m;
+  };
+})(findMatchForLeg);
+/* Raio-X: guardado enquanto as apostas e os jogos forem os mesmos */
+let RX_MEM = null;
+function rxSig() { const b = loadBank(); let h = b.bets.length + ':' + matchVer(); for (const x of b.bets) h += x.id + (x.status || '?')[0] + (x.legs ? x.legs.length : 0) + ','; return h.length + '|' + h.slice(-400) + '|' + b.bets.reduce((s, x) => s + (x.status === 'win' ? 3 : x.status === 'loss' ? 7 : 1), 0); }
+raioX = (function (prev) {
+  return function () {
+    const s = rxSig();
+    if (RX_MEM && RX_MEM.s === s && Date.now() - RX_MEM.t < (RX_MEM.partial ? 20e3 : 10 * 60e3)) return RX_MEM.v;
+    RX_LG = lsGet(LEGLG_KEY, {}); RX_LG_DIRTY = false; RX_MODE = true; RX_BUDGET = 25;
+    let v; try { v = prev.apply(this, arguments); } finally { RX_MODE = false; }
+    if (RX_LG_DIRTY) { const ks = Object.keys(RX_LG); if (ks.length > 1500) ks.sort((a, b) => RX_LG[a].t - RX_LG[b].t).slice(0, ks.length - 1500).forEach(x => delete RX_LG[x]); lsSet(LEGLG_KEY, RX_LG); }
+    RX_MEM = { s, t: Date.now(), v: v, partial: RX_BUDGET <= 0 }; return v;
+  };
+})(raioX);
+let RX_PENDING = false;
+raioXHTML = (function (prev) {
+  return function (chat) {
+    // escondido (Finanças fechado): não calcula agora; calcula quando o telemóvel estiver livre ou ao abrires Finanças
+    if (!chat && typeof currentView !== 'undefined' && currentView !== 'banca' && !(RX_MEM && RX_MEM.s === rxSig())) {
+      if (!RX_PENDING) { RX_PENDING = true; const go = () => { RX_PENDING = false; try { const el = document.querySelector('#wlRaioX .panel-b'); if (el) el.innerHTML = prev.call(this, false); } catch (e) {} }; (window.requestIdleCallback || (f => setTimeout(f, 1500)))(go, { timeout: 4000 }); }
+      return '<div class="muted">⏳ O Zé está a fazer as contas das tuas apostas…</div>';
+    }
+    return prev.apply(this, arguments);
+  };
+})(raioXHTML);
+fmGo = (function (prev) { return function (v) { const r = prev.apply(this, arguments); if (v === 'banca') { try { const el = document.querySelector('#wlRaioX .panel-b'); if (el && /⏳/.test(el.textContent)) el.innerHTML = raioXHTML(false); } catch (e) {} } return r; }; })(fmGo);
+/* desafios: se ainda não estão calculados, o ecrã abre primeiro e eles aparecem logo a seguir */
+zeChallengesToggle = (function (prev) {
+  return function (force) {
+    const box = document.getElementById('zeChallenges');
+    const opening = box && (force != null ? force : box.hidden);
+    const hot = CH_MEM && Date.now() - CH_MEM.t < 5 * 60e3 && CH_MEM.key === (36 + '|' + matches.length + '|' + Object.keys(STUDY).length + '|' + matchVer());
+    if (!opening || hot || /jsdom/i.test(navigator.userAgent || '')) return prev.apply(this, arguments);
+    box.hidden = false;
+    box.innerHTML = `<div class="panel-h" style="margin:-14px -14px 12px;"><span>🎯 Desafios do Zé</span><span class="muted">a escolher…</span></div><div class="muted">⏳ O Zé está a ver os jogos de hoje e amanhã…</div>`;
+    const args = arguments;
+    setTimeout(() => { try { box.hidden = true; prev.apply(this, args); } catch (e) {} }, 30);
+  };
+})(zeChallengesToggle);
+
+/* desafios: guardados 5 min (mudam quando há jogos/odds novas) */
+zeChallenges = function (hours) {
+  const key = (hours || 36) + '|' + matches.length + '|' + Object.keys(STUDY).length + '|' + matchVer();
+  if (CH_MEM && CH_MEM.key === key && Date.now() - CH_MEM.t < 5 * 60e3) return CH_MEM.v;
+  const v = zeChallengesRaw(hours); CH_MEM = { key, t: Date.now(), v }; return v;
+};
 
 renderWallet(); renderUpdateInfo();
 
