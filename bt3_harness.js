@@ -173,6 +173,31 @@
         ouro1: g(rows.slice(0, half).filter(r => r.grade === 'ouro')), ouro2: g(rows.slice(half).filter(r => r.grade === 'ouro')),
         motivos: rows.filter(r => r.grade !== 'ouro').reduce((a, r) => { (r.bad || '').split('|').filter(Boolean).forEach(b => { const k = b.replace(/\(.*\)/, '').trim(); a[k] = (a[k] || 0) + 1; }); return a; }, {}) };
     };
+
+    /* ---------- poupanças: o favorito joga pior quando a seguir tem Europa/Taça (ou acabou de ter)? ---------- */
+    window.__runRot = function (EXTRA) {
+      const EX = (EXTRA || []).map(e => ({ t: new Date(e.d).getTime(), h: String(e.h), a: String(e.a), c: e.c }));
+      const nextImp = (id, t) => EX.filter(e => (e.h === id || e.a === id) && e.t > t + 3600e3 && e.t - t < 4.5 * 864e5).length > 0;
+      const prevImp = (id, t) => EX.filter(e => (e.h === id || e.a === id) && e.t < t - 3600e3 && t - e.t < 3.5 * 864e5).length > 0;
+      const out = [];
+      for (const P of PRE) {
+        const { x, t, code } = P; if (/uefa/.test(code)) continue;
+        const books = ODDS[x.id] || []; if (!books.length) continue;
+        const bo = books[0].odds; if (!(bo['1'] > 1 && bo.X > 1 && bo['2'] > 1)) continue;
+        const s = 1 / bo['1'] + 1 / bo.X + 1 / bo['2'], q = [1 / bo['1'] / s, 1 / bo.X / s, 1 / bo['2'] / s];
+        const fav = q[0] >= q[2] ? 0 : 2, qf = q[fav]; if (qf < 0.5) continue;
+        const favId = String(fav === 0 ? x.homeTeam.id : x.awayTeam.id);
+        const i = x.score.fullTime.home, j = x.score.fullTime.away, won = fav === 0 ? i > j : j > i;
+        // folga na tabela antes do jogo
+        const T = tableBefore(code, t)[0].table.slice().sort((a, b) => b.points - a.points || (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst));
+        const pos = T.findIndex(r => String(r.team.id) === favId), lead = pos === 0 && T[1] ? T[0].points - T[1].points : null;
+        out.push({ code, qf, won: won ? 1 : 0, next: nextImp(favId, t), prev: prevImp(favId, t), lead, top3: pos >= 0 && pos < 3, oddF: fav === 0 ? bo['1'] : bo['2'] });
+      }
+      const g = L => { const n = L.length; if (!n) return { n: 0 }; const w = L.reduce((a, r) => a + r.won, 0), e = L.reduce((a, r) => a + r.qf, 0), v = L.reduce((a, r) => a + r.qf * (1 - r.qf), 0), pr = L.reduce((a, r) => a + (r.won ? r.oddF - 1 : -1), 0); return { n, ganhou: +(w / n).toFixed(3), casas: +(e / n).toFixed(3), z: +((w - e) / Math.sqrt(v)).toFixed(2), roiFav: +(pr / n).toFixed(3) }; };
+      return { todos: g(out), seguinteEuropaTaca: g(out.filter(r => r.next)), semNada: g(out.filter(r => !r.next && !r.prev)), vemDeEuropaTaca: g(out.filter(r => r.prev)),
+        lider5mais: g(out.filter(r => r.lead != null && r.lead >= 5)), lider5mais_e_seguinte: g(out.filter(r => r.lead != null && r.lead >= 5 && r.next)),
+        top3_seguinte: g(out.filter(r => r.top3 && r.next)), favForte_seguinte: g(out.filter(r => r.qf >= 0.65 && r.next)), favForte_semNada: g(out.filter(r => r.qf >= 0.65 && !r.next && !r.prev)) };
+    };
     const S0 = window.__run({});
     post('done', { n: S0.all.n });
   } catch (e) { post('error', String(e && e.stack || e)); }
