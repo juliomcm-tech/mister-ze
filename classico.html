@@ -15842,15 +15842,16 @@ async function zeMonthTest() {
       if (d.type === 'need') { f.contentWindow.postMessage({ cmd: '__data', data: null }, '*'); return; }
       if (d.type === 'reply') { replies[d.data.id] = d.data.val; return; }
       if (d.type === 'progress') { const el = document.getElementById('mtProg'); if (el) el.textContent = '⏳ ' + String(d.data).replace(/^odds/, 'odds das casas').replace(/^jogos /, 'jogos ') + ' · ' + Math.round((Date.now() - MT_RUN.t) / 1000) + ' s'; return; }
-      if (d.type === 'done' || d.type === 'error') { window.removeEventListener('message', onMsg); resolve(d.type === 'done' ? null : String(d.data || 'erro')); }
+      if (d.type === 'done' || d.type === 'error') resolve(d.type === 'done' ? null : String(d.data || 'erro'));
     };
-    window.addEventListener('message', onMsg);
+    MT_RUN.onMsg = onMsg; window.addEventListener('message', onMsg);
   });
   box.innerHTML = '<div class="muted" id="mtProg">⏳ A começar… (deixa a app aberta; demora uns minutos)</div>';
   document.body.appendChild(f);
   const err = await Promise.race([done, new Promise(r => setTimeout(() => r('demorou demasiado (mais de 15 min)'), 15 * 60e3))]);
   let res = null;
-  if (!err) { const v = await ask('JSON.stringify(window.__runSelo())'); try { res = JSON.parse(v); } catch (e) {} }
+  if (!err) { const el = document.getElementById('mtProg'); if (el) el.textContent = '⏳ O Zé está a decidir os jogos um a um…'; const v = await ask('JSON.stringify(window.__runSelo())'); try { res = JSON.parse(v); } catch (e) {} }
+  try { window.removeEventListener('message', MT_RUN.onMsg); } catch (e) {}
   try { f.remove(); } catch (e) {}
   MT_RUN = null;
   if (!res) { box.innerHTML = `<div class="muted">Não consegui terminar o teste${err ? ` (${esc(err).slice(0, 120)})` : ''}. Tenta outra vez mais logo.</div>`; return; }
