@@ -15220,7 +15220,9 @@ body.rv:after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;t
     linear-gradient(180deg, #120a24 0%, #1c1036 26%, #24124a 40%, #1b3a22 62%, #17602e 78%, #1a7a36 100%);}
 body.rv:before{content:"";position:fixed;left:50%;bottom:-18vh;width:120vw;height:46vh;transform:translateX(-50%) translateZ(0);will-change:transform;border:3px solid rgba(255,255,255,.13);border-radius:50%;pointer-events:none;z-index:0;}
 body.rv #mNav{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;}
-body.rv .rv-sort{-webkit-text-fill-color:#122000;background-clip:border-box;-webkit-background-clip:border-box;display:inline-block;margin-left:6px;padding:3px 9px;border-radius:999px;background:linear-gradient(180deg,#e2ff6e,#a8d61e);color:#122000;font:800 .72rem var(--cond);letter-spacing:.03em;cursor:pointer;vertical-align:1px;box-shadow:0 2px 4px rgba(0,0,0,.4);}
+body.rv .rv-seg{display:inline-flex;margin-left:6px;border-radius:999px;overflow:hidden;border:1px solid #6f9410;vertical-align:1px;box-shadow:0 2px 4px rgba(0,0,0,.4);-webkit-text-fill-color:initial;}
+body.rv .rv-seg b{padding:4px 9px;font:800 .72rem var(--cond);letter-spacing:.03em;cursor:pointer;color:#c9c1e6;-webkit-text-fill-color:#c9c1e6;background:#241844;text-transform:uppercase;}
+body.rv .rv-seg b.on{background:linear-gradient(180deg,#e2ff6e,#a8d61e);color:#122000;-webkit-text-fill-color:#122000;}
 body.rv .vc-btns a.vc-live{background:linear-gradient(180deg,#ff5a6e,#c81e3a) !important;color:#fff !important;border-color:#8e1027 !important;animation:rvPulse 1.6s ease-in-out infinite;cursor:pointer;}
 @keyframes rvPulse{50%{opacity:.75}}
 body.rv .container{position:relative;z-index:1;}
@@ -15418,12 +15420,30 @@ function rvUpcoming(hours) {
   return matches.map((m, i) => ({ m, i, k: (typeof kickOf === 'function' && kickOf(m)) || null })).filter(x => x.m.live && !x.m.past && !x.m.aviso && x.k && x.k.getTime() > now - 2 * 3600e3 && x.k.getTime() < now + hours * 3600e3).sort((a, b) => a.k - b.k);
 }
 /* ordenar: por % (a aposta lógica mais provável primeiro, dia a dia) ou por hora — toca para trocar */
-function rvSortMode() { try { return localStorage.getItem('ze_rv_sort') || 'pct'; } catch (e) { return 'pct'; } }
-function rvSortToggle() {
-  try { localStorage.setItem('ze_rv_sort', rvSortMode() === 'pct' ? 'hora' : 'pct'); } catch (e) {}
-  try { if (currentView === 'portal') renderPortal(); if (currentView === 'jogos') rvCalRender(); } catch (e) {}
+function rvSortMode() { try { return localStorage.getItem('ze_rv_sort2') || 'pct'; } catch (e) { return 'pct'; } }
+function rvSortSet(mode) {
+  try { localStorage.setItem('ze_rv_sort2', mode); } catch (e) {}
+  try { if (currentView === 'portal') renderPortal(); if (currentView === 'jogos') rvCalRender(); if (currentView === 'dia') rvDaySort(); } catch (e) {}
 }
-function rvSortChip() { const p = rvSortMode() === 'pct'; return `<span class="rv-sort" onclick="event.stopPropagation(); rvSortToggle()" title="Tocar para trocar">${p ? '↓ maior %' : '🕒 por hora'}</span>`; }
+function rvSortToggle() { rvSortSet(rvSortMode() === 'pct' ? 'hora' : 'pct'); }
+/* duas opções lado a lado: a acesa é a ordem atual */
+function rvSortChip() { const p = rvSortMode() === 'pct'; return `<span class="rv-seg" onclick="event.stopPropagation()"><b class="${p ? 'on' : ''}" onclick="rvSortSet('pct')">↓ % maior</b><b class="${p ? '' : 'on'}" onclick="rvSortSet('hora')">🕒 hora</b></span>`; }
+/* Análise do dia: as caixas também por % (ou por hora) */
+function rvDaySort() {
+  const box = document.getElementById('dayResult'); if (!box) return;
+  const cards = [...box.children].filter(el => el.classList && el.classList.contains('vc-card') && el.dataset.i != null && +el.dataset.i >= 0);
+  if (cards.length < 2) return;
+  const pct = rvSortMode() === 'pct';
+  const key = el => { const m = matches[+el.dataset.i]; let p = 0, k = 0; try { const z = zeLogical(m); p = z ? z.p : 0; } catch (e) {} try { const d = kickOf(m); k = d ? d.getTime() : 0; } catch (e) {} return { p, k }; };
+  const K = new Map(cards.map(el => [el, key(el)]));
+  const sorted = cards.slice().sort((a, b) => pct ? (K.get(b).p - K.get(a).p) || (K.get(a).k - K.get(b).k) : (K.get(a).k - K.get(b).k) || (K.get(b).p - K.get(a).p));
+  const mark = document.createComment('rv'); cards[0].parentNode.insertBefore(mark, cards[0]);
+  let at = mark; sorted.forEach(el => { at.parentNode.insertBefore(el, at.nextSibling); at = el; }); mark.remove();
+  let bar = document.getElementById('rvDaySortBar');
+  if (!bar) { bar = document.createElement('div'); bar.id = 'rvDaySortBar'; bar.style.cssText = 'display:flex;justify-content:flex-end;align-items:center;gap:6px;margin:-4px 0 10px;font:700 .78rem var(--cond);color:var(--muted);text-transform:uppercase;'; const meta = box.querySelector('.day-meta'); if (meta) meta.insertAdjacentElement('afterend', bar); else box.insertBefore(bar, sorted[0]); }
+  bar.innerHTML = 'Ordem ' + rvSortChip();
+}
+gerarDia = (function (prev) { return async function () { const r = await prev.apply(this, arguments); try { rvDaySort(); } catch (e) { console.warn(e); } return r; }; })(gerarDia);
 function rvSortList(list) {
   if (rvSortMode() !== 'pct') return list;
   const day = d => d.getFullYear() * 10000 + d.getMonth() * 100 + d.getDate();
