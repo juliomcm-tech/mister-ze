@@ -16088,13 +16088,18 @@ function safeZeBet() {
   const b = loadBank();
   const key = S.map(x => x.c.m.home + '|' + x.c.key).sort().join(',');
   if (b.zeBets.some(z => z.safeKey === key && Date.now() - Date.parse(z.at || 0) < 2 * 864e5)) { toast('🤖 Já apostei este boletim.'); return; }
-  const typed = parseFloat(String((document.getElementById('ssStake') || {}).value || '').replace(',', '.'));
-  const stake = r2(Math.min(b.ze, typed > 0 ? typed : chStake()));
-  if (!(stake > 0)) { toast('🤖 Estou sem banca — recarrega em Definições.'); return; }
+  // o valor é sempre decidido pelo Zé (gestão de banca dele), nunca pelo campo do utilizador
+  const ev0 = P * O - 1, kelly = ev0 > 0 ? (P * O - 1) / (O - 1) : 0;
+  const exposure = openStake(b.zeBets), capLeft = Math.max(0, r2((b.ze + exposure) * 0.15 - exposure));
+  let stake = kelly > 0 ? r2(b.ze * Math.min(0.05, kelly * 0.25)) : 0, how = kelly > 0 ? `Kelly ¼ (${(Math.min(0.05, kelly * 0.25) * 100).toFixed(1)}% da banca)` : '';
+  if (stake < chStake()) { stake = chStake(); how = 'stake mínima (1% da banca: aposta pela probabilidade, não pelo valor)'; }
+  stake = r2(Math.min(stake, capLeft, b.ze));
+  if (!(b.ze > 0)) { toast('🤖 Estou sem banca — recarrega em Definições.'); return; }
+  if (stake < 0.1) { toast('🤖 Passo: já tenho 15% da banca em jogo — espero pelos resultados.'); return; }
   const leg = x => ({ home: x.c.m.home, away: x.c.m.away, sel: marketName(x.c.key, x.c.m), odd: +x.od.toFixed(2), market: x.c.key });
-  const ev = P * O - 1;
-  const ok = addBet({ match: S.length === 1 ? `${S[0].c.m.home} vs ${S[0].c.m.away}` : `Boletim seguro do Zé (${S.length} jogos)`, pick: S.length === 1 ? marketName(S[0].c.key, S[0].c.m) : 'Múltipla segura', odd: +O.toFixed(2), stake, legs: S.map(leg), source: 'boletim-seguro-ze', safeKey: key, pUsed: +P.toFixed(3), zeCompare: `Boletim seguro · prob ${pct(P)} · odd ${O.toFixed(2)} · EV ${(ev * 100).toFixed(1)}%` }, 'ze');
-  if (ok) { toast(`🤖 Aposto ${stake.toFixed(2)} € no boletim seguro (${S.length} jogo${S.length > 1 ? 's' : ''}, odd ${O.toFixed(2)}, eu dou ${pct(P)}).`); try { renderBanca(); } catch (e) {} try { updateContinue(); } catch (e) {} }
+  const ev = ev0;
+  const ok = addBet({ match: S.length === 1 ? `${S[0].c.m.home} vs ${S[0].c.m.away}` : `Boletim seguro do Zé (${S.length} jogos)`, pick: S.length === 1 ? marketName(S[0].c.key, S[0].c.m) : 'Múltipla segura', odd: +O.toFixed(2), stake, legs: S.map(leg), source: 'boletim-seguro-ze', safeKey: key, pUsed: +P.toFixed(3), zeCompare: `Boletim seguro · prob ${pct(P)} · odd ${O.toFixed(2)} · EV ${(ev * 100).toFixed(1)}% · ${how}` }, 'ze');
+  if (ok) { toast(`🤖 Aposto ${stake.toFixed(2)} € no boletim seguro (odd ${O.toFixed(2)}, eu dou ${pct(P)}) — ${how}.`); try { renderBanca(); } catch (e) {} try { updateContinue(); } catch (e) {} }
 }
 safeSum = (function (prev) {
   return function () {
@@ -16103,11 +16108,43 @@ safeSum = (function (prev) {
       const el = document.getElementById('ssSum'); if (!el || el.querySelector('.ss-ze')) return r;
       const row = el.querySelector('div[style*="flex"]'); if (!row) return r;
       row.insertAdjacentHTML('beforeend', `<button class="btn ss-ze" onclick="safeZeBet()">🤖 O Zé aposta</button>`);
-      el.insertAdjacentHTML('beforeend', `<div class="muted" style="font-size:.74rem;margin-top:4px;">«O Zé aposta» regista o boletim na banca do Zé como múltipla (com o valor que meteres, ou a stake dele: 1–2% da banca). Abaixo de odd ${ZE_MIN_ODD.toFixed(2)} ele passa.</div>`);
+      el.insertAdjacentHTML('beforeend', `<div class="muted" style="font-size:.74rem;margin-top:4px;">«O Zé aposta» põe o Zé a apostar este boletim (múltipla). <b>O valor é sempre ele que decide</b>, pela gestão de banca dele: Kelly ¼ quando há valor, 1% da banca quando não há, e nunca mais de 15% da banca em jogo. Abaixo de odd ${ZE_MIN_ODD.toFixed(2)} ele passa.</div>`);
     } catch (e) {}
     return r;
   };
 })(safeSum);
+
+
+/* =====================================================================
+   v60b · aposta lógica estável (a mesma no Início, nos Jogos e nas Estatísticas)
+   Porquê mudava: a aposta lógica é o mercado mais provável entre 55% e 85%. «1X» e «Mais de 1.5» andam
+   muitas vezes colados (ex. 83% vs 84%); quando o Zé estuda o jogo (odds novas) ou aprende com um
+   resultado, a ordem trocava e o Início (desenhado antes) mostrava um, os Jogos (depois) outro.
+   Agora: a escolha que o Zé já registou para o jogo mantém-se, a não ser que outro mercado passe à frente
+   por mais de 3 pontos. As estatísticas contam essa mesma escolha (a última antes do apito).
+   ===================================================================== */
+let DIARY_MEMO = null;
+function diaryItemsFast() {
+  const v = (typeof LS_VER !== 'undefined' && LS_VER[DIARY_KEY]) || 0;
+  if (DIARY_MEMO && DIARY_MEMO.v === v && Date.now() - DIARY_MEMO.t < 10e3) return DIARY_MEMO.items;
+  let items = {}; try { items = diaryLoad().items || {}; } catch (e) {}
+  DIARY_MEMO = { v, t: Date.now(), items };
+  return items;
+}
+matchBestMarket = (function (prev) {
+  return function (m) {
+    const best = prev.apply(this, arguments);
+    try {
+      if (!best || !m || m.past) return best;
+      const old = diaryItemsFast()[diaryKey(m)];
+      const k0 = old && !old.res && old.pick && old.pick.k;
+      if (!k0 || k0 === best.k) return best;
+      const r = modelo(m), p0 = r.mk[k0];
+      if (p0 >= 0.55 && p0 <= 0.85 && p0 >= best.p - 0.03) return { k: k0, p: p0 };
+    } catch (e) {}
+    return best;
+  };
+})(matchBestMarket);
 
 renderWallet(); renderUpdateInfo();
 
