@@ -1360,15 +1360,17 @@ select.inp { appearance: auto; }
         <div class="panel-b" id="cfgProfileZe" style="font-size:.88rem;line-height:1.5;"></div>
       </div>
       <div class="panel">
-        <div class="panel-h"><span>🏁 Nova época</span></div>
+        <div class="panel-h"><span>🏁 Banca e época</span></div>
         <div class="panel-b">
           <div id="cfgSeasonNow" class="hint" style="margin-bottom:10px;"></div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+            <label class="lbl">Recarregar (€)<input id="cfgTopUp" class="inp" type="number" inputmode="decimal" step="1" min="1" placeholder="ex. 20" style="width:110px;"></label>
+            <button class="btn btn-primary" onclick="recarregarBanca()">💰 Recarregar</button>
             <label class="lbl">A tua banca inicial (€)<input id="cfgStartYou" class="inp" type="number" inputmode="decimal" step="1" min="1" style="width:130px;"></label>
             <label class="lbl">Banca inicial do Zé (€)<input id="cfgStartZe" class="inp" type="number" inputmode="decimal" step="1" min="1" style="width:130px;"></label>
             <button class="btn btn-lime" onclick="novaEpoca(false)">Começar nova época</button>
           </div>
-          <div class="hint" style="margin-top:10px;">Dá-lhe menos dinheiro se quiseres. O líder é decidido pelo <b>ROI</b> (lucro ÷ banca inicial), por isso é justo com bancas diferentes. A época atual fica guardada no histórico.</div>
+          <div class="hint" style="margin-top:10px;"><b>💰 Recarregar</b> põe o montante nas duas bancas sem fechar a época — o que já perdeste ou ganhaste continua a contar. <b>Nova época</b> fecha tudo e começa do zero. Dá-lhe menos dinheiro se quiseres. O líder é decidido pelo <b>ROI</b> (lucro ÷ banca inicial), por isso é justo com bancas diferentes. A época atual fica guardada no histórico.</div>
         </div>
       </div>
       <div class="panel">
@@ -7813,7 +7815,7 @@ addBet = function (bet, who) {
   const avail = who === 'ze' ? b.ze : b.you;
   if (stake > avail + 1e-9) {
     if (who === 'ze') return null;
-    alert(`Saldo insuficiente: tens ${eur(Math.max(0, avail))} disponíveis e querias apostar ${eur(stake)}.\n\nEspera pelos resultados, anula uma aposta que não fizeste, ou começa uma nova época em Definições.`);
+    alert(`Saldo insuficiente: tens ${eur(Math.max(0, avail))} disponíveis e querias apostar ${eur(stake)}.\n\nEspera pelos resultados, anula uma aposta que não fizeste, recarrega a banca (💰 Recarregar) ou começa uma nova época em Definições.`);
     return null;
   }
   bet.odd = r2(odd); bet.stake = r2(stake);
@@ -11378,7 +11380,7 @@ try { updateContinue(); } catch (e) {}
    - chat novo: classificação de qualquer liga, «transferências benfica», «mercado»
    - a app atualiza-se sozinha quando há versão nova
    ===================================================================== */
-const APP_VER = 'v59';
+const APP_VER = 'v60';
 
 /* ---------- 1) notícias e YouTube sem falhar ---------- */
 const FEED_LS = 'ze_feed_cache_v1';
@@ -16023,6 +16025,89 @@ zeTalk = (function (prev) {
     document.head.appendChild(css);
   } catch (e) {}
 })();
+
+
+/* =====================================================================
+   v60 · 💰 Recarregar banca (sem fechar a época)
+   O montante entra nas duas bancas (tua e do Zé) e também no «capital investido» de cada um:
+   - se estavas a perder, continuas a ver a perda (a recarga não esconde o prejuízo);
+   - se estavas a ganhar, a banca simplesmente cresce — o lucro continua a ser só o que ganhaste.
+   O ROI passa a ser (banca − capital) ÷ capital. Cada recarga fica registada.
+   ===================================================================== */
+function recarregarBanca() {
+  const el = document.getElementById('cfgTopUp');
+  const a = Math.round(parseFloat(String((el && el.value) || '').replace(',', '.')) * 100) / 100;
+  if (!(a > 0)) { toast('Mete o montante a recarregar (ex. 20).'); if (el) el.focus(); return; }
+  const b = loadBank();
+  const resY = b.you + openStake(b.bets) - b.startYou, resZ = b.ze + openStake(b.zeBets) - b.startZe;
+  if (!confirm(`Recarregar ${a.toFixed(2)} € na tua banca e na do Zé?\n\nTu: ${b.you.toFixed(2)} → ${(b.you + a).toFixed(2)} € (resultado até agora ${resY >= 0 ? '+' : ''}${resY.toFixed(2)} € fica igual)\nZé: ${b.ze.toFixed(2)} → ${(b.ze + a).toFixed(2)} € (resultado ${resZ >= 0 ? '+' : ''}${resZ.toFixed(2)} € fica igual)`)) return;
+  b.topups = b.topups || [];
+  b.topups.push({ at: new Date().toISOString(), amount: a, youBefore: b.you, zeBefore: b.ze, resYou: +resY.toFixed(2), resZe: +resZ.toFixed(2) });
+  b.you = r2(b.you + a); b.ze = r2(b.ze + a);
+  b.startYou = r2(b.startYou + a); b.startZe = r2(b.startZe + a); b.start = b.startYou;
+  b.zePeak = Math.max(b.zePeak || 0, b.ze);
+  saveBank(b);
+  if (el) el.value = '';
+  try { renderBanca(); } catch (e) {}
+  try { renderConfig(); } catch (e) {}
+  toast(`💰 Recarregado ${a.toFixed(2)} € · ${pname()} ${b.you.toFixed(2)} € · Zé ${b.ze.toFixed(2)} €`);
+}
+/* a recarga fica na época atual; ao começar nova época passa para o histórico */
+novaEpoca = (function (prev) {
+  return function () {
+    const b0 = loadBank(), tops = (b0.topups || []).slice();
+    const r = prev.apply(this, arguments);
+    try {
+      const b = loadBank();
+      if (tops.length && b.season === b0.season + 1 && b.seasons[0] && b.seasons[0].n === b0.season) { b.seasons[0].topups = tops.reduce((s, t) => s + t.amount, 0); b.topups = []; saveBank(b); }
+    } catch (e) {}
+    return r;
+  };
+})(novaEpoca);
+renderConfig = (function (prev) {
+  return function () {
+    const r = prev.apply(this, arguments);
+    try {
+      const b = loadBank(), T = b.topups || [], el = document.getElementById('cfgSeasonNow');
+      if (el && T.length && !el.querySelector('.cfg-tops')) {
+        const tot = T.reduce((s, t) => s + t.amount, 0);
+        el.innerHTML = el.innerHTML.replace('Tu começaste com', 'Capital: tu').replace('· Zé com', '· Zé');
+        el.insertAdjacentHTML('beforeend', `<div class="cfg-tops" style="margin-top:4px;">💰 Inclui <b>+${tot.toFixed(2)} €</b> de recargas (${T.length} vez${T.length > 1 ? 'es' : ''}) — o ROI conta com isto, por isso não fica inflacionado.</div>`);
+      }
+    } catch (e) {}
+    return r;
+  };
+})(renderConfig);
+
+/* ---------- 🤖 o Zé também aposta o boletim seguro ---------- */
+function safeZeBet() {
+  const S = safeSel(); if (!S.length) { toast('Escolhe pelo menos uma seleção.'); return; }
+  if (S.some(x => !(x.od > 1))) { toast('Falta a odd de alguma seleção (mete a da tua casa).'); return; }
+  const O = S.reduce((a, x) => a * x.od, 1), P = S.reduce((a, x) => a * x.c.p, 1);
+  if (O < ZE_MIN_ODD) { toast(`🤖 Passo: odd total ${O.toFixed(2)} — abaixo de ${ZE_MIN_ODD.toFixed(2)} o Zé não aposta. Junta mais um jogo.`); return; }
+  const b = loadBank();
+  const key = S.map(x => x.c.m.home + '|' + x.c.key).sort().join(',');
+  if (b.zeBets.some(z => z.safeKey === key && Date.now() - Date.parse(z.at || 0) < 2 * 864e5)) { toast('🤖 Já apostei este boletim.'); return; }
+  const typed = parseFloat(String((document.getElementById('ssStake') || {}).value || '').replace(',', '.'));
+  const stake = r2(Math.min(b.ze, typed > 0 ? typed : chStake()));
+  if (!(stake > 0)) { toast('🤖 Estou sem banca — recarrega em Definições.'); return; }
+  const leg = x => ({ home: x.c.m.home, away: x.c.m.away, sel: marketName(x.c.key, x.c.m), odd: +x.od.toFixed(2), market: x.c.key });
+  const ev = P * O - 1;
+  const ok = addBet({ match: S.length === 1 ? `${S[0].c.m.home} vs ${S[0].c.m.away}` : `Boletim seguro do Zé (${S.length} jogos)`, pick: S.length === 1 ? marketName(S[0].c.key, S[0].c.m) : 'Múltipla segura', odd: +O.toFixed(2), stake, legs: S.map(leg), source: 'boletim-seguro-ze', safeKey: key, pUsed: +P.toFixed(3), zeCompare: `Boletim seguro · prob ${pct(P)} · odd ${O.toFixed(2)} · EV ${(ev * 100).toFixed(1)}%` }, 'ze');
+  if (ok) { toast(`🤖 Aposto ${stake.toFixed(2)} € no boletim seguro (${S.length} jogo${S.length > 1 ? 's' : ''}, odd ${O.toFixed(2)}, eu dou ${pct(P)}).`); try { renderBanca(); } catch (e) {} try { updateContinue(); } catch (e) {} }
+}
+safeSum = (function (prev) {
+  return function () {
+    const r = prev.apply(this, arguments);
+    try {
+      const el = document.getElementById('ssSum'); if (!el || el.querySelector('.ss-ze')) return r;
+      const row = el.querySelector('div[style*="flex"]'); if (!row) return r;
+      row.insertAdjacentHTML('beforeend', `<button class="btn ss-ze" onclick="safeZeBet()">🤖 O Zé aposta</button>`);
+      el.insertAdjacentHTML('beforeend', `<div class="muted" style="font-size:.74rem;margin-top:4px;">«O Zé aposta» regista o boletim na banca do Zé como múltipla (com o valor que meteres, ou a stake dele: 1–2% da banca). Abaixo de odd ${ZE_MIN_ODD.toFixed(2)} ele passa.</div>`);
+    } catch (e) {}
+    return r;
+  };
+})(safeSum);
 
 renderWallet(); renderUpdateInfo();
 
