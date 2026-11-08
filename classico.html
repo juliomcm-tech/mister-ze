@@ -11380,7 +11380,7 @@ try { updateContinue(); } catch (e) {}
    - chat novo: classificação de qualquer liga, «transferências benfica», «mercado»
    - a app atualiza-se sozinha quando há versão nova
    ===================================================================== */
-const APP_VER = 'v61';
+const APP_VER = 'v61c';
 
 /* ---------- 1) notícias e YouTube sem falhar ---------- */
 const FEED_LS = 'ze_feed_cache_v1';
@@ -16209,7 +16209,7 @@ async function zeAutoRun(force) {
         if (s.stake < 0.1) break;
         a.bank = r2(a.bank - s.stake);
         a.bets.unshift({ id: Date.now() + Math.random().toString(36).slice(2, 6), at: new Date().toISOString(), day: today, ev: String(c.m.espn.ev), code: c.m.espn.code,
-          h: c.m.home, a: c.m.away, lg: c.m.league || '', ko: c.k.getTime(), k: c.k2, label: marketName(c.k2, c.m), p: +c.p.toFixed(3), o: +(+c.odd).toFixed(2), book: c.book || '',
+          h: c.m.home, a: c.m.away, lg: c.m.league || '', ko: c.k.getTime(), k: c.k2, label: marketName(c.k2, c.m), p: +c.p.toFixed(3), o: +(+c.odd).toFixed(2), book: c.book || '', od: c.oddDer ? 1 : 0,
           stake: s.stake, how: s.how, evp: +s.ev.toFixed(3), kind: c.selo && c.selo.grade === 'ouro' ? 'ouro' : c.cat === 'valor' ? 'valor' : 'desafio', st: 'open' });
         left--; nw++;
       }
@@ -16283,7 +16283,7 @@ function autoAllBets() {
   const r = Object.keys(AUTO_W).flatMap(w => autoLoad(w).bets.map(x => Object.assign({ w }, x)));
   AUTO_ALL_MEMO = { v, t: Date.now(), r }; return r;
 }
-function autoRowHTML(x) { return `<div class="zst-row"><span style="font-size:.8rem;">${x.st === 'win' ? '✅' : x.st === 'loss' ? '❌' : x.st === 'void' ? '↩️' : '⏳'} ${esc(x.h)}–${esc(x.a)} · ${esc(x.label)}${x.res ? ` · ${esc(x.res)}` : ''} <span class="muted">${AUTO_W[x.w] ? AUTO_W[x.w].name.split(' ')[0] : ''}</span></span><span class="muted" style="font-size:.78rem;">${x.stake.toFixed(2)} € @ ${x.o.toFixed(2)} · ${Math.round(x.p * 100)}%</span></div>`; }
+function autoRowHTML(x) { return `<div class="zst-row"><span style="font-size:.8rem;">${x.st === 'win' ? '✅' : x.st === 'loss' ? '❌' : x.st === 'void' ? '↩️' : '⏳'} ${esc(x.h)}–${esc(x.a)} · ${esc(x.label)}${x.res ? ` · ${esc(x.res)}` : ''} <span class="muted">${AUTO_W[x.w] ? AUTO_W[x.w].name.split(' ')[0] : ''}</span></span><span class="muted" style="font-size:.78rem;">${x.stake.toFixed(2)} € @ ${x.od ? '≈' : ''}${x.o.toFixed(2)} · ${Math.round(x.p * 100)}%</span></div>`; }
 function autoTableHTML() {
   return `<div style="overflow-x:auto;"><table class="rx-t"><tr><th>estratégia</th><th>carteira</th><th>ROI</th><th>certas</th><th>retorno</th><th>CLV</th></tr>${Object.keys(AUTO_W).map(w => { const a = autoLoad(w), s = autoStats(a); return `<tr><td><b>${AUTO_W[w].name}</b><br><span class="muted" style="font-size:.7rem;">${AUTO_W[w].desc} · até ${a.perDay}/dia</span></td><td>${s.value.toFixed(2)} €${s.open ? `<br><span class="muted" style="font-size:.7rem;">${s.open} em jogo</span>` : ''}</td><td class="${s.roi >= 0 ? 'rx-pos' : 'rx-neg'}">${s.roi >= 0 ? '+' : ''}${(s.roi * 100).toFixed(1)}%</td><td>${s.n ? `${s.w}/${s.n}` : '—'}</td><td>${s.yield != null ? (s.yield * 100).toFixed(1) + '%' : '—'}</td><td>${s.clv != null ? (s.clv >= 0 ? '+' : '') + (s.clv * 100).toFixed(1) + '%' : '—'}</td></tr>`; }).join('')}</table></div>`;
 }
@@ -16334,7 +16334,7 @@ function autoBetsOf(m) { try { const ev = m && m.espn && String(m.espn.ev); if (
 function autoBadge(m) {
   const L = autoBetsOf(m); if (!L.length) return '';
   const byK = {}; L.forEach(x => { (byK[x.label] = byK[x.label] || []).push(x); });
-  return `<div class="auto-badge">🤖 Piloto apostou: ${Object.entries(byK).map(([lab, X]) => `<b>${esc(lab)}</b> @ ${X[0].o.toFixed(2)} (${X.map(x => AUTO_W[x.w].name.split(' ')[0]).join('')}) ${X[0].st === 'win' ? '✅' : X[0].st === 'loss' ? '❌' : X[0].st === 'void' ? '↩️' : '⏳'}`).join(' · ')}</div>`;
+  return `<div class="auto-badge">🤖 Piloto apostou: ${Object.entries(byK).map(([lab, X]) => `<b>${esc(lab)}</b> @ ${X[0].od ? '≈' : ''}${X[0].o.toFixed(2)} (${X.map(x => AUTO_W[x.w].name.split(' ')[0]).join('')}) ${X[0].st === 'win' ? '✅' : X[0].st === 'loss' ? '❌' : X[0].st === 'void' ? '↩️' : '⏳'}`).join(' · ')}</div>`;
 }
 zeLogText = (function (prev) { return function () { let t = prev.apply(this, arguments); try { const parts = Object.keys(AUTO_W).map(w => { const a = autoLoad(w), s = autoStats(a); return a.bets.length ? `${w} ${s.value.toFixed(0)}/${s.capital.toFixed(0)} ${s.w}/${s.n} y${s.yield != null ? (s.yield * 100).toFixed(0) : '-'} clv${s.clv != null ? (s.clv * 100).toFixed(1) : '-'}` : ''; }).filter(Boolean); if (parts.length) t = t.replace(/\n(erros:)/, `\npiloto ${autoLoad('ouro').on ? 'on' : 'off'}: ${parts.join(' · ')}\n$1`); } catch (e) {} return t; }; })(zeLogText);
 zeTalk = (function (prev) {
@@ -16352,6 +16352,78 @@ zeTalk = (function (prev) {
   };
 })(zeTalk);
 (function () { try { const css = document.createElement('style'); css.textContent = `.auto-badge{font-size:.76rem;margin:6px 0 2px;padding:6px 8px;border-radius:8px;background:rgba(76,149,240,.14);border:1px solid rgba(76,149,240,.45)}.rv-auto{font-size:.7rem;margin-left:2px}`; document.head.appendChild(css); } catch (e) {} })();
+
+
+/* ===== v61c · odds derivadas da casa (para o piloto e desafios) =====
+   A ESPN só traz 1X2 e Mais/Menos 2.5. As escolhas mais seguras (1X, X2, Mais 1.5, Menos 3.5)
+   ficavam sem odd e o piloto nunca as apostava. Agora a odd sai das odds da própria casa:
+   - dupla hipótese: 1 / (1/odd1 + 1/oddX)  (a margem da casa fica incluída)
+   - outras linhas de golos: ajusta Poisson à linha 2.5 da casa e aplica a mesma margem. */
+function oddDerived(m, k) {
+  try {
+    const st = studyFor(m), b = st && st.books && st.books[0], o = b && b.odds; if (!o) return null;
+    if (o[k] > 1) return { odd: +o[k], der: false, book: b.provider };
+    if (OUT_SET[k] && o['1'] > 1 && o.X > 1 && o['2'] > 1) {
+      const s = OUT_SET[k].reduce((a, j) => a + 1 / o[j], 0);
+      return s > 0 && s < 1 ? { odd: +(1 / s).toFixed(2), der: true, book: b.provider } : null;
+    }
+    const g = /^([OU])(\d+)\.5$/.exec(k);
+    if (g && o['O2.5'] > 1 && o['U2.5'] > 1) {
+      const t = 1 / o['O2.5'] + 1 / o['U2.5'], pO = (1 / o['O2.5']) / t;
+      const cdf = (lam, n) => { let s = 0, term = Math.exp(-lam); for (let i = 0; i <= n; i++) { if (i) term *= lam / i; s += term; } return s; };
+      let lo = 0.2, hi = 6;
+      for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; if (1 - cdf(mid, 2) < pO) lo = mid; else hi = mid; }
+      const lam = (lo + hi) / 2, n = +g[2], pU = cdf(lam, n), p = g[1] === 'O' ? 1 - pU : pU;
+      if (!(p > 0.02 && p < 0.98)) return null;
+      return { odd: +(1 / (p * t)).toFixed(2), der: true, book: b.provider };
+    }
+  } catch (e) {}
+  return null;
+}
+const _chOddOfV61 = chOddOf;
+chOddOf = function (m, k, p) {
+  const d = oddDerived(m, k);
+  if (d && d.odd > 1) return { odd: d.odd, est: false, der: d.der, book: d.book };
+  return _chOddOfV61(m, k, p);
+};
+const _chFixMinOddV61 = chFixMinOdd;
+chFixMinOdd = function (c) {
+  const r = _chFixMinOddV61(c);
+  if (!r) return r;
+  const d = oddDerived(r.m, r.k2);
+  if (!(r.odd > 1)) { if (d && d.odd >= ZE_MIN_ODD) { const o = Object.assign({}, r, { odd: d.odd, oddDer: d.der }); if (!o.book) o.book = d.book; return o; } }
+  else if (d && d.der && Math.abs(d.odd - r.odd) < 0.005 && !r.oddDer) return Object.assign({}, r, { oddDer: true });
+  return r;
+};
+
+/* ===== v61c · o piloto liquida apostas antigas (fora da janela de 4 dias do Atualizar) ===== */
+let AUTO_CATCH_AT = 0;
+async function autoCatchUp(force) {
+  if (/jsdom/i.test(navigator.userAgent || '') || window.__ZE_LAB || navigator.onLine === false) return 0;
+  if (!force && Date.now() - AUTO_CATCH_AT < 30 * 60e3) return 0;
+  if (typeof espnCooling === 'function' && espnCooling()) return 0;
+  const old = Date.now() - 3.5 * 864e5, want = {};
+  Object.keys(AUTO_W).forEach(w => autoLoad(w).bets.forEach(x => {
+    if (x.st !== 'open' || !x.code || !(x.ko < old)) return;
+    const d = new Date(x.ko); want[x.code + '|' + d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, '0')] = 1;
+  }));
+  const keys = Object.keys(want).slice(0, 4); if (!keys.length) return 0;
+  AUTO_CATCH_AT = Date.now();
+  const all = [];
+  for (const kk of keys) {
+    const [code, ym] = kk.split('|');
+    try {
+      const j = await fetchJSON(`https://site.api.espn.com/apis/site/v2/sports/soccer/${code}/scoreboard?dates=${ym}&limit=1000`);
+      (j.events || []).forEach(ev => { const n = normalizeEspn(ev, code, (typeof ESPN_LEAGUES !== 'undefined' && ESPN_LEAGUES[code]) || code); if (n) all.push(n); });
+    } catch (e) {}
+    if (typeof espnCooling === 'function' && espnCooling()) break;
+  }
+  const n = all.length ? autoGrade({ matches: all }) : 0;
+  if (n) { try { if (currentView === 'stats') renderZeStats(); if (currentView === 'config') renderConfig(); } catch (e) {} }
+  return n;
+}
+setTimeout(() => autoCatchUp().catch(() => {}), 45000);
+applyLive = (function (prev) { return function () { const r = prev.apply(this, arguments); setTimeout(() => autoCatchUp().catch(() => {}), 25000); return r; }; })(applyLive);
 
 renderWallet(); renderUpdateInfo();
 
