@@ -1,6 +1,6 @@
 (async function FLAB() {
   const post = (type, data) => { window.__FLMSG = type + ': ' + String(data).slice(0, 200); };
-  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const sleep = () => new Promise(r => { const c = new MessageChannel(); c.port1.onmessage = () => r(); c.port2.postMessage(0); });   // sem temporizadores (separadores em segundo plano travam-nos)
   try {
     const LG = window.__FL_LG, UEFA = ['uefa.champions', 'uefa.europa', 'uefa.europa.conf'], MONTHS = window.__FL_MONTHS, CAP = window.__FL_CAP || 110, END = window.__FL_END;
     const byId = new Map();
@@ -138,6 +138,7 @@
       A.rows['bt|' + x.id] = { t: 'aposta', d: x.utcDate.slice(0, 10), lg: x.competition.name, c: code, j: m.home + ' vs ' + m.away, k: z.k, s: '', p: z.p, w: MARKET_CONDS[z.k](i, j) ? 1 : 0, r: i + '-' + j };
       try { localStorage.setItem(ZARCH_KEY, JSON.stringify(A)); } catch (e) {}
       delete STUDY[key];
+      if (rows.length % 40 === 0) { post('progress', 'decididos ' + rows.length + '/' + ord.length); await sleep(); }
     }
     window.__FL = rows;
     post('done', rows.length);
