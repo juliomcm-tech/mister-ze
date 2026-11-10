@@ -73,6 +73,9 @@ const ev = async code => { const r = w.eval(code); return (r && typeof r.then ==
 const VER = await ev('typeof APP_VER !== "undefined" ? APP_VER : "?"');
 console.log('app', VER, '· memória', Object.keys(estado.ls || {}).length, 'chaves');
 
+/* ---------- 0) perfil das equipas: tabelas da época passada (uma vez por época, como no telemóvel) ---------- */
+try { if (await ev('zePrevSeasonAuto()')) console.log('perfil das equipas: época passada carregada · pedidos', net.n); } catch (e) { nota('época passada: ' + (e && e.message)); }
+
 /* ---------- 1) Atualizar ---------- */
 let payload = null, liveOk = false;
 try {
