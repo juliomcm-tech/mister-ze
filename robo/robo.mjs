@@ -3,7 +3,7 @@
    Corre a própria app (classico.html) sem ecrã, de 15 em 15 minutos, no GitHub Actions:
    1) «Atualizar» → dados/live.json   (jogos, resultados e classificações, prontos a usar pela app)
    2) odds das casas, com histórico   → dados/odds.json  + dados/hist/AAAA-MM.json (jogos acabados)
-   3) piloto automático na nuvem      → dados/piloto.json
+   3) piloto automático na nuvem      → dados/piloto.json (+ piloto-hist.json e piloto.csv: histórico completo)
    4) estado do robô                  → dados/robo.json  (+ dados/estado.json: a memória do robô)
    Só fala com a ESPN. Não guarda nada pessoal: só jogos, odds e as apostas virtuais do piloto.
    ===================================================================== */
@@ -172,9 +172,12 @@ if (liveOk) {
       const prov = E.s && (E.s.Bet365 ? 'Bet365' : Object.keys(E.s)[0]); const L = prov && E.s[prov]; const u = L && L[L.length - 1];
       if (u && agora - u[0] * 60000 < 13 * H) books[id] = { provider: prov, odds: u[1], scorers: [], oc: E.oc };
     });
-    w.__ROBO_IN = JSON.stringify({ books, maxEstudos: pausa ? 0 : 8, testeEstudo: Number(process.env.ROBO_TESTE_ESTUDO) || 0 });
+    w.__ROBO_IN = JSON.stringify({ books, maxEstudos: pausa ? 0 : 8, testeEstudo: Number(process.env.ROBO_TESTE_ESTUDO) || 0, hist: rd('piloto-hist.json', { v: 1, bets: {} }).bets });
     piloto = JSON.parse(await ev(fs.readFileSync(path.join(HERE, 'piloto.js'), 'utf8')));
     (piloto.out.log || []).forEach(nota);
+    // histórico completo do piloto, para estudo e para imprimir: JSON + CSV (abre no Excel)
+    if (piloto.hist) wr('piloto-hist.json', { v: 1, at: new Date().toISOString(), bets: piloto.hist });
+    if (piloto.csv) { fs.writeFileSync(path.join(DIR, 'piloto.csv'), piloto.csv); }
     const antes = rd('piloto.json', null);
     wr('piloto.json', { at: new Date().toISOString(), ver: VER, regras: piloto.regras, nomes: piloto.nomes, carteiras: piloto.wallets, desde: (antes && antes.desde) || new Date().toISOString() });
   } catch (e) { nota('piloto: ' + (e && e.message)); }

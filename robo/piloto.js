@@ -46,5 +46,11 @@
   } catch (e) { out.log.push('piloto: ' + (e && e.stack || e)); }
   const wallets = {};
   Object.keys(AUTO_W).forEach(w => { const a = lsGet(AUTO_W[w].key, null); if (a) wallets[w] = Object.assign({}, a, { bets: (a.bets || []).slice(0, 400) }); });
-  return JSON.stringify({ out, wallets, regras: typeof ZE_RULES !== 'undefined' ? ZE_RULES.ver : null, nomes: Object.fromEntries(Object.keys(AUTO_W).map(w => [w, { name: AUTO_W[w].name, desc: AUTO_W[w].desc }])) });
+  // histórico completo (nunca se apaga): junta as apostas de agora às de corridas anteriores e escreve o CSV para estudo
+  const hist = IN.hist || {}; let csv = null;
+  try {
+    Object.keys(AUTO_W).forEach(w => { const a = lsGet(AUTO_W[w].key, null); ((a && a.bets) || []).forEach(x => { hist[w + '|' + x.id] = Object.assign({}, x, { w }); }); });
+    if (typeof autoCSVText === 'function') csv = autoCSVText(Object.values(hist));
+  } catch (e) { out.log.push('histórico: ' + (e && e.message)); }
+  return JSON.stringify({ out, wallets, hist, csv, regras: typeof ZE_RULES !== 'undefined' ? ZE_RULES.ver : null, nomes: Object.fromEntries(Object.keys(AUTO_W).map(w => [w, { name: AUTO_W[w].name, desc: AUTO_W[w].desc }])) });
 })()
