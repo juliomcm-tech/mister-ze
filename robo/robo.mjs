@@ -1,6 +1,6 @@
 /* =====================================================================
    Robô do Mister Zé
-   Corre a própria app (classico.html) sem ecrã, de 30 em 30 minutos, no GitHub Actions:
+   Corre a própria app (classico.html) sem ecrã, de 15 em 15 minutos, no GitHub Actions:
    1) «Atualizar» → dados/live.json   (jogos, resultados e classificações, prontos a usar pela app)
    2) odds das casas, com histórico   → dados/odds.json  + dados/hist/AAAA-MM.json (jogos acabados)
    3) piloto automático na nuvem      → dados/piloto.json

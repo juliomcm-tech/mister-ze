@@ -1,9 +1,9 @@
 name: robo
-# Robô do Mister Zé: de 30 em 30 minutos vai buscar jogos, resultados e odds e corre o piloto na nuvem.
+# Robô do Mister Zé: de 15 em 15 minutos vai buscar jogos, resultados e odds e corre o piloto na nuvem.
 # Os dados ficam no ramo «dados» (um só commit, sempre substituído), que a app lê.
 on:
   schedule:
-    - cron: '7,37 * * * *'
+    - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
   push:
     branches: [main, robo-dev]
