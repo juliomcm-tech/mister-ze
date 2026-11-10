@@ -11387,7 +11387,7 @@ try { updateContinue(); } catch (e) {}
    - chat novo: classificação de qualquer liga, «transferências benfica», «mercado»
    - a app atualiza-se sozinha quando há versão nova
    ===================================================================== */
-const APP_VER = 'v64';
+const APP_VER = 'v64b';
 
 /* ---------- 1) notícias e YouTube sem falhar ---------- */
 const FEED_LS = 'ze_feed_cache_v1';
@@ -16943,10 +16943,12 @@ fetchJSON = (function (prev) {
 espnStandings = (function (prev) { return function (j) { if (j && j.__robo) return j.__robo; return prev.apply(this, arguments); }; })(espnStandings);
 
 /* ---------- 2) piloto na nuvem ---------- */
-let CLOUD = null, CLOUD_TRIED = false, ROBO_SAUDE = null, AUTO_FORCE_LOCAL = 0, CLOUD_AT = 0;
+let CLOUD = null, CLOUD_MODE_SEEN = null, CLOUD_TRIED = false, ROBO_SAUDE = null, AUTO_FORCE_LOCAL = 0, CLOUD_AT = 0;
 try { const c = lsGet(CLOUD_KEY, null); if (c && c.carteiras && c.carteiras.ouro) CLOUD = c; } catch (e) {}
 function cloudOk() { return !!(CLOUD && CLOUD.carteiras && CLOUD.carteiras.ouro) && roboOn(); }
-function autoMode() { if (AUTO_FORCE_LOCAL || !cloudOk()) return 'local'; return lsGet(AUTO_MODE_KEY, null) === 'local' ? 'local' : 'nuvem'; }
+/* o robô deu sinal de vida nas últimas 3 horas? se não, quem aposta volta a ser o piloto deste telemóvel */
+function cloudAlive() { const t = Math.max(CLOUD && CLOUD.at ? Date.parse(CLOUD.at) : 0, ROBO_SAUDE && ROBO_SAUDE.at ? Date.parse(ROBO_SAUDE.at) : 0); return Date.now() - t < 3 * 3600e3; }
+function autoMode() { if (AUTO_FORCE_LOCAL || !cloudOk()) return 'local'; if (lsGet(AUTO_MODE_KEY, null) === 'local') return 'local'; return cloudAlive() ? 'nuvem' : 'local'; }
 async function cloudRefresh(force) {
   if (!roboOn()) return false;
   if (!force && Date.now() - CLOUD_AT < 4 * 60e3) return false;
@@ -16961,7 +16963,8 @@ async function cloudRefresh(force) {
       // cópia pequena para a app arrancar já em modo nuvem (as contas completas chegam uns segundos depois)
       try { const lite = Object.assign({}, p, { parcial: 1, carteiras: {} }); Object.keys(p.carteiras).forEach(w => { lite.carteiras[w] = Object.assign({}, p.carteiras[w], { bets: (p.carteiras[w].bets || []).slice(0, 120) }); }); lsSet(CLOUD_KEY, lite); } catch (e) {}
       if (was !== autoMode() || autoMode() === 'nuvem') cloudRepaint();
-    }
+    } else if (CLOUD && CLOUD_MODE_SEEN !== autoMode()) cloudRepaint();
+    CLOUD_MODE_SEEN = autoMode();
   } catch (e) { CLOUD_TRIED = true; }
   return ch;
 }
@@ -16970,6 +16973,7 @@ function cloudRepaint() {
   try { if (currentView === 'config') renderConfig(); else if (currentView === 'stats') renderZeStats(); else if (currentView === 'portal') renderPortal(); } catch (e) {}
 }
 function autoModeSet(m) {
+  if (m !== 'local' && !cloudAlive()) { lsSet(AUTO_MODE_KEY, 'nuvem'); cloudRepaint(); toast('☁️ O robô na nuvem está parado. Quando voltar, o piloto da nuvem aparece aqui sozinho.'); return; }
   lsSet(AUTO_MODE_KEY, m === 'local' ? 'local' : 'nuvem');
   cloudRepaint();
   toast(m === 'local' ? '📱 A mostrar o piloto deste telemóvel (só corre com a app aberta).' : '☁️ A mostrar o piloto na nuvem (corre 24 h, igual para todos).');
@@ -17019,7 +17023,8 @@ function roboState() {
 }
 function autoSwitchHTML() {
   const m = autoMode(), b = (k, lab) => `<button class="btn btn-sm ${m === k ? 'btn-lime' : ''}" onclick="autoModeSet('${k}')">${lab}</button>`;
-  return `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">${b('nuvem', '☁️ Na nuvem')}${b('local', '📱 Neste telemóvel')}</div>`;
+  const dead = !cloudAlive() && lsGet(AUTO_MODE_KEY, null) !== 'local';
+  return `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">${b('nuvem', '☁️ Na nuvem')}${b('local', '📱 Neste telemóvel')}</div>${dead ? `<div class="hint" style="margin-bottom:10px;">⚠️ O robô na nuvem está parado${ROBO_SAUDE && ROBO_SAUDE.at ? ` (última corrida ${roboAgeTxt(ROBO_SAUDE.at)})` : ''}. Enquanto não voltar, quem aposta é o piloto deste telemóvel.</div>` : ''}`;
 }
 autoPanelHTML = (function (prev) {
   return function () {
