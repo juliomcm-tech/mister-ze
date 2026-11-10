@@ -169,7 +169,7 @@ if (liveOk) {
       const prov = E.s && (E.s.Bet365 ? 'Bet365' : Object.keys(E.s)[0]); const L = prov && E.s[prov]; const u = L && L[L.length - 1];
       if (u && agora - u[0] * 60000 < 13 * H) books[id] = { provider: prov, odds: u[1], scorers: [], oc: E.oc };
     });
-    w.__ROBO_IN = JSON.stringify({ books, maxEstudos: pausa ? 0 : 8 });
+    w.__ROBO_IN = JSON.stringify({ books, maxEstudos: pausa ? 0 : 8, testeEstudo: Number(process.env.ROBO_TESTE_ESTUDO) || 0 });
     piloto = JSON.parse(await ev(fs.readFileSync(path.join(HERE, 'piloto.js'), 'utf8')));
     (piloto.out.log || []).forEach(nota);
     const antes = rd('piloto.json', null);

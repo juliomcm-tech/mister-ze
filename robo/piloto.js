@@ -29,6 +29,16 @@
     try { SELO_STUDY_RUN = true; } catch (e) {}
     try { INTL_STUDY_RUN = true; } catch (e) {}
     out.novas = await zeAutoRun(true);
+    // (diagnóstico, só quando pedido) estuda N jogos e diz o que conseguiu ler — não aposta
+    if (IN.testeEstudo) {
+      const up = matches.filter(m => m.live && !m.past && m.espn && m.espn.ev).slice(0, IN.testeEstudo);
+      for (const m of up) {
+        const t = Date.now();
+        try { const st = await zeStudy(m); const z = zeLogical(m); const c = chFixMinOdd({ m, i: 0, k2: z.k, p: z.p, odd: null, cat: 'dia', score: 1 }); const sl = c ? zeSelo(m, c.k2, c.p, c.odd) : null;
+          out.log.push(`teste ${m.home}–${m.away}: ${Date.now() - t} ms · casas ${(st.books || []).map(b => b.provider).join('+') || '—'} · forma ${st.recentH ? st.recentH.length : '—'}/${st.recentA ? st.recentA.length : '—'} · descanso ${st.restH && st.restH.since != null ? st.restH.since.toFixed(1) : '—'}/${st.restA && st.restA.since != null ? st.restA.since.toFixed(1) : '—'} · escolha ${c ? c.k2 + ' @' + c.odd + ' p' + c.p.toFixed(2) : z.k} · selo ${sl ? (sl.grade || 'não') : '—'} · fatores ${JSON.stringify(zeFactors(m, z.k))}`);
+        } catch (e) { out.log.push('teste ' + m.home + ': ERRO ' + (e && e.message)); }
+      }
+    }
     // 4) apostas antigas por fechar e odds de fecho (CLV)
     try { Object.defineProperty(navigator, 'userAgent', { get: () => 'MisterZeRobo/1.0', configurable: true }); } catch (e) { out.log.push('ua: ' + e.message); }
     try { out.atrasadas = await autoCatchUp(true); } catch (e) { out.log.push('atrasadas: ' + (e && e.message)); }

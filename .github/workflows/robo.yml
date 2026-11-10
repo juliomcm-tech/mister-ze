@@ -20,6 +20,7 @@ jobs:
     env:
       TZ: Europe/Lisbon
       RAMO: ${{ github.ref_name == 'main' && 'dados' || 'dados-dev' }}
+      ROBO_TESTE_ESTUDO: ${{ github.ref_name == 'main' && '0' || '3' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
