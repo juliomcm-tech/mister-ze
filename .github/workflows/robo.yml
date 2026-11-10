@@ -1,0 +1,22 @@
+name: robo
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['robo/**', '.github/workflows/robo.yml']
+permissions:
+  contents: write
+concurrency:
+  group: robo
+  cancel-in-progress: false
+jobs:
+  robo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: teste de acesso
+        run: node robo/teste.mjs
