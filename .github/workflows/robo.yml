@@ -1,22 +1,41 @@
 name: robo
+# Robô do Mister Zé: de 30 em 30 minutos vai buscar jogos, resultados e odds e corre o piloto na nuvem.
+# Os dados ficam no ramo «dados» (um só commit, sempre substituído), que a app lê.
 on:
+  schedule:
+    - cron: '7,37 * * * *'
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, robo-dev]
     paths: ['robo/**', '.github/workflows/robo.yml']
 permissions:
   contents: write
 concurrency:
-  group: robo
+  group: robo-${{ github.ref_name }}
   cancel-in-progress: false
 jobs:
   robo:
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    env:
+      TZ: Europe/Lisbon
+      RAMO: ${{ github.ref_name == 'main' && 'dados' || 'dados-dev' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-      - name: teste de acesso
-        run: node robo/teste.mjs
+          node-version: 22
+      - name: instalar
+        run: cd robo && npm ci --no-audit --no-fund
+      - name: dados da corrida anterior
+        run: git clone --quiet --depth 1 --branch "$RAMO" "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" dados || mkdir -p dados
+      - name: correr o robô
+        run: node robo/robo.mjs
+      - name: publicar
+        run: |
+          cd dados
+          rm -rf .git
+          git init -q -b "$RAMO"
+          git add -A
+          git -c user.name="mister-ze-robo" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -qm "dados $(date -u +%FT%TZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" "$RAMO"
