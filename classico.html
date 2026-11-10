@@ -6762,6 +6762,14 @@ function bySource(b) {
 /* ---------- Extrato ---------- */
 const KIND_LABEL = { abertura: 'Abertura', aposta: 'Aposta', premio: 'Prémio', reembolso: 'Reembolso', ajuste: 'Ajuste', estorno: 'Estorno' };
 const STATUS_PILL = { open: ['Aberta', 'open'], win: ['Ganha', 'win'], loss: ['Perdida', 'loss'], void: ['Nula', 'void'], cancel: ['Anulada', 'void'] };
+/** estado de cada linha do extrato: a aposta mostra como acabou; o prémio, o reembolso e o estorno também */
+function extratoPill(e) {
+  if (!e || !e.bet) return null;
+  if (e.kind === 'premio') return STATUS_PILL.win;
+  if (e.kind === 'reembolso') return STATUS_PILL.void;
+  if (e.kind === 'estorno') return STATUS_PILL.cancel;
+  return STATUS_PILL[e.bet.status] || ['Por conferir', 'open'];
+}
 function extratoRows(b) {
   const led = buildLedger(b, wlAcc);
   const from = periodFrom();
@@ -6793,7 +6801,7 @@ function renderExtrato() {
   box.innerHTML = rows.length ? `<table class="ltable stmt">
     <thead><tr><th>Data</th><th>Documento</th><th>Descrição</th><th>Estado</th><th class="num">Débito</th><th class="num">Crédito</th><th class="num">Saldo</th></tr></thead>
     <tbody>${rows.slice().reverse().map(e => {
-      const pill = e.kind === 'aposta' && e.bet ? STATUS_PILL[e.bet.status] : null;
+      const pill = extratoPill(e);
       return `<tr class="k-${e.kind}">
         <td data-l="Data" class="nowrap">${dtFmt(e.t, true)}</td>
         <td data-l="Doc." class="doc">${e.doc}</td>
@@ -6810,7 +6818,7 @@ function extratoCSV() {
   const { rows } = extratoRows(b);
   const n = x => (Number(x) || 0).toFixed(2).replace('.', ',');
   const lines = [['Data', 'Documento', 'Tipo', 'Descrição', 'Estado', 'Débito', 'Crédito', 'Saldo'].join(';')];
-  rows.forEach(e => lines.push([dtFmt(e.t, true), e.doc, KIND_LABEL[e.kind], '"' + String(e.desc).replace(/"/g, '""') + '"', e.bet && e.kind === 'aposta' ? STATUS_PILL[e.bet.status][0] : '', e.debit ? n(e.debit) : '', e.credit ? n(e.credit) : '', n(e.bal)].join(';')));
+  rows.forEach(e => lines.push([dtFmt(e.t, true), e.doc, KIND_LABEL[e.kind], '"' + String(e.desc).replace(/"/g, '""') + '"', (extratoPill(e) || [''])[0], e.debit ? n(e.debit) : '', e.credit ? n(e.credit) : '', n(e.bal)].join(';')));
   const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -11387,7 +11395,7 @@ try { updateContinue(); } catch (e) {}
    - chat novo: classificação de qualquer liga, «transferências benfica», «mercado»
    - a app atualiza-se sozinha quando há versão nova
    ===================================================================== */
-const APP_VER = 'v64b';
+const APP_VER = 'v64c';
 
 /* ---------- 1) notícias e YouTube sem falhar ---------- */
 const FEED_LS = 'ze_feed_cache_v1';
