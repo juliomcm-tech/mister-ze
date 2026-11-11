@@ -1,0 +1,14 @@
+{
+  "registado_em": "2026-11-11",
+  "regras_em_vigor": "R1 (sem alterações)",
+  "origem": "Auditoria de novembro de 2026: 6.994 jogos, 10 ligas, épocas 2024/25, 2025/26 e 2026/27 (até 11/11). 158 hipóteses testadas, 0 confirmadas.",
+  "como_ler": "Estes testes ficam definidos HOJE e não podem ser afinados depois. Medem-se uma única vez, com a época 2026/27 completa (maio de 2027), só com jogos posteriores a 2026-11-11. Nenhum mexe nas apostas do Zé enquanto corre.",
+  "criterio": "Lucro por euro (roi) contra a odd, com z >= 2 nos jogos novos. A taxa de acerto sozinha não conta.",
+  "testes": [
+    {"id": "T1_teto_odd_135", "ideia": "As apostas do Zé com odd de 1,35 ou mais perdem mais do que as de odd mais baixa.", "regra": "ze_odd >= 1.35", "aposta": "ZE", "tipo": "evitar", "comparar_com": "ze_odd >= 1.25 and ze_odd < 1.35", "visto_ate_agora": "2024/25 -3,5% · 2025/26 -6,8% · 2026/27 -11,1%"},
+    {"id": "T2_odd_a_subir_10", "ideia": "Apostar na vitória da casa quando a odd dela subiu mais de 10% entre a abertura e o fecho perde mais do que o normal.", "regra": "mexe_1 > 0.10", "aposta": "1", "tipo": "evitar", "comparar_com": "mexe_1 <= 0.10", "visto_ate_agora": "2024/25 -9,8% · 2025/26 -16,5% · 2026/27 -8,4%"},
+    {"id": "T3_casa_perdeu_1a_volta", "ideia": "A «vingança» não existe: apostar na casa que perdeu na 1ª volta perde mais do que o normal.", "regra": "volta1 == 'D'", "aposta": "1", "tipo": "evitar", "comparar_com": "volta1 == 'V' or volta1 == 'E'", "visto_ate_agora": "2024/25 -17,8% · 2025/26 -11,1%"}
+  ],
+  "medida_principal_do_piloto": "Odd apanhada contra a odd de fecho (CLV) e lucro por euro. A meta deixa de ser «90% de acerto».",
+  "como_medir": "gh workflow run lab.yml -f epocas=2026 → ficheiro em lab-dados → robo/auditoria/build.py 2026 → robo/auditoria/evaluate.py preregisto.json --epocas 2026 (filtrar data > 2026-11-11)"
+}

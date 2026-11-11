@@ -438,6 +438,110 @@ select.inp { appearance: auto; }
 .wl-tab { background: none; border: none; color: var(--muted); font-weight: 800; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; padding: 10px 14px 9px; border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; }
 .wl-tab.active { color: var(--text); border-bottom-color: var(--lime); }
 .wl-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+.wl-filters[hidden] { display: none; }
+/* ---- Finanças (v66): três contas, a mesma estrutura em cada uma ---- */
+.fin-accs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 2px 0 14px; }
+.fin-acc { --fc: var(--blue); --fca: rgba(90,169,255,.17); position: relative; display: flex; flex-direction: column; align-items: flex-start; min-width: 0; text-align: left; padding: 12px 10px 10px; border-radius: 14px; border: 1px solid var(--border); background: linear-gradient(165deg, var(--fca), transparent 64%), var(--card); color: var(--text); cursor: pointer; overflow: hidden; transition: transform .12s, border-color .12s, box-shadow .12s; }
+.fin-acc.ze { --fc: var(--lime); --fca: rgba(200,245,60,.13); }
+.fin-acc.auto { --fc: var(--orange); --fca: rgba(255,159,67,.16); }
+.fin-acc::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--fc); opacity: .3; }
+.fin-acc.on { border-color: var(--fc); box-shadow: 0 0 0 1px var(--fc), 0 10px 24px rgba(0,0,0,.4); }
+.fin-acc.on::before { opacity: 1; }
+.fin-acc:active { transform: scale(.98); }
+.fa-top { display: flex; align-items: center; gap: 6px; min-width: 0; width: 100%; }
+.fa-top svg, .fa-top img { flex-shrink: 0; border-radius: 50%; }
+.fa-ico { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: .82rem; background: rgba(255,255,255,.1); flex-shrink: 0; }
+.fa-name { font: 800 .8rem var(--cond); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+.fin-acc.on .fa-name { color: var(--text); }
+.fa-val { font: 800 1.3rem/1.1 var(--cond); margin-top: 8px; white-space: nowrap; }
+.fa-res { font-size: .72rem; font-weight: 800; white-space: nowrap; margin-top: 1px; }
+.fa-open { margin-top: 7px; font-size: .66rem; font-weight: 700; color: var(--muted2); white-space: nowrap; }
+.fa-open.live { color: var(--yellow); }
+@media (max-width: 380px) { .fa-val { font-size: 1.12rem; } .fin-acc { padding: 10px 8px 9px; } }
+@media (min-width: 820px) { .fin-accs { gap: 14px; } .fin-acc { padding: 16px 16px 14px; } .fa-val { font-size: 1.8rem; } .fa-name { font-size: .95rem; } }
+.fin-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 12px; }
+.fin-tools:empty { display: none; }
+.fin-chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; flex: 1 1 200px; min-width: 0; padding: 1px; }
+.fin-chips::-webkit-scrollbar { display: none; }
+.fin-chip { flex-shrink: 0; border: 1px solid var(--line2); background: var(--card); color: var(--muted); font-weight: 700; font-size: .76rem; padding: 6px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.fin-chip.on { color: var(--text); border-color: var(--lime); background: var(--tile); }
+.fin-io { display: flex; gap: 6px; margin-left: auto; }
+.fin-sum { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; margin: 0 2px 10px; font-size: .82rem; color: var(--muted); }
+.fin-sum b { color: var(--text); font: 800 1.08rem var(--cond); }
+.fin-list { display: flex; flex-direction: column; gap: 8px; }
+.fin-bet { position: relative; border: 1px solid var(--border); border-radius: 12px; background: var(--card); padding: 11px 12px 10px 16px; overflow: hidden; }
+.fin-bet::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--yellow); }
+.fin-bet.live::before { background: var(--red); }
+.fb-top { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+.fb-match { font-weight: 800; font-size: .92rem; line-height: 1.25; min-width: 0; }
+.fb-match small { display: block; font-weight: 600; font-size: .68rem; color: var(--muted2); letter-spacing: .02em; }
+.fb-pick { font-size: .86rem; margin-top: 3px; }
+.fb-nums { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; font-size: .78rem; color: var(--muted); }
+.fb-nums b { color: var(--text); }
+.fb-when { margin-top: 6px; font-size: .75rem; color: var(--muted); line-height: 1.4; }
+.fb-when.live { color: var(--red-light); font-weight: 700; }
+.fb-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.fb-tag { font-size: .68rem; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: var(--tile); color: var(--muted); white-space: nowrap; }
+.fin-more { margin-top: 9px; border-top: 1px dashed var(--border); padding-top: 7px; }
+.fin-more > summary { cursor: pointer; font-size: .72rem; font-weight: 700; color: var(--muted); list-style: none; }
+.fin-more > summary::-webkit-details-marker { display: none; }
+.fin-more > summary::after { content: ' ▸'; } .fin-more[open] > summary::after { content: ' ▾'; }
+.fin-more .acts { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+.fin-more .fm-txt { margin-top: 6px; font-size: .76rem; color: var(--muted); line-height: 1.5; }
+.fin-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0 0 12px; }
+.fin-kpi { border: 1px solid var(--border); border-radius: 10px; background: var(--card); padding: 8px 10px; min-width: 0; }
+.fin-kpi dt { font-size: .6rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fin-kpi dd { font: 800 1.08rem var(--cond); white-space: nowrap; }
+.fin-rows { border: 1px solid var(--border); border-radius: 12px; background: var(--card); overflow: hidden; }
+.fin-day { padding: 6px 12px; font: 800 .68rem var(--cond); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); background: var(--bg2); border-bottom: 1px solid var(--border); }
+.fin-row { border-bottom: 1px solid var(--border); }
+.fin-row:last-child { border-bottom: none; }
+.fin-row > summary { display: flex; gap: 10px; align-items: center; padding: 9px 12px; cursor: pointer; list-style: none; }
+.fin-row > summary::-webkit-details-marker { display: none; }
+.fr-ic { width: 22px; text-align: center; flex-shrink: 0; }
+.fr-main { flex: 1; min-width: 0; }
+.fr-match { font-weight: 700; font-size: .86rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fr-pick { font-size: .76rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fr-right { text-align: right; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; }
+.fr-right b { font-size: .88rem; white-space: nowrap; } .fr-right span { font-size: .68rem; color: var(--muted2); }
+.fr-body { padding: 0 12px 10px 44px; font-size: .76rem; color: var(--muted); line-height: 1.55; }
+.fr-body .acts { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+.fin-empty { border: 1px dashed var(--line2); border-radius: 12px; padding: 22px 14px; text-align: center; color: var(--muted); font-size: .86rem; line-height: 1.5; }
+.fin-foot { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.fin-note { font-size: .72rem; color: var(--muted2); line-height: 1.5; margin-top: 8px; }
+.fin-fold > summary { cursor: pointer; list-style: none; border-bottom: none; }
+.fin-fold > summary::-webkit-details-marker { display: none; }
+.fin-fold > summary > span:first-child::before { content: '▸ '; color: var(--muted); }
+.fin-fold[open] > summary > span:first-child::before { content: '▾ '; }
+.fin-fold[open] > summary { border-bottom: 1px solid var(--border); }
+.speech[hidden] { display: none !important; }
+.fin-head { flex-direction: row !important; align-items: flex-end !important; justify-content: space-between; flex-wrap: nowrap !important; gap: 10px; }
+.fin-head .btn-row { flex-shrink: 0; }
+.fin-find { border-top: none; padding-top: 0; margin: 0 0 12px; }
+.fin-home { border: 1px solid var(--border); border-radius: 14px; background: var(--card); padding: 11px 12px 12px; margin: 10px 0; }
+.fh-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 9px; font: 800 .86rem var(--cond); letter-spacing: .05em; text-transform: uppercase; }
+.fh-h small { font: 600 .72rem var(--font, inherit); letter-spacing: 0; text-transform: none; color: var(--muted); white-space: nowrap; }
+.fh-live { color: var(--red-light); font-weight: 800; }
+.fh-accs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.fh-a { --fc: var(--blue); display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 8px; align-items: center; text-align: left; padding: 8px 9px; border-radius: 11px; border: 1px solid var(--border); border-left: 3px solid var(--fc); background: var(--tile); color: var(--text); cursor: pointer; min-width: 0; }
+.fh-a.ze { --fc: var(--lime); } .fh-a.auto { --fc: var(--orange); }
+.fh-a.off { opacity: .55; }
+.fh-n { grid-row: 1 / span 2; font: 800 1.5rem/1 var(--cond); color: var(--yellow); min-width: 18px; text-align: center; }
+.fh-a.off .fh-n { color: var(--muted2); }
+.fh-who { font: 800 .74rem var(--cond); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fh-v { font-size: .68rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fh-a:active { transform: scale(.98); }
+.fin-seg button { padding: 7px 10px; font-size: .75rem; }
+#view-banca .fin-io .btn { padding: 7px 9px; font-size: .68rem; letter-spacing: .02em; white-space: nowrap; }
+#view-banca .fin-seg button { padding: 7px 9px; font-size: .74rem; }
+.fin-chips.wide { flex: 1 1 100%; }
+button.fin-kpi { text-align: left; color: var(--text); cursor: pointer; font: inherit; display: block; }
+button.fin-kpi.on { border-color: var(--lime); box-shadow: 0 0 0 1px var(--lime); }
+.fin-kpi .k { display: block; font-size: .6rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fin-kpi .v { display: block; font: 800 1.08rem var(--cond); white-space: nowrap; }
+@media (max-width: 520px) { #view-banca .wl-tab { padding: 10px 10px 9px; font-size: .76rem; letter-spacing: .04em; } }
+.wcard.auto { background: radial-gradient(120% 140% at 100% 0%, rgba(255,159,67,.36), transparent 55%), linear-gradient(135deg, #4a2508 0%, #1d1226 100%); }
+.wc-ico { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 1.3rem; background: rgba(255,255,255,.14); flex-shrink: 0; }
 .wl-flabel { font-size: .68rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 800; }
 .seg { display: inline-flex; border: 1px solid var(--line2); border-radius: 6px; overflow: hidden; }
 .seg button { background: var(--card); border: none; color: var(--muted); font-weight: 700; font-size: .78rem; padding: 7px 12px; cursor: pointer; }
@@ -1138,31 +1242,41 @@ select.inp { appearance: auto; }
 
   <!-- ===================== FINANÇAS ===================== -->
   <section id="view-banca" class="fm-view">
-    <div class="screen-head">
+    <div class="screen-head fin-head">
       <div>
         <div class="eyebrow">Finanças</div>
-        <h1>Carteiras</h1>
-        <p>Contabilidade das duas contas virtuais · tudo guardado neste aparelho.</p>
+        <h1>Contas</h1>
       </div>
       <div class="btn-row" style="margin:0;">
         <button class="btn btn-primary btn-sm btn-upd" onclick="atualizarTudo()">🔄 Atualizar resultados</button>
-        <button class="btn btn-sm" onclick="shareDuel()">📤 Partilhar duelo</button>
-        <button class="btn btn-sm" onclick="fmGo('config')">🏁 Fechar época</button>
       </div>
     </div>
-    <div class="wl-tabs" role="tablist" aria-label="Secções das carteiras">
-      <button class="wl-tab active" role="tab" aria-selected="true" data-t="resumo" onclick="wlSetTab('resumo')">Resumo</button>
-      <button class="wl-tab" role="tab" aria-selected="false" data-t="extrato" onclick="wlSetTab('extrato')">Extrato</button>
-      <button class="wl-tab" role="tab" aria-selected="false" data-t="apostas" onclick="wlSetTab('apostas')">Apostas<span class="nbadge" id="wlOpenBadge"></span></button>
-      <button class="wl-tab" role="tab" aria-selected="false" data-t="registar" onclick="wlSetTab('registar')">Registar</button>
-    </div>
     <div class="hint upd-info" style="margin:-4px 0 10px;"></div>
-    <div class="wl-filters" id="wlFilters">
+    <div class="fin-accs" id="finAccs" role="tablist" aria-label="Contas"></div>
+    <div class="wl-tabs" role="tablist" aria-label="Secções da conta">
+      <button class="wl-tab active" role="tab" aria-selected="true" data-t="emjogo" onclick="wlSetTab('emjogo')">Em jogo<span class="nbadge" id="wlOpenBadge"></span></button>
+      <button class="wl-tab" role="tab" aria-selected="false" data-t="decididas" onclick="wlSetTab('decididas')">Decididas</button>
+      <button class="wl-tab" role="tab" aria-selected="false" data-t="extrato" onclick="wlSetTab('extrato')">Extrato</button>
+      <button class="wl-tab" role="tab" aria-selected="false" data-t="resumo" onclick="wlSetTab('resumo')">Resumo</button>
+    </div>
+    <div class="fin-tools" id="finTools"></div>
+    <div class="wl-filters" id="wlFilters" hidden>
       <span class="wl-flabel">Período</span>
       <div class="seg"><button data-wl="period" data-v="epoca" class="active" onclick="wlSet('period','epoca')">Época</button><button data-wl="period" data-v="30d" onclick="wlSet('period','30d')">30 dias</button><button data-wl="period" data-v="7d" onclick="wlSet('period','7d')">7 dias</button></div>
     </div>
 
-    <div class="wl-pane" data-t="resumo">
+    <div class="wl-pane" data-t="emjogo">
+      <div class="speech" id="zeRoast" hidden></div>
+      <div id="finOpen"></div>
+    </div>
+
+    <div class="wl-pane" data-t="decididas" hidden>
+      <div id="finDone"></div>
+    </div>
+
+    <div class="wl-pane" data-t="resumo" hidden>
+      <div id="finAutoSum" hidden></div>
+      <div id="finSumBank">
       <div class="wcards" id="wlCards"></div>
       <div class="speech" id="wlVerdict"></div>
       <div class="panel">
@@ -1175,58 +1289,41 @@ select.inp { appearance: auto; }
           <details class="wtable"><summary>Ver dados em tabela</summary><div id="wlChartTable"></div></details>
         </div>
       </div>
-      <div class="grid2" style="margin-bottom:14px;">
-        <div class="panel">
-          <div class="panel-h"><span>Indicadores comparados</span><span class="muted">período selecionado</span></div>
-          <div class="tscroll" id="wlCompare"></div>
-        </div>
-        <div>
-          <div class="panel">
-            <div class="panel-h"><span>Resultado das apostas</span></div>
-            <div class="panel-b" id="wlOutcome"></div>
-          </div>
-          <div class="panel">
-            <div class="panel-h"><span>Por origem</span></div>
-            <div class="tscroll" id="wlSource"></div>
-          </div>
-        </div>
-      </div>
       <div class="panel">
-        <div class="panel-h"><span>Resumo mensal</span><span class="muted">apostas liquidadas</span></div>
+        <div class="panel-h"><span>Ganhas e perdidas</span><span class="muted">tu e o Zé</span></div>
+        <div class="panel-b" id="wlOutcome"></div>
+      </div>
+      <details class="panel fin-fold">
+        <summary class="panel-h"><span>Indicadores comparados</span><span class="muted">tu contra o Zé</span></summary>
+        <div class="tscroll" id="wlCompare"></div>
+      </details>
+      <details class="panel fin-fold">
+        <summary class="panel-h"><span>Por origem</span><span class="muted">de onde vieram as apostas</span></summary>
+        <div class="tscroll" id="wlSource"></div>
+      </details>
+      <details class="panel fin-fold">
+        <summary class="panel-h"><span>Resumo mensal</span><span class="muted">apostas liquidadas</span></summary>
         <div class="tscroll" id="wlMonthly"></div>
+      </details>
+      <div class="btn-row" style="margin:4px 0 14px;">
+        <button class="btn btn-sm" onclick="shareDuel()">📤 Partilhar duelo</button>
+        <button class="btn btn-sm" onclick="fmGo('config')">🏁 Fechar época</button>
+      </div>
       </div>
     </div>
 
     <div class="wl-pane" data-t="extrato" hidden>
-      <div class="wl-filters">
-        <div class="seg"><button data-wl="acc" data-v="you" class="active" onclick="wlSet('acc','you')">A tua conta</button><button data-wl="acc" data-v="ze" onclick="wlSet('acc','ze')">Conta do Zé</button></div>
+      <div id="finAutoExt" hidden></div>
+      <div id="finExtBank">
+      <details class="fin-more fin-find"><summary>🔎 Procurar ou filtrar movimentos</summary>
+      <div class="wl-filters" style="margin:8px 0 0;">
         <div class="seg"><button data-wl="type" data-v="tudo" class="active" onclick="wlSet('type','tudo')">Tudo</button><button data-wl="type" data-v="apostas" onclick="wlSet('type','apostas')">Apostas</button><button data-wl="type" data-v="premios" onclick="wlSet('type','premios')">Prémios</button><button data-wl="type" data-v="outros" onclick="wlSet('type','outros')">Reembolsos</button></div>
         <input class="inp" type="search" placeholder="Procurar no extrato…" oninput="wlQuery=this.value; renderExtrato()" style="flex:1;min-width:160px;">
-        <button class="btn btn-sm" onclick="extratoCSV()">⬇️ CSV</button>
-        <button class="btn btn-sm" onclick="extratoPrint()">🖨️ Imprimir / PDF</button>
       </div>
+      </details>
       <div class="panel stmt-panel">
         <div class="panel-b" id="wlExtratoHead"></div>
         <div class="tscroll" id="wlExtratoBody"></div>
-      </div>
-    </div>
-
-    <div class="wl-pane" data-t="apostas" hidden>
-      <div class="btn-row">
-        <button class="btn btn-primary btn-upd" onclick="atualizarTudo()">🔄 Atualizar resultados</button>
-        <button class="btn btn-lime" onclick="registarPeloPrint()">📸 Registar aposta pelo print</button>
-        <button class="btn" onclick="wlSetTab('registar')">✍️ Registo manual</button>
-        <span class="hint" style="align-self:center;">Registaste uma aposta que não chegaste a fazer? Usa <b>🗑️ Anular</b> — o dinheiro volta à carteira e fica um estorno no extrato.</span>
-      </div>
-      <div class="speech" id="zeRoast"></div>
-    <div class="grid2">
-      <div class="panel">
-        <div class="panel-h"><span>👤 As tuas apostas</span><span class="muted" id="histYouCount"></span></div>
-        <div id="betHistory" style="max-height:420px;overflow-y:auto;"></div>
-      </div>
-      <div class="panel">
-        <div class="panel-h"><span>🤖 Apostas do Zé</span><span class="muted" id="histZeCount"></span></div>
-        <div id="betHistoryZe" style="max-height:420px;overflow-y:auto;"></div>
       </div>
     </div>
     </div>
@@ -11395,7 +11492,7 @@ try { updateContinue(); } catch (e) {}
    - chat novo: classificação de qualquer liga, «transferências benfica», «mercado»
    - a app atualiza-se sozinha quando há versão nova
    ===================================================================== */
-const APP_VER = 'v65';
+const APP_VER = 'v66';
 
 /* ---------- 1) notícias e YouTube sem falhar ---------- */
 const FEED_LS = 'ze_feed_cache_v1';
@@ -17329,6 +17426,406 @@ renderZeStats = (function (prev) {
     document.head.appendChild(css);
   } catch (e) {}
 })();
+
+
+/* =====================================================================
+   v66 · 💰 Finanças em três contas: Tu · Mister Zé · Piloto automático
+   A mesma estrutura em cada conta: Em jogo · Decididas · Extrato · Resumo, com exportar e imprimir sempre à mão.
+   Só muda a forma de mostrar: nenhuma regra de aposta, saldo ou liquidação é tocada aqui.
+   ===================================================================== */
+const FIN = { acc: 'you', w: 'all', filt: 'tudo', nDone: 40, nExt: 60 };
+const FIN_ST = { open: ['Em jogo', 'open', '⏳'], win: ['Ganha', 'win', '✅'], loss: ['Perdida', 'loss', '❌'], void: ['Devolvida', 'void', '↩️'] };
+function finOn() { return !!document.getElementById('finAccs'); }
+function finWallets() { return Object.keys(AUTO_W); }
+function finAccName(acc) { return acc === 'auto' ? 'Piloto automático' : holderName(acc); }
+function finWName(w) { return AUTO_W[w] ? AUTO_W[w].name : w; }
+function finHM(t) { return new Date(t).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }); }
+function finDayLabel(t) {
+  const d = new Date(t), n = new Date(), d0 = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(), n0 = new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime(), k = Math.round((d0 - n0) / 864e5);
+  if (k === 0) return 'hoje'; if (k === 1) return 'amanhã'; if (k === -1) return 'ontem';
+  return d.toLocaleDateString('pt-PT', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '');
+}
+function finOdd(e) { return (e.est ? '≈' : '') + Number(e.odd).toFixed(2).replace('.', ','); }
+
+/* ---------- contas: números de cada uma ---------- */
+function finPilotStats(w) {
+  const ws = w && w !== 'all' && AUTO_W[w] ? [w] : finWallets();
+  const o = { capital: 0, value: 0, cash: 0, exposure: 0, open: 0, n: 0, w: 0, profit: 0, staked: 0, bets: 0, since: null, wallets: ws.length };
+  ws.forEach(k => {
+    const a = autoLoad(k), op = a.bets.filter(x => x.st === 'open'), dec = a.bets.filter(x => x.st === 'win' || x.st === 'loss');
+    const exp = op.reduce((s, x) => s + x.stake, 0), cap = a.start + (a.topups || []).reduce((s, t) => s + t.amount, 0);
+    o.capital += cap; o.cash += a.bank; o.exposure += exp; o.value += a.bank + exp; o.open += op.length; o.bets += a.bets.length;
+    o.n += dec.length; o.w += dec.filter(x => x.st === 'win').length; o.staked += dec.reduce((s, x) => s + x.stake, 0); o.profit += dec.reduce((s, x) => s + (x.ret || 0) - x.stake, 0);
+    if (a.since && (!o.since || a.since < o.since)) o.since = a.since;
+  });
+  ['capital', 'cash', 'exposure', 'value', 'staked', 'profit'].forEach(k => { o[k] = r2(o[k]); });
+  o.result = r2(o.value - o.capital); o.roi = o.capital ? (o.value - o.capital) / o.capital : 0; o.hit = o.n ? o.w / o.n : null;
+  return o;
+}
+
+/* ---------- apostas de qualquer conta, no mesmo formato ---------- */
+function finBets(acc) {
+  if (acc === 'auto') {
+    const all = FIN.w === 'all' || !AUTO_W[FIN.w], ws = all ? finWallets() : [FIN.w], g = new Map();
+    ws.forEach(w => autoLoad(w).bets.forEach(x => {
+      const key = all ? `${x.ev}|${x.k}|${x.st}` : `${w}|${x.id}`;
+      let e = g.get(key);
+      if (!e) {
+        const t = Date.parse(x.at) || 0;
+        e = { id: key, acc, t, td: Math.max(t + 1000, (x.ko || t) + 110 * 60e3), ko: x.ko || null, match: `${x.h} – ${x.a}`, lg: x.lg || '', pick: x.label || x.k, odd: +x.o, est: !!x.od, stake: 0, ret: 0, st: FIN_ST[x.st] ? x.st : 'open', res: x.res || '', p: x.p, parts: [], raw: x };
+        g.set(key, e);
+      }
+      e.stake = r2(e.stake + x.stake);
+      e.ret = r2(e.ret + (x.st === 'win' ? (x.ret != null ? x.ret : r2(x.stake * x.o)) : x.st === 'void' ? x.stake : 0));
+      e.parts.push({ w, stake: x.stake, how: x.how || '', kind: x.kind || '' });
+    }));
+    return [...g.values()];
+  }
+  const b = loadBank(), L = acc === 'ze' ? b.zeBets : b.bets;
+  return L.filter(x => x.status !== 'cancel').map(x => {
+    const stake = Number(x.stake) || 0, odd = Number(x.odd) || 0, st = FIN_ST[x.status] ? x.status : 'open', t = Date.parse(x.at) || 0;
+    return { id: String(x.id), acc, t, td: Date.parse(x.settledAt || x.at) || t, ko: null, match: x.match || '', lg: '', pick: x.pick || '', odd, est: false, stake, ret: st === 'win' ? r2(stake * odd) : st === 'void' ? stake : 0, st, res: '',
+      legs: Array.isArray(x.legs) ? x.legs : [], src: (typeof SOURCE_LABEL !== 'undefined' && SOURCE_LABEL[x.source]) || '', note: x.zeCompare || '', autoSet: !!x.autoSettled, raw: x };
+  });
+}
+function finProfit(e) { return e.st === 'win' ? r2(e.ret - e.stake) : e.st === 'loss' ? -e.stake : 0; }
+
+/* ---------- mosaicos das três contas ---------- */
+function finTile(acc, name, face, value, result, open) {
+  const on = FIN.acc === acc, up = result >= 0;
+  return `<button type="button" class="fin-acc ${acc}${on ? ' on' : ''}" role="tab" aria-selected="${on}" onclick="finAcc('${acc}')" aria-label="Conta ${esc(name)}">
+    <span class="fa-top">${face}<span class="fa-name">${esc(name)}</span></span>
+    <span class="fa-val num">${eur(value)}</span>
+    <span class="fa-res ${Math.abs(result) < 0.005 ? 'muted' : up ? 'pos' : 'neg'}">${Math.abs(result) < 0.005 ? 'sem ganho nem perda' : (up ? '▲ ' : '▼ ') + eurS(result)}</span>
+    <span class="fa-open${open ? ' live' : ''}">${open ? `⏳ ${open} em jogo` : 'nada em jogo'}</span>
+  </button>`;
+}
+function finPilotIcon() { let m = 'local'; try { m = autoMode(); } catch (e) {} return m === 'nuvem' ? '☁️' : '📱'; }
+
+/* ---------- barra de ferramentas: carteiras do piloto, filtros, exportar, imprimir ---------- */
+function finToolsHTML() {
+  const acc = FIN.acc, t = wlTab;
+  if (t === 'registar') return `<button class="btn btn-sm" onclick="wlSetTab('emjogo')">← Voltar às apostas</button>`;
+  let left = '';
+  if (acc === 'auto') {
+    const opts = [['all', 'Todas']].concat(finWallets().map(w => [w, finWName(w)]));
+    left = `<div class="fin-chips wide" role="group" aria-label="Carteiras do piloto">${opts.map(([k, l]) => `<button type="button" class="fin-chip${FIN.w === k ? ' on' : ''}" onclick="finSetW('${k}')">${l}</button>`).join('')}</div>`;
+  } else if (t === 'emjogo') {
+    left = acc === 'you' ? `<button class="btn btn-lime btn-sm" onclick="wlSetTab('registar')">＋ Registar aposta</button>` : '';
+  } else {
+    left = `<div class="seg fin-seg" role="group" aria-label="Período">${[['epoca', 'Época'], ['30d', '30 dias'], ['7d', '7 dias']].map(([k, l]) => `<button type="button" class="${wlPeriod === k ? 'active' : ''}" onclick="wlSet('period','${k}')">${l}</button>`).join('')}</div>`;
+  }
+  return `${left}<div class="fin-io"><button class="btn btn-sm" onclick="finExport()" title="Guardar num ficheiro que abre no Excel">⬇️ Exportar</button><button class="btn btn-sm" onclick="finPrint()" title="Imprimir ou guardar em PDF">🖨️ Imprimir</button></div>`;
+}
+
+/* ---------- Em jogo ---------- */
+function finWhen(e, d) {
+  const now = Date.now();
+  if (e.ko) {
+    if (now < e.ko) return { t: `⏳ Joga ${finDayLabel(e.ko)} às ${finHM(e.ko)}` };
+    if (now < e.ko + 115 * 60e3) return { t: '🔴 A decorrer agora', live: 1 };
+    return { t: '⌛ Já acabou · à espera do resultado' };
+  }
+  if (d && d.ds && d.ds.length) {
+    const ic = { won: '✅', lost: '❌', pending: '⏳', notfound: '❓', manual: '✋', teams: '❓' };
+    if (d.ds.length === 1) {
+      const x = d.ds[0], m = /\(([^()]+)\)\s*$/.exec(x.txt || '');
+      if (x.k === 'pending') return { t: `⏳ Ainda não acabou${m ? ' · ' + m[1] : ''}` };
+      if (x.k === 'notfound') return { t: '❓ Ainda não encontrei este jogo nos resultados', list: [x.txt] };
+      if (x.k === 'teams') return { t: '❓ Não sei de que jogo é esta aposta', list: [x.txt] };
+      if (x.k === 'manual') return { t: '✋ Só tu podes confirmar esta aposta', list: [x.txt] };
+      return { t: `${ic[x.k] || '•'} ${x.txt.charAt(0).toUpperCase()}${x.txt.slice(1)}` };
+    }
+    const c = k => d.ds.filter(x => x.k === k).length, parts = [];
+    if (c('won')) parts.push(`✅ ${c('won')} certa${c('won') > 1 ? 's' : ''}`); if (c('lost')) parts.push(`❌ ${c('lost')} falhada${c('lost') > 1 ? 's' : ''}`);
+    if (c('pending')) parts.push(`⏳ ${c('pending')} por jogar`); const o = d.ds.length - c('won') - c('lost') - c('pending'); if (o) parts.push(`✋ ${o} por confirmar`);
+    return { t: parts.join(' · '), list: d.ds.map(x => `${ic[x.k] || '•'} ${x.txt}`) };
+  }
+  return { t: `Apostada ${finDayLabel(e.t)} às ${finHM(e.t)}` };
+}
+function finOpenCard(e, d) {
+  const w = finWhen(e, d), id = esc(e.id), who = e.acc;
+  const tags = e.acc === 'auto' ? e.parts.map(p => `<span class="fb-tag">${finWName(p.w)}${e.parts.length > 1 ? ' · ' + eur(p.stake) : ''}</span>`).join('') : (e.src ? `<span class="fb-tag">${esc(e.src)}</span>` : '');
+  let more = '';
+  if (e.acc === 'auto') {
+    more = `<details class="fin-more"><summary>Porquê esta aposta</summary><div class="fm-txt">O Zé dá-lhe <b>${Math.round(e.p * 100)}%</b> de probabilidade${e.est ? ' · odd calculada a partir das odds da casa (≈)' : ''}.${e.parts.map(p => `<br>${finWName(p.w)}: ${eur(p.stake)}${p.how ? ' · ' + esc(p.how) : ''}`).join('')}</div></details>`;
+  } else {
+    more = `<details class="fin-more"><summary>Fechar à mão ou partilhar</summary>${w.list ? `<div class="fm-txt">${w.list.map(esc).join('<br>')}</div>` : ''}${e.note ? `<div class="fm-txt">🤖 ${esc(e.note)}</div>` : ''}<div class="acts">
+      <button class="mini w" onclick="settleBet('${id}','win','${who}')">Ganhou</button><button class="mini l" onclick="settleBet('${id}','loss','${who}')">Perdeu</button><button class="mini v" onclick="settleBet('${id}','void','${who}')">Nula</button>
+      <button class="mini s" onclick="shareBet('${id}','${who}')" title="Partilhar (WhatsApp)">📤 Partilhar</button>${who === 'you' ? `<button class="mini x" onclick="cancelUserBet('${id}')" title="Não chegaste a fazer esta aposta: devolve o dinheiro à carteira">🗑️ Anular</button>` : ''}</div>
+      <div class="fm-txt">As apostas fecham sozinhas quando o resultado chega. Só precisas destes botões se o jogo não for encontrado.</div></details>`;
+  }
+  return `<article class="fin-bet${w.live ? ' live' : ''}"><div class="fb-top"><div class="fb-match">${esc(e.match)}${e.lg ? `<small>${esc(e.lg)}</small>` : ''}</div><span class="spill open">${w.live ? 'A decorrer' : 'Em jogo'}</span></div>
+    <div class="fb-pick">${esc(e.pick)}</div>
+    <div class="fb-nums"><span>Odd <b>${finOdd(e)}</b></span><span>Apostado <b>${eur(e.stake)}</b></span><span>Se ganhar recebe <b class="pos">${eur(r2(e.stake * e.odd))}</b></span></div>
+    <div class="fb-when${w.live ? ' live' : ''}">${esc(w.t)}</div>${tags ? `<div class="fb-tags">${tags}</div>` : ''}${more}</article>`;
+}
+function finOpenPaint() {
+  const acc = FIN.acc, L = finBets(acc).filter(e => e.st === 'open');
+  let D = {};
+  if (acc !== 'auto' && L.length) { try { openDiag().forEach(d => { if (d.who === acc) D[String(d.bet.id)] = d; }); } catch (e) {} }
+  L.sort((a, c) => acc === 'auto' ? (a.ko || 0) - (c.ko || 0) : c.t - a.t);
+  if (!L.length) {
+    const why = acc === 'you' ? 'Não tens apostas por decidir. Regista uma com o botão em cima, ou entra no Duelo.' : acc === 'ze' ? 'O Zé não tem apostas por decidir. Ele aposta quando preparas um duelo.' : 'O piloto não tem apostas por decidir. Ele só aposta a menos de 30 horas do jogo, e só quando encontra uma aposta que cumpra as regras.';
+    setHTML('finOpen', `<div class="fin-empty">👌 Nada em jogo.<br>${why}</div>`); return;
+  }
+  const stake = r2(L.reduce((s, e) => s + e.stake, 0)), pot = r2(L.reduce((s, e) => s + e.stake * e.odd, 0));
+  setHTML('finOpen', `<div class="fin-sum"><span><b>${L.length}</b> aposta${L.length > 1 ? 's' : ''} em jogo</span><span>Apostado <b>${eur(stake)}</b></span><span>Se todas ganharem <b class="pos">${eur(pot)}</b></span></div>
+    <div class="fin-list">${L.map(e => finOpenCard(e, D[e.id])).join('')}</div>`);
+}
+
+/* ---------- Decididas (ganhas, perdidas, devolvidas) ---------- */
+function finDoneRow(e) {
+  const p = finProfit(e), s = FIN_ST[e.st], id = esc(e.id);
+  let body = '';
+  if (e.acc === 'auto') body = `Probabilidade do Zé: ${Math.round(e.p * 100)}%${e.est ? ' · odd calculada (≈)' : ''}${e.parts.map(q => `<br>${finWName(q.w)}: ${eur(q.stake)}${q.how ? ' · ' + esc(q.how) : ''}`).join('')}`;
+  else body = `${e.legs.length > 1 ? `Múltipla de ${e.legs.length} seleções. ` : ''}${e.src ? `Origem: ${esc(e.src)}. ` : ''}${e.autoSet ? 'Fechada sozinha pelo resultado. ' : ''}${e.note ? `<br>🤖 ${esc(e.note)}` : ''}
+    <div class="acts"><button class="mini s" onclick="shareBet('${id}','${e.acc}')">📤 Partilhar</button>${e.acc === 'you' ? `<button class="mini x" onclick="cancelUserBet('${id}')" title="Anular o registo (fica um estorno no extrato)">🗑️ Anular registo</button>` : ''}</div>`;
+  return `<details class="fin-row"><summary><span class="fr-ic">${s[2]}</span><span class="fr-main"><span class="fr-match" style="display:block;">${esc(e.match)}${e.res ? ` <span class="muted">${esc(e.res)}</span>` : ''}</span><span class="fr-pick" style="display:block;">${esc(e.pick)} · ${finOdd(e)} · ${eur(e.stake)}</span></span>
+    <span class="fr-right"><b class="${p > 0 ? 'pos' : p < 0 ? 'neg' : 'muted'}">${e.st === 'void' ? 'devolvida' : eurS(p)}</b></span></summary><div class="fr-body">${body}</div></details>`;
+}
+function finDonePaint() {
+  const acc = FIN.acc, from = acc === 'auto' ? 0 : periodFrom();
+  const all = finBets(acc).filter(e => e.st !== 'open' && e.td >= from).sort((a, c) => c.td - a.td);
+  const W = all.filter(e => e.st === 'win'), Lo = all.filter(e => e.st === 'loss'), dec = W.length + Lo.length, profit = r2(all.reduce((s, e) => s + finProfit(e), 0));
+  const L = FIN.filt === 'tudo' ? all : all.filter(e => e.st === FIN.filt);
+  if (!all.length) { setHTML('finDone', `<div class="fin-empty">Ainda não há apostas decididas${from ? ' neste período' : ''}.</div>`); return; }
+  let last = '', rows = '';
+  L.slice(0, FIN.nDone).forEach(e => { const d = finDayLabel(e.td); if (d !== last) { rows += `<div class="fin-day">${d}</div>`; last = d; } rows += finDoneRow(e); });
+  const kb = (k, lab, val, cls) => `<button type="button" class="fin-kpi${FIN.filt === k ? ' on' : ''}" onclick="finSetFilt('${FIN.filt === k ? 'tudo' : k}')" aria-pressed="${FIN.filt === k}"><span class="k">${lab}</span><span class="v num ${cls}">${val}</span></button>`;
+  setHTML('finDone', `<div class="fin-kpis">${kb('win', '✅ Ganhas', W.length, 'pos')}${kb('loss', '❌ Perdidas', Lo.length, 'neg')}
+      <div class="fin-kpi"><span class="k">Acerto</span><span class="v num">${dec ? pctP(W.length / dec) : '—'}</span></div><div class="fin-kpi"><span class="k">Resultado</span><span class="v num ${profit > 0 ? 'pos' : profit < 0 ? 'neg' : ''}">${eurS(profit)}</span></div></div>
+    ${L.length ? `<div class="fin-rows">${rows}</div>` : '<div class="fin-empty">Nenhuma aposta com este filtro.</div>'}
+    ${L.length > FIN.nDone ? `<div class="fin-foot"><button class="btn btn-sm" onclick="finMore('nDone')">Ver mais ${Math.min(60, L.length - FIN.nDone)} (faltam ${L.length - FIN.nDone})</button></div>` : ''}
+    <div class="fin-note">Toca em «Ganhas» ou «Perdidas» para ver só essas, e numa aposta para ver os detalhes.${acc === 'auto' && FIN.w === 'all' ? ' Com «Todas» escolhido, a mesma aposta feita por várias carteiras aparece numa só linha, com os valores somados.' : ''}</div>`);
+}
+
+/* ---------- Extrato do piloto (uma carteira, ou todas juntas com saldo corrente comum) ---------- */
+function finAutoLedger() {
+  const ws = FIN.w === 'all' || !AUTO_W[FIN.w] ? finWallets() : [FIN.w];
+  let entries = [], staked = 0, ret = 0;
+  ws.forEach(w => { const L = autoLedger(w), ic = finWName(w).split(' ')[0]; staked += L.staked; ret += L.ret; L.entries.forEach(e => entries.push(Object.assign({}, e, { w, desc: ws.length > 1 ? `${ic} ${e.desc}` : e.desc }))); });
+  if (ws.length > 1) { entries.sort((p, q) => p.t - q.t || p.ord - q.ord); let bal = 0; entries.forEach(e => { bal = r2(bal + e.credit - e.debit); e.bal = bal; }); }
+  return { entries, staked: r2(staked), ret: r2(ret), s: finPilotStats(FIN.w) };
+}
+function finLedgerTable(rows) {
+  return `<table class="ltable stmt"><thead><tr><th>Data</th><th>Documento</th><th>Descrição</th><th>Estado</th><th class="num">Débito</th><th class="num">Crédito</th><th class="num">Saldo</th></tr></thead><tbody>${rows.map(e => `<tr class="k-${e.kind}">
+    <td data-l="Data" class="nowrap">${dmyhm(e.t)}</td><td data-l="Doc." class="doc">${e.doc}</td><td data-l="Descrição" class="desc"><span class="kind">${AUTO_KIND[e.kind]}</span> ${esc(e.desc)}</td><td data-l="Estado">${autoPill(e)}</td>
+    <td data-l="Débito" class="num neg">${e.debit ? '−' + eu2(e.debit) : ''}</td><td data-l="Crédito" class="num pos">${e.credit ? '+' + eu2(e.credit) : ''}</td><td data-l="Saldo" class="num strong">${eu2(e.bal)}</td></tr>`).join('')}</tbody></table>`;
+}
+function finAutoExtHTML() {
+  const L = finAutoLedger(), rows = L.entries.slice().reverse(), show = rows.slice(0, FIN.nExt);
+  let hist = '';
+  try { if (autoMode() === 'nuvem') hist = ` O histórico completo do piloto na nuvem fica guardado <a href="${ROBO_BASE}piloto.csv" target="_blank" rel="noopener">neste ficheiro</a>.`; } catch (e) {}
+  return `<div class="panel stmt-panel"><div class="panel-b">
+      <div class="stmt-holder"><span class="wc-ico">${finPilotIcon()}</span><div><div class="stmt-name">Piloto automático</div><div class="muted">${FIN.w === 'all' ? `${L.s.wallets} carteiras juntas` : finWName(FIN.w)} · ${finPilotIcon() === '☁️' ? 'na nuvem' : 'neste telemóvel'}</div></div></div>
+      <dl class="stmt-sum"><div><dt>Capital</dt><dd class="num">${eur(L.s.capital)}</dd></div><div><dt>Apostado</dt><dd class="num neg">${eur(L.staked)}</dd></div><div><dt>Recebido</dt><dd class="num pos">${eur(L.ret)}</dd></div><div><dt>Saldo</dt><dd class="num strong">${eur(L.s.cash)}</dd></div></dl>
+    </div><div class="tscroll">${finLedgerTable(show)}</div></div>
+    ${rows.length > show.length ? `<div class="fin-foot"><button class="btn btn-sm" onclick="finMore('nExt')">Ver mais ${Math.min(60, rows.length - show.length)} movimentos (faltam ${rows.length - show.length})</button></div>` : ''}
+    <div class="fin-note">O saldo não conta com o dinheiro das apostas em jogo.${hist}</div>`;
+}
+
+/* ---------- Resumo do piloto ---------- */
+function finPilotCard(s) {
+  const up = s.result >= 0, cloud = finPilotIcon() === '☁️';
+  return `<article class="wcard auto" aria-label="Conta do piloto automático"><header class="wc-top"><span class="wc-ico">${finPilotIcon()}</span>
+      <div class="wc-id"><div class="wc-name">Piloto automático</div><div class="wc-acc">${FIN.w === 'all' ? `${s.wallets} carteiras` : esc(finWName(FIN.w))} · ${cloud ? 'na nuvem' : 'neste telemóvel'}</div></div></header>
+    <div class="wc-lbl">Saldo disponível</div><div class="wc-bal num">${eur(s.cash)}</div>
+    <dl class="wc-grid" style="margin-top:14px;"><div><dt>Em jogo</dt><dd class="num">${eur(s.exposure)}</dd></div><div><dt>Património</dt><dd class="num">${eur(s.value)}</dd></div>
+      <div><dt>Resultado</dt><dd class="num ${up ? 'pos' : 'neg'}">${up ? '▲' : '▼'} ${eurS(s.result)}</dd></div><div><dt>ROI</dt><dd class="num ${up ? 'pos' : 'neg'}">${pctS(s.roi)}</dd></div></dl>
+    <footer class="wc-foot"><span>Capital ${eur(s.capital)}</span><span>${s.bets} apostas · ${s.open} em jogo${s.n ? ` · ${s.w}/${s.n} certas` : ''}</span></footer></article>`;
+}
+function finAutoSumHTML() {
+  const s = finPilotStats(FIN.w);
+  let sw = '', robo = '', on = true;
+  try { if (cloudOk()) sw = autoSwitchHTML(); } catch (e) {}
+  try { if (autoMode() === 'nuvem') { const rs = roboState(); robo = `<div class="zst-row" style="margin-bottom:10px;"><span>${rs.i} Robô na nuvem</span><span class="muted" style="text-align:right;">${esc(rs.t)}</span></div>`; } else on = !!autoLoad('ouro').on; } catch (e) {}
+  return `<div class="wcards">${finPilotCard(s)}</div>
+    <div class="panel"><div class="panel-h"><span>Como está a correr</span><span class="muted">${on ? '🟢 ligado' : '⚪ desligado'}</span></div><div class="panel-b">${sw}${robo}
+      <div class="hint" style="margin-bottom:10px;">O Zé aposta sozinho em carteiras só dele, que não mexem no duelo. Cada estratégia tem a sua carteira, para no fim se ver qual cresce mais.</div>
+      ${autoTableHTML()}
+      <div class="fin-foot"><button class="btn btn-sm" onclick="finPilotCfg()">⚙️ Ligar, desligar e gerir o piloto</button></div></div></div>`;
+}
+function finPilotCfg() { fmGo('config'); setTimeout(() => { const el = document.getElementById('autoPanel'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 200); }
+
+/* ---------- comandos ---------- */
+function finAcc(acc) {
+  if (!['you', 'ze', 'auto'].includes(acc)) acc = 'you';
+  FIN.acc = acc; FIN.nDone = 40; FIN.nExt = 60; if (acc !== 'auto') wlAcc = acc;
+  if (wlTab === 'registar' && acc !== 'you') { wlSetTab('emjogo'); return; }
+  renderWallet();
+}
+function finSetW(w) { FIN.w = w === 'all' || AUTO_W[w] ? w : 'all'; FIN.nDone = 40; FIN.nExt = 60; renderWallet(); }
+function finSetFilt(f) { FIN.filt = f; FIN.nDone = 40; renderWallet(); }
+function finMore(k) { FIN[k] += 60; renderWallet(); }
+function finOpenAcc(acc, tab) { fmGo('banca'); FIN.acc = ['you', 'ze', 'auto'].includes(acc) ? acc : 'you'; if (FIN.acc !== 'auto') wlAcc = FIN.acc; wlSetTab(tab || 'emjogo'); try { window.scrollTo(0, 0); } catch (e) {} }
+
+/* ---------- desenhar ---------- */
+function finRender() {
+  const acc = FIN.acc, t = wlTab, b = loadBank();
+  if (!['emjogo', 'decididas', 'extrato', 'resumo', 'registar'].includes(t)) { wlSetTab('emjogo'); return; }
+  const sy = walletStats(b, 'you'), sz = walletStats(b, 'ze'), sp = finPilotStats('all');
+  setHTML('finAccs', finTile('you', holderName('you'), humanFace(24), sy.equity, sy.result, b.bets.filter(x => x.status === 'open').length)
+    + finTile('ze', 'Zé', zeFace(zeMood(b), 24), sz.equity, sz.result, b.zeBets.filter(x => x.status === 'open').length)
+    + finTile('auto', 'Piloto', `<span class="fa-ico">${finPilotIcon()}</span>`, sp.value, sp.result, finBetsOpenCount()));
+  const nOpen = acc === 'auto' ? finBets('auto').filter(e => e.st === 'open').length : (acc === 'ze' ? b.zeBets : b.bets).filter(x => x.status === 'open').length;
+  setText('wlOpenBadge', nOpen ? String(nOpen) : '');
+  const show = (id, on) => { const el = document.getElementById(id); if (el) el.hidden = !on; };
+  show('wlFilters', false);
+  show('finAutoSum', acc === 'auto'); show('finSumBank', acc !== 'auto'); show('finAutoExt', acc === 'auto'); show('finExtBank', acc !== 'auto');
+  show('wlRaioX', acc === 'you'); show('stuckBox', acc !== 'auto');
+  setHTML('finTools', finToolsHTML());
+  if (t === 'emjogo') finOpenPaint();
+  if (t === 'decididas') finDonePaint();
+  if (t === 'extrato') { if (acc === 'auto') setHTML('finAutoExt', finAutoExtHTML()); else renderExtrato(); }
+  if (t === 'resumo') {
+    if (acc === 'auto') setHTML('finAutoSum', finAutoSumHTML());
+    else { _renderWalletV65(); setHTML('wlCards', walletCard(b, acc === 'ze' ? sz : sy, duelLeader(b).who === acc)); }
+  }
+}
+function finBetsOpenCount() { const keep = FIN.w; FIN.w = 'all'; try { return finBets('auto').filter(e => e.st === 'open').length; } finally { FIN.w = keep; } }
+const _renderWalletV65 = renderWallet;
+renderWallet = function () {
+  if (!finOn()) return _renderWalletV65.apply(this, arguments);
+  try { finRender(); } catch (e) { console.error(e); }
+};
+wlSetTab = (function (prev) {
+  return function (t) {
+    if (t === 'apostas') t = 'emjogo';
+    if (t === 'registar') { FIN.acc = 'you'; wlAcc = 'you'; }
+    return prev.call(this, t);
+  };
+})(wlSetTab);
+try { if (finOn()) wlTab = 'emjogo'; } catch (e) {}
+stuckBox = (function (prev) { return function () { const r = prev.apply(this, arguments); try { const sb = document.getElementById('stuckBox'); if (sb) sb.hidden = FIN.acc === 'auto'; } catch (e) {} return r; }; })(stuckBox);
+/* o piloto mudou (nuvem ↔ telemóvel, apostas novas): se as Finanças estiverem abertas, redesenha */
+cloudRepaint = (function (prev) { return function () { const r = prev.apply(this, arguments); try { if (currentView === 'banca') renderWallet(); } catch (e) {} return r; }; })(cloudRepaint);
+
+/* ---------- exportar ---------- */
+function finCSVLine(a) { return a.map(v => { const s = String(v == null ? '' : v); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(';'); }
+function finNum(v) { return v == null || !isFinite(v) ? '' : Number(v).toFixed(2).replace('.', ','); }
+function finBetsCSVText(acc) {
+  const L = finBets(acc).sort((a, c) => a.t - c.t);
+  const head = ['conta', 'apostada em', 'decidida em', 'jogo', 'aposta', 'seleções', 'odd', 'valor (€)', 'estado', 'recebido (€)', 'lucro (€)', 'origem', 'nota do Zé'];
+  return '﻿' + [finCSVLine(head)].concat(L.map(e => finCSVLine([finAccName(acc), dtFmt(e.t, true), e.st === 'open' ? '' : dtFmt(e.td, true), e.match, e.pick, Math.max(1, (e.legs || []).length), finNum(e.odd), finNum(e.stake), FIN_ST[e.st][0], e.st === 'open' ? '' : finNum(e.ret), e.st === 'open' ? '' : finNum(finProfit(e)), e.src || '', e.note || '']))).join('\r\n');
+}
+function finExport() {
+  const acc = FIN.acc, day = isoDay(new Date());
+  if (acc === 'auto') {
+    if (wlTab === 'extrato') {
+      const L = finAutoLedger();
+      const txt = '﻿' + [finCSVLine(['Data', 'Carteira', 'Documento', 'Tipo', 'Descrição', 'Estado', 'Débito', 'Crédito', 'Saldo'])].concat(L.entries.map(e => finCSVLine([dmyhm(e.t), finWName(e.w).replace(/^\S+\s/, ''), e.doc, AUTO_KIND[e.kind], e.desc, e.bet ? (PST_TXT[e.kind === 'premio' ? 'win' : e.kind === 'reembolso' ? 'void' : e.bet.st] || '') : '', e.debit ? finNum(e.debit) : '', e.credit ? finNum(e.credit) : '', finNum(e.bal)]))).join('\r\n');
+      zeDownload(`extrato-piloto-${FIN.w === 'all' ? 'todas' : FIN.w}-${day}.csv`, txt, 'text/csv;charset=utf-8', `📄 Extrato do piloto exportado (${L.entries.length} movimentos · abre no Excel).`);
+    } else autoCSV();
+    return;
+  }
+  if (wlTab === 'extrato') { extratoCSV(); return; }
+  const n = finBets(acc).length; if (!n) { toast('Esta conta ainda não tem apostas para exportar.'); return; }
+  const slug = acc === 'ze' ? 'mister-ze' : (normTxt(holderName('you')).replace(/\s+/g, '-') || 'tu');
+  zeDownload(`apostas-${slug}-${day}.csv`, finBetsCSVText(acc), 'text/csv;charset=utf-8', `📄 ${n} apostas exportadas (abre no Excel).`);
+}
+
+/* ---------- imprimir / PDF: a conta escolhida numa folha limpa ---------- */
+function finPrint() {
+  const acc = FIN.acc, name = finAccName(acc), bets = finBets(acc), open = bets.filter(e => e.st === 'open').sort((a, c) => (a.ko || a.t) - (c.ko || c.t)), done = bets.filter(e => e.st !== 'open').sort((a, c) => c.td - a.td);
+  const b = loadBank();
+  let sum, mov;
+  if (acc === 'auto') {
+    const s = finPilotStats(FIN.w), L = finAutoLedger();
+    sum = `<table class="zp-t"><thead><tr><th>Carteiras</th><th>Capital</th><th>Saldo disponível</th><th>Em jogo</th><th>Património</th><th>Resultado</th><th>Certas</th></tr></thead><tbody><tr><td>${FIN.w === 'all' ? `Todas (${s.wallets})` : esc(finWName(FIN.w))}</td><td>${eur(s.capital)}</td><td>${eur(s.cash)}</td><td>${eur(s.exposure)}</td><td>${eur(s.value)}</td><td>${eurS(s.result)} (${pctS(s.roi)})</td><td>${s.n ? `${s.w}/${s.n} · ${pctP(s.hit)}` : '—'}</td></tr></tbody></table>`;
+    mov = finLedgerTable(L.entries.slice().reverse());
+  } else {
+    const s = walletStats(b, acc), led = buildLedger(b, acc);
+    sum = `<table class="zp-t"><thead><tr><th>Conta</th><th>Capital inicial</th><th>Saldo disponível</th><th>Em jogo</th><th>Património</th><th>Resultado</th><th>Certas</th></tr></thead><tbody><tr><td>${esc(name)} · ${accNo(acc, b)}</td><td>${eur(s.start)}</td><td>${eur(s.cash)}</td><td>${eur(s.exposure)}</td><td>${eur(s.equity)}</td><td>${eurS(s.result)} (${pctS(s.roiCap)})</td><td>${s.nWin + s.nLoss ? `${s.nWin}/${s.nWin + s.nLoss} · ${pctP(s.hit)}` : '—'}</td></tr></tbody></table>`;
+    mov = `<table class="zp-t"><thead><tr><th>Data</th><th>Documento</th><th>Descrição</th><th>Estado</th><th>Débito</th><th>Crédito</th><th>Saldo</th></tr></thead><tbody>${led.entries.slice().reverse().map(e => { const pill = extratoPill(e); return `<tr><td>${dtFmt(e.t, true)}</td><td>${e.doc}</td><td>${KIND_LABEL[e.kind]} · ${esc(e.desc)}</td><td>${pill ? pill[0] : ''}</td><td>${e.debit ? '−' + eur(e.debit) : ''}</td><td>${e.credit ? '+' + eur(e.credit) : ''}</td><td>${eur(e.bal)}</td></tr>`; }).join('')}</tbody></table>`;
+  }
+  const tb = (L, isOpen) => L.length ? `<table class="zp-t"><thead><tr><th>${isOpen ? 'Quando' : 'Decidida'}</th><th>Jogo</th><th>Aposta</th><th>Odd</th><th>Valor</th><th>${isOpen ? 'Se ganhar recebe' : 'Estado'}</th>${isOpen ? '' : '<th>Lucro</th>'}${acc === 'auto' ? '<th>Carteiras</th>' : ''}</tr></thead><tbody>${L.map(e => `<tr><td>${isOpen ? (e.ko ? dtFmt(e.ko, true) : 'apostada ' + dtFmt(e.t, true)) : dtFmt(e.td, true)}</td><td>${esc(e.match)}${e.res ? ` (${esc(e.res)})` : ''}</td><td>${esc(e.pick)}</td><td>${finOdd(e)}</td><td>${eur(e.stake)}</td><td>${isOpen ? eur(r2(e.stake * e.odd)) : FIN_ST[e.st][0]}</td>${isOpen ? '' : `<td>${e.st === 'void' ? '—' : eurS(finProfit(e))}</td>`}${acc === 'auto' ? `<td>${e.parts.map(p => esc(finWName(p.w).replace(/^\S+\s/, ''))).join(', ')}</td>` : ''}</tr>`).join('')}</tbody></table>` : '<p class="zp-note">Nenhuma.</p>';
+  zePrintDoc(`Conta ${name}`, `${sum}<h3>Apostas em jogo (${open.length})</h3>${tb(open, true)}<h3>Apostas decididas (${done.length})</h3>${tb(done.slice(0, 500), false)}<h3>Extrato de movimentos</h3>${mov}`);
+}
+
+/* ---------- Definições e ecrã do Zé: o painel do piloto fica só com os comandos; as apostas e o extrato vivem nas Finanças ---------- */
+autoExtHTML = function () { return `<div id="autoExtBox" style="margin-top:12px;"><button class="btn btn-sm btn-lime" onclick="finOpenAcc('auto')">💰 Abrir a conta do piloto (em jogo, extrato, exportar)</button></div>`; };
+autoPanelHTML = (function (prev) {
+  return function () {
+    let h = prev.apply(this, arguments);
+    try { if (finOn()) h = h.replace(/<div class="rx-h">(?:Em jogo agora[^<]*|Últimas decididas)<\/div>(?:<div class="zst-row">(?:(?!<div).)*?<\/div>)*/gs, ''); } catch (e) {}
+    return h;
+  };
+})(autoPanelHTML);
+
+/* ---------- Início: o que está em jogo nas três contas, num relance ---------- */
+function finOpenSum(acc) {
+  const keep = FIN.w; FIN.w = 'all';
+  try {
+    const L = finBets(acc).filter(e => e.st === 'open'), now = Date.now();
+    return { n: L.length, stake: r2(L.reduce((s, e) => s + e.stake, 0)), live: L.filter(e => e.ko && now >= e.ko && now < e.ko + 115 * 60e3).length };
+  } catch (e) { return { n: 0, stake: 0, live: 0 }; } finally { FIN.w = keep; }
+}
+function finHomeStrip() {
+  try {
+    const A = [['you', holderName('you')], ['ze', 'Zé'], ['auto', 'Piloto']].map(([k, n]) => Object.assign({ k, name: n }, finOpenSum(k)));
+    const tot = A.reduce((s, a) => s + a.n, 0); if (!tot) return '';
+    const live = A.reduce((s, a) => s + a.live, 0);
+    return `<div class="fin-home" aria-label="Apostas em jogo nas três contas"><div class="fh-h"><span>⏳ Em jogo agora</span><small>${tot} aposta${tot > 1 ? 's' : ''} · ${eur(r2(A.reduce((s, a) => s + a.stake, 0)))}${live ? ` · <b class="fh-live">🔴 ${live} a decorrer</b>` : ''}</small></div>
+      <div class="fh-accs">${A.map(a => `<button type="button" class="fh-a ${a.k}${a.n ? '' : ' off'}" onclick="finOpenAcc('${a.k}','emjogo')"><span class="fh-n num">${a.n}</span><span class="fh-who">${esc(a.name)}</span><span class="fh-v">${a.n ? eur(a.stake) : 'nada em jogo'}</span></button>`).join('')}</div></div>`;
+  } catch (e) { return ''; }
+}
+
+/* registo: a auditoria de novembro não mudou regras; ficam três testes marcados para maio */
+try { ZE_RULES.log.push({ ver: ZE_RULES.ver, d: '2026-11-11', txt: 'Auditoria a 6.994 jogos de 3 épocas: 158 ideias testadas, nenhuma confirmada. As regras ficam como estão. Três testes ficam registados para medir até maio, sem mexer nas apostas: teto de odd em 1,35; não apostar em equipa cuja odd subiu mais de 10%; não apostar na casa que perdeu na 1ª volta.' }); } catch (e) {}
+
+/* ---------- 📒 Diário: opiniões pendentes com data e liga; resultados antigos vão-se buscar; as que nunca terão resultado saem da lista ---------- */
+let DIARY_CATCH_AT = 0;
+const DIARY_OLD = 10 * 864e5;
+function diaryPendSplit() {
+  const now = Date.now(), P = Object.values(diaryLoad().items).filter(x => !x.res && !x.lost);
+  const t = x => Date.parse(x.kick) || 0;
+  return { next: P.filter(x => t(x) > now).sort((a, b) => t(a) - t(b)), wait: P.filter(x => t(x) <= now && now - t(x) < DIARY_OLD).sort((a, b) => t(b) - t(a)), old: P.filter(x => now - t(x) >= DIARY_OLD) };
+}
+function diaryPendHTML() {
+  const S = diaryPendSplit(), now = Date.now();
+  const when = x => { const d = new Date(x.kick); return d.toLocaleDateString('pt-PT', { weekday: 'short', day: '2-digit', month: '2-digit' }).replace(/\./g, '') + ' ' + finHM(d); };
+  const row = (x, ic) => `<div style="font-size:.8rem;padding:4px 0;border-top:1px solid var(--line2);line-height:1.4;">${ic} <b>${esc(x.home)} vs ${esc(x.away)}</b> <span class="muted">· ${esc(x.league || x.code || '')} · ${when(x)}</span><br><span class="muted">${x.pick ? `${esc(x.pick.label)} ${pct(x.pick.p)}` : 'sem aposta segura'}${x.value ? ` · 💶 valor em ${esc(marketName(x.value.k, x))} @ ${x.value.odd}` : ''}${x.studied ? ' 🧠' : ''}</span></div>`;
+  const blk = (title, L, ic, note) => L.length ? `<div style="margin-top:10px;"><b>${title} (${L.length})</b>${L.slice(0, 8).map(x => row(x, ic)).join('')}${L.length > 8 ? `<div class="muted" style="font-size:.74rem;padding-top:4px;">… e mais ${L.length - 8}</div>` : ''}${note ? `<div class="muted" style="font-size:.74rem;padding-top:4px;">${note}</div>` : ''}</div>` : '';
+  return blk('🔒 Opinião gravada · jogos por jogar', S.next, '⏳', '')
+    + blk('⌛ Já jogados · à espera do resultado', S.wait, '⌛', 'O resultado entra quando carregas em 📡 Atualizar. Se um jogo foi adiado, ou é de uma competição que saiu da tua lista, sai daqui sozinho ao fim de 10 dias.')
+    + (S.old.length ? `<div class="muted" style="font-size:.74rem;margin-top:8px;">${S.old.length} opini${S.old.length > 1 ? 'ões antigas' : 'ão antiga'} sem resultado encontrado (jogos adiados ou fora da lista) — não conta${S.old.length > 1 ? 'm' : ''} para as estatísticas. <a href="#" onclick="diaryDropOld(); return false;">Limpar</a></div>` : '');
+}
+function diaryDropOld() { const D = diaryLoad(), now = Date.now(); let n = 0; Object.values(D.items).forEach(x => { if (!x.res && !x.lost && now - (Date.parse(x.kick) || 0) >= DIARY_OLD) { x.lost = true; n++; } }); if (n) diarySave(D); try { renderDiary(); } catch (e) {} toast(n ? `🧹 ${n} opini${n > 1 ? 'ões antigas arrumadas' : 'ão antiga arrumada'}.` : 'Nada para limpar.'); }
+diaryHTML = (function (prev) {
+  return function () {
+    let h = prev.apply(this, arguments);
+    try { h = h.replace(/<div style="margin-top:10px;"><b>🔒 Opiniões gravadas \(à espera do resultado\)<\/b>(?:<div style="font-size:.8rem;padding:3px 0;">(?:(?!<div).)*?<\/div>)*<\/div>/s, () => diaryPendHTML()); } catch (e) {}
+    return h;
+  };
+})(diaryHTML);
+/* jogos já jogados cujo resultado nunca chegou (a app esteve fechada, a liga saiu da lista): vai buscar o mês dessa liga */
+async function diaryCatchUp(force) {
+  if (/jsdom/i.test(navigator.userAgent || '') || window.__ZE_LAB || navigator.onLine === false) return 0;
+  if (!force && Date.now() - DIARY_CATCH_AT < 30 * 60e3) return 0;
+  if (typeof espnCooling === 'function' && espnCooling()) return 0;
+  const now = Date.now(), want = {};
+  Object.values(diaryLoad().items).forEach(x => {
+    const t = Date.parse(x.kick) || 0; if (x.res || x.lost || !x.code || now - t < 1.5 * 864e5 || now - t > 45 * 864e5) return;
+    const d = new Date(t); want[x.code + '|' + d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, '0')] = 1;
+  });
+  const keys = Object.keys(want).slice(0, 4); if (!keys.length) return 0;
+  DIARY_CATCH_AT = Date.now();
+  const all = [];
+  for (const kk of keys) {
+    const [code, ym] = kk.split('|');
+    try {
+      const j = await fetchJSON(`https://site.api.espn.com/apis/site/v2/sports/soccer/${code}/scoreboard?dates=${ym}&limit=1000`);
+      (j.events || []).forEach(ev => { const n = normalizeEspn(ev, code, (typeof ESPN_LEAGUES !== 'undefined' && ESPN_LEAGUES[code]) || code); if (n) all.push(n); });
+    } catch (e) {}
+    if (typeof espnCooling === 'function' && espnCooling()) break;
+  }
+  const n = all.length ? diaryGrade({ matches: all }) : 0;
+  try { if (n && currentView === 'ze') renderDiary(); } catch (e) {}
+  return n;
+}
+setTimeout(() => diaryCatchUp().catch(() => {}), 60000);
+applyLive = (function (prev) { return function () { const r = prev.apply(this, arguments); setTimeout(() => diaryCatchUp().catch(() => {}), 40000); return r; }; })(applyLive);
 
 renderWallet(); renderUpdateInfo();
 
