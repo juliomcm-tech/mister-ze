@@ -1,6 +1,11 @@
 name: robo
 # Robô do Mister Zé: de 15 em 15 minutos vai buscar jogos, resultados e odds e corre o piloto na nuvem.
 # Os dados ficam no ramo «dados» (um só commit, sempre substituído), que a app lê.
+#
+# Como se repete: o temporizador do GitHub (schedule) dispara poucas vezes por dia neste repositório,
+# por isso cada corrida marca a seguinte. O trabalho «seguinte» espera 15 minutos no ambiente «espera»
+# (Settings → Environments → espera → Wait timer; enquanto espera não gasta máquina) e depois lança outra corrida.
+# O schedule fica como rede de segurança: se a corrente partir, é ele que a volta a pôr a andar.
 on:
   schedule:
     - cron: '6,21,36,51 * * * *'
@@ -10,13 +15,13 @@ on:
     paths: ['robo/**', '.github/workflows/robo.yml']
 permissions:
   contents: write
-concurrency:
-  group: robo-${{ github.ref_name }}
-  cancel-in-progress: false
 jobs:
   robo:
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    concurrency:
+      group: robo-dados-${{ github.ref_name }}
+      cancel-in-progress: false
     env:
       TZ: Europe/Lisbon
       RAMO: ${{ github.ref_name == 'main' && 'dados' || 'dados-dev' }}
@@ -40,3 +45,27 @@ jobs:
           git add -A
           git -c user.name="mister-ze-robo" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -qm "dados $(date -u +%FT%TZ)"
           git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" "$RAMO"
+  seguinte:
+    needs: robo
+    if: ${{ always() && github.ref_name == 'main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    environment: espera
+    permissions:
+      actions: write
+    steps:
+      - name: marcar a próxima corrida
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          agora=$(date +%s)
+          inicio=$(date -d "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" -q .run_started_at)" +%s)
+          passou=$((agora - inicio))
+          # travão: se a espera de 15 minutos não aconteceu (ambiente apagado ou sem temporizador), não marca nada, para nunca entrar em ciclo
+          if [ "$passou" -lt 600 ]; then echo "Só passaram $passou s desde o início: a espera não funcionou, não marco a próxima corrida."; exit 0; fi
+          # só a corrida mais nova marca a seguinte (evita correntes em duplicado quando o schedule ou um push também disparam)
+          novas=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/robo.yml/runs?per_page=30" -q "[.workflow_runs[] | select(.id > $GITHUB_RUN_ID and (.status == \"queued\" or .status == \"in_progress\" or .status == \"waiting\" or .status == \"pending\" or .status == \"requested\"))] | length")
+          if [ "$novas" != "0" ]; then echo "Há $novas corrida(s) mais nova(s) em curso: é essa que marca a seguinte."; exit 0; fi
+          gh workflow run robo.yml --repo "$GITHUB_REPOSITORY" --ref main
+          echo "Próxima corrida marcada (passaram $passou s)."
