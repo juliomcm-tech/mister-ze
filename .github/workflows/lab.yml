@@ -1,0 +1,37 @@
+name: lab
+# Laboratório: constrói os ficheiros de épocas passadas para auditoria (só corre quando é lançado à mão).
+on:
+  workflow_dispatch:
+    inputs:
+      epocas:
+        description: 'Épocas (ano de início), separadas por espaço'
+        default: '2024 2025 2026'
+permissions:
+  contents: write
+concurrency:
+  group: lab
+  cancel-in-progress: false
+jobs:
+  lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      TZ: Europe/Lisbon
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: cd robo && npm ci --no-audit --no-fund
+      - name: ramo dos dados
+        run: git clone --quiet --depth 1 --branch lab-dados "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" lab || (mkdir -p lab && cd lab && git init -q -b lab-dados)
+      - name: construir e publicar época a época
+        run: |
+          for e in ${{ inputs.epocas }}; do
+            ROBO_DADOS=lab node robo/lab.mjs "$e"
+            cd lab
+            git add -A
+            git -c user.name="mister-ze-robo" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -qm "época $e" || true
+            git push -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" lab-dados
+            cd ..
+          done
