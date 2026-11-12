@@ -11494,7 +11494,7 @@ try { updateContinue(); } catch (e) {}
    - chat novo: classificação de qualquer liga, «transferências benfica», «mercado»
    - a app atualiza-se sozinha quando há versão nova
    ===================================================================== */
-const APP_VER = 'v72';
+const APP_VER = 'v73';
 
 /* ---------- 1) notícias e YouTube sem falhar ---------- */
 const FEED_LS = 'ze_feed_cache_v1';
@@ -18523,6 +18523,29 @@ gistAutoBackup = (function (prev) {
   };
 })(gistAutoBackup);
 try { ZE_RULES.log.push({ ver: ZE_RULES.ver, d: '2026-11-12', txt: 'Sem mudança de regras. Boletim: a hora do jogo desempata quando as equipas não se leem. Cópia de segurança passa a levar tudo (diário, piloto, notas) e, com token, é diária.' }); } catch (e) {}
+
+/* ================= v73 · Duelo abre depressa: o Zé faz as contas dos jogos em segundo plano ================= */
+/* As contas são exatamente as mesmas (modelo de cada jogo); só mudam de momento: aos bocadinhos, enquanto estás
+   noutro ecrã, em vez de todas de uma vez quando carregas em Duelo. Nada é gravado nem decidido aqui. */
+let ZE_WARM_RUN = 0;
+function zeWarm(delay) {
+  if (/jsdom/i.test(navigator.userAgent || '') || window.__ZE_LAB || window.__ROBO) return;
+  const run = ++ZE_WARM_RUN;
+  setTimeout(() => {
+    let i = 0; const L = (typeof matches !== 'undefined' && matches || []).slice();
+    const step = () => {
+      if (run !== ZE_WARM_RUN) return;                       // começou outra ronda (dados novos): esta pára
+      const t0 = performance.now();
+      while (i < L.length && performance.now() - t0 < 12) { try { modelo(L[i]); } catch (e) {} i++; }   // fatias curtas: o ecrã nunca prende
+      if (i < L.length) return setTimeout(step, 40);
+      setTimeout(() => { if (run === ZE_WARM_RUN && typeof currentView !== 'undefined' && currentView !== 'duelo') { try { zeChallenges(); } catch (e) {} } }, 60);
+    };
+    step();
+  }, delay == null ? 1800 : delay);
+}
+try { zeWarm(2500); } catch (e) {}
+atualizarTudo = (function (prev) { return async function () { const r = await prev.apply(this, arguments); try { zeWarm(1200); } catch (e) {} return r; }; })(atualizarTudo);
+fmGo = (function (prev) { return function (v) { const r = prev.apply(this, arguments); try { if (v === 'portal' && !(CH_MEM && Date.now() - CH_MEM.t < 4 * 60e3)) zeWarm(900); } catch (e) {} return r; }; })(fmGo);
 
 renderWallet(); renderUpdateInfo();
 

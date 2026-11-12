@@ -48,6 +48,6 @@ setTimeout(async()=>{try{
   h=await say('mercado'); console.log('mercado →',h.slice(0,160)); chk(/Mercado/.test(h),'mercado');
   h=await say('odds juventus'); h=await say('odds villarreal'); console.log('odds villarreal →',h.slice(0,120)); chk(!/Derby|Benfica|Charlton|Como/.test(h)||/Não encontro/.test(h),'odds de equipa sem jogo');
   // versão
-  w.fmGo('config'); chk(/v72/.test(w.document.getElementById('appVer')?.textContent||''),'versão nas definições');
+  w.fmGo('config'); chk(/v73/.test(w.document.getElementById('appVer')?.textContent||''),'versão nas definições');
 }catch(e){bad.push('EXC '+e.stack)}
  console.log(errs.length?'ERRS '+errs.join(' | '):'NO ERRORS'); console.log('=== PROBLEMAS ===\n'+(bad.join('\n')||'NENHUM')); process.exit(0);},2000);
