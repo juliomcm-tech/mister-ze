@@ -1,0 +1,12 @@
+const {JSDOM,VirtualConsole}=require(process.env.NODE_PATH_JSDOM);const fs=require('fs');
+const vc=new VirtualConsole();const errs=[];vc.on('jsdomError',e=>errs.push('JSERR '+e.message));
+const dom=new JSDOM(fs.readFileSync('/home/claude/work/dossie_do_dia_v50.html','utf8'),{runScripts:'dangerously',virtualConsole:vc,url:'https://x.test/',pretendToBeVisual:true,beforeParse(w){w.scrollTo=()=>{};w.alert=m=>errs.push('ALERT '+m);w.confirm=()=>true;w.HTMLElement.prototype.scrollIntoView=()=>{};w.fetch=async()=>{throw new TypeError('x')}}});
+setTimeout(()=>{const w=dom.window;const bad=[];const chk=(c,m)=>{if(!c)bad.push(m);};try{dom.window.eval("CAL_STATIC.forEach(m=>{m.calSt='ok';if(m.aviso===CAL_PENDING_TXT)m.aviso=m._orig.aviso||null;delete m.calNote;if(!matches.includes(m))matches.push(m)})");
+ console.log('mínimo por omissão',w.minStake());
+ const ok1=w.addBet({match:'Benfica vs Alverca',pick:'Benfica vence',odd:1.3,stake:0.2},'you'); console.log('tu 0.20 €:',ok1,'|',errs.pop());
+ chk(ok1===false,'devia recusar');
+ w.addBet({match:'Benfica vs Alverca',pick:'Benfica vence',odd:1.3,stake:0.17,source:'duelo-ze'},'ze'); const z=w.loadBank().zeBets.slice(-1)[0]||w.loadBank().zeBets[0]; console.log('Zé 0.17 € →',z.stake,'|',z.note); chk(z.stake===0.25,'Zé subido');
+ w.fmGo('config'); console.log('painel:',!!w.document.getElementById('cfgMinStake')); w.setMinStake('0.50'); console.log('novo mínimo',w.minStake());
+ const i=w.eval('matches').findIndex(m=>!m.past&&!m.aviso); w.prepararDuelo(i); ['1','X','2'].forEach((k,j)=>{const el=w.document.getElementById('odd_'+k); if(el) el.value=[1.9,4.5,6.5][j];}); w.zeDecidirUI(); const d=w.eval('dueloAtual').decision; console.log('duelo: pick',d.pick&&d.pick.label,'stake',d.stake,'| subido',!!d.minRaised,'| passou',!!d.minSkip, '|', (w.document.getElementById('zeDecision').textContent.match(/💶.*/)||[''])[0].slice(0,120));
+ chk(!d.pick||d.stake>=0.5,'stake do duelo abaixo do mínimo');
+}catch(e){errs.push(e.stack)} console.log('PROBLEMAS:',bad.concat(errs).join(' | ')||'NENHUM');},500);

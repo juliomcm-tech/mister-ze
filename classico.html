@@ -1513,7 +1513,7 @@ button.fin-kpi.on { border-color: var(--lime); box-shadow: 0 0 0 1px var(--lime)
             <button class="btn" onclick="syncDown()">⬇️ Receber</button>
           </div>
           <div id="syncStatus" class="hint"></div>
-          <div class="hint" style="margin-top:6px;">Só liga ao GitHub quando carregas num destes botões: guarda bancas, épocas, perfil e foto num gist <b>privado</b> para teres o mesmo duelo no PC e no telemóvel. Sem token, usa o backup por ficheiro.</div>
+          <div class="hint" style="margin-top:6px;">Guarda <b>tudo</b> — a tua conta, a do Zé, o diário de opiniões, notas e limites — num gist <b>privado</b> da tua conta GitHub. Com o token posto, a app faz a cópia sozinha uma vez por dia quando a abres; «Receber» repõe tudo noutro telemóvel ou depois de limpares o Chrome. O token fica só neste aparelho e nunca vai na cópia. Sem token, usa o backup por ficheiro.</div>
         </div>
       </div>
       <div class="panel" style="grid-column:1/-1;">
@@ -11494,7 +11494,7 @@ try { updateContinue(); } catch (e) {}
    - chat novo: classificação de qualquer liga, «transferências benfica», «mercado»
    - a app atualiza-se sozinha quando há versão nova
    ===================================================================== */
-const APP_VER = 'v71';
+const APP_VER = 'v72';
 
 /* ---------- 1) notícias e YouTube sem falhar ---------- */
 const FEED_LS = 'ze_feed_cache_v1';
@@ -17804,7 +17804,7 @@ function diaryPendSplit() {
 function diaryPendHTML() {
   const S = diaryPendSplit(), now = Date.now();
   const when = x => { const d = new Date(x.kick); return d.toLocaleDateString('pt-PT', { weekday: 'short', day: '2-digit', month: '2-digit' }).replace(/\./g, '') + ' ' + finHM(d); };
-  const row = (x, ic) => `<div style="font-size:.8rem;padding:4px 0;border-top:1px solid var(--line2);line-height:1.4;">${ic} <b>${esc(x.home)} vs ${esc(x.away)}</b> <span class="muted">· ${esc(x.league || x.code || '')} · ${when(x)}</span><br><span class="muted">${x.pick ? `${esc(x.pick.label)} ${pct(x.pick.p)}` : 'sem aposta segura'}${x.value ? ` · 💶 valor em ${esc(marketName(x.value.k, x))} @ ${x.value.odd}` : ''}${x.studied ? ' 🧠' : ''}</span></div>`;
+  const row = (x, ic) => `<div style="font-size:.8rem;padding:4px 0;border-top:1px solid var(--line2);line-height:1.4;">${ic} <b>${esc(x.home)} vs ${esc(x.away)}</b> <span class="muted">· ${esc(x.league || x.code || '')} · ${when(x)}</span><br><span class="muted">${x.pick ? `${esc(x.pick.label)} ${pct(x.pick.p)}` : 'sem aposta segura'}${x.cs ? ` · 🎯 placar previsto <b>${esc(x.cs)}</b>` : ''}${x.value ? ` · 💶 valor em ${esc(marketName(x.value.k, x))} @ ${x.value.odd}` : ''}${x.studied ? ' 🧠' : ''}</span></div>`;
   const blk = (title, L, ic, note) => L.length ? `<div style="margin-top:10px;"><b>${title} (${L.length})</b>${L.slice(0, 8).map(x => row(x, ic)).join('')}${L.length > 8 ? `<div class="muted" style="font-size:.74rem;padding-top:4px;">… e mais ${L.length - 8}</div>` : ''}${note ? `<div class="muted" style="font-size:.74rem;padding-top:4px;">${note}</div>` : ''}</div>` : '';
   return blk('🔒 Opinião gravada · jogos por jogar', S.next, '⏳', '')
     + blk('⌛ Já jogados · à espera do resultado', S.wait, '⌛', 'O resultado entra quando carregas em 📡 Atualizar. Se um jogo foi adiado, ou é de uma competição que saiu da tua lista, sai daqui sozinho ao fim de 10 dias.')
@@ -18432,6 +18432,97 @@ stDecorate = (function (prev) {
   };
 })(stDecorate);
 try { ZE_RULES.log.push({ ver: ZE_RULES.ver, d: '2026-11-12', txt: 'Nova estratégia do piloto, à parte das outras: «💎 Preço justo» (250 € virtuais). Aposta 1% da banca no resultado final quando a Betano paga 3% ou mais acima do preço justo da Pinnacle, com odd entre 1,25 e 4,00. Regra fixada hoje; as regras do Zé não mudaram.' }); } catch (e) {}
+
+
+/* ================= v72 · arrumações pedidas: data/hora do boletim, cópia completa na nuvem ================= */
+/* 1) Boletim: a data e hora que a casa escreve por baixo de cada jogo serve de desempate.
+      Se o print não deixou ler as equipas e só há UM jogo conhecido a essa hora, é esse. */
+function zeSlipKick(txt) {
+  const m = String(txt || '').match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})\D{1,4}(\d{1,2})[:h.](\d{2})/);
+  if (!m) return null;
+  const y = +m[3] < 100 ? 2000 + +m[3] : +m[3], d = new Date(y, +m[2] - 1, +m[1], +m[4], +m[5]);
+  return isNaN(d) || +m[2] > 12 || +m[1] > 31 || +m[4] > 23 ? null : d.toISOString();
+}
+function zeFixturesAt(iso, pool) {
+  const t = Date.parse(iso); if (!t) return [];
+  let L = pool; if (!L) { try { L = (lsGet(LIVE_KEY, null) || {}).matches || []; } catch (e) { L = []; } }
+  const seen = {};
+  return L.filter(x => x && x.utcDate && x.homeTeam && x.awayTeam && Math.abs(Date.parse(x.utcDate) - t) <= 5 * 60e3)
+    .filter(x => { const k = normTxt((x.homeTeam.name || '') + '|' + (x.awayTeam.name || '')); if (seen[k]) return false; seen[k] = 1; return true; });
+}
+parseSlip = (function (prev) {
+  return function (text) {
+    const out = prev.apply(this, arguments);
+    try {
+      const lines = String(text || '').split(/\r?\n/).map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean);
+      const blocks = [];
+      lines.forEach((l, i) => {
+        if (!MARKET_RE.test(l)) return;
+        let kick = null;
+        for (let k = i + 1; k <= i + 5 && k < lines.length; k++) { if (MARKET_RE.test(lines[k])) break; kick = zeSlipKick(lines[k]); if (kick) break; }
+        blocks.push({ market: l, kick, used: false });
+      });
+      out.legs.forEach(l => { if (!l.market || l.kick) return; const b = blocks.find(x => !x.used && x.market === l.market); if (b) { b.used = true; if (b.kick) l.kick = b.kick; } });
+      // desempate: sem equipas legíveis e sem equipa na seleção → o único jogo conhecido a essa hora
+      out.legs.forEach(l => {
+        if (!l.kick || l.sport === 'nba' || (zeTeamOk(l.home) && zeTeamOk(l.away))) return;
+        const c = zeFixturesAt(l.kick); if (c.length !== 1) return;
+        const e = c[0], hx = expandAliases(normTxt(e.homeTeam.name + ' ' + (e.homeTeam.shortName || ''))), ax = expandAliases(normTxt(e.awayTeam.name + ' ' + (e.awayTeam.shortName || '')));
+        // se uma equipa foi lida, tem de jogar neste jogo — senão não mexo
+        const one = zeTeamOk(l.home) ? l.home : zeTeamOk(l.away) ? l.away : '';
+        if (one && !(teamScore(one, hx) > 0 || teamScore(one, ax) > 0)) return;
+        const h = e.homeTeam.shortName || e.homeTeam.name, a = e.awayTeam.shortName || e.awayTeam.name;
+        l.home = h; l.away = a; l.byKick = 1;
+      });
+    } catch (e) { console.warn(e); }
+    return out;
+  };
+})(parseSlip);
+/* apostas já gravadas com a hora mas sem equipas: na liquidação, o único jogo acabado a essa hora */
+resolveLeg = (function (prev) {
+  return function (l, fin, at) {
+    const r = prev.apply(this, arguments);
+    if (r || !l || !l.kick || (zeTeamOk(l.home) && zeTeamOk(l.away))) return r;
+    try {
+      const c = zeFixturesAt(l.kick, fin || []); if (c.length !== 1) return r;
+      const e = c[0];
+      return prev.call(this, Object.assign({}, l, { home: e.homeTeam.shortName || e.homeTeam.name, away: e.awayTeam.shortName || e.awayTeam.name }), fin, at);
+    } catch (e) { return r; }
+  };
+})(resolveLeg);
+
+/* 2) Cópia de segurança completa: o backup antigo só levava bancas, épocas e perfil.
+      Agora leva também o diário do Zé, o piloto local, notas, limites, etc. — nunca tokens nem chaves. */
+const ZE_BK_EXTRA = ['ze_diary_v1', 'ze_auto_v1', 'ze_auto_mode_v1', 'ze_gold_v1', 'ze_notes_v1', 'ze_tips_v1', 'ze_archive_v1', 'ze_month_test_v1', 'ze_disc_v1', 'ze_minstake', 'ze_safe_slip_v1', 'ze_scout_v1', 'ze_teams_v1', 'ze_team_meta_v1', 'ze_players_v2', 'ze_leg_league_v1', 'ze_ch_done_v1', 'ze_euro_v1', 'ze_rules_seen_v1', 'ze_fin_seen_v1'];
+buildBackup = (function (prev) {
+  return function () {
+    const d = prev.apply(this, arguments);
+    try { d.v = 72; d.extra = {}; ZE_BK_EXTRA.forEach(k => { const v = lsGet(k, null); if (v != null) d.extra[k] = v; }); } catch (e) {}
+    return d;
+  };
+})(buildBackup);
+applyBackup = (function (prev) {
+  return function (d) {
+    // primeiro o que é novo (se o ficheiro for antigo não tem «extra» e nada muda), depois o resto e o redesenho
+    if (d && d.app === 'mister-ze' && d.bank && d.extra && typeof d.extra === 'object') { ZE_BK_EXTRA.forEach(k => { if (d.extra[k] != null) { try { lsSet(k, d.extra[k]); } catch (e) {} } }); }
+    return prev.apply(this, arguments);
+  };
+})(applyBackup);
+/* com token posto, a cópia para o Gist privado passa de semanal a diária (só quando a app está aberta) */
+gistAutoBackup = (function (prev) {
+  return async function () {
+    try {
+      const s = lsGet(SYNC_KEY, {}); if (!s.token) return false;
+      if (s.last && Date.now() - new Date(s.last).getTime() < 20 * 3600e3) return false;
+      const body = { description: 'Mister Zé backup', public: false, files: { 'mister-ze.json': { content: JSON.stringify(buildBackup()) } } };
+      const g = s.gist ? await gh('/gists/' + s.gist, { method: 'PATCH', body: JSON.stringify(body) }) : await gh('/gists', { method: 'POST', body: JSON.stringify(body) });
+      const s2 = lsGet(SYNC_KEY, {}); s2.gist = g.id; s2.last = new Date().toISOString(); lsSet(SYNC_KEY, s2);
+      lsSet('ze_last_backup', Date.now());
+      return true;
+    } catch (e) { return false; }
+  };
+})(gistAutoBackup);
+try { ZE_RULES.log.push({ ver: ZE_RULES.ver, d: '2026-11-12', txt: 'Sem mudança de regras. Boletim: a hora do jogo desempata quando as equipas não se leem. Cópia de segurança passa a levar tudo (diário, piloto, notas) e, com token, é diária.' }); } catch (e) {}
 
 renderWallet(); renderUpdateInfo();
 

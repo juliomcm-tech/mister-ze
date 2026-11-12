@@ -1,0 +1,3 @@
+const {JSDOM,VirtualConsole}=require(process.env.NODE_PATH_JSDOM);const fs=require('fs');
+const dom=new JSDOM(fs.readFileSync('/home/claude/work/dossie_do_dia_v50.html','utf8'),{runScripts:'dangerously',url:'https://x.test/',pretendToBeVisual:true,virtualConsole:new VirtualConsole(),beforeParse(w){w.scrollTo=()=>{};w.fetch=async()=>({ok:false,status:404,json:async()=>({}),text:async()=>''});}});
+setTimeout(()=>{const w=dom.window; console.log(w.whichSide('Dortmund','Borussia Dortmund','Real Betis'), '|', w.tipSel('Dortmund Or Draw','Borussia Dortmund','Real Betis'), '|', w.tipSel('Viking Wins','Viking','Sabah Baku'), '|', JSON.stringify(w.selConds('Dortmund Or Draw',{home:'Borussia Dortmund',away:'Real Betis'})&&'ok')); process.exit(0);},1500);

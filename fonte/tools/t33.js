@@ -1,0 +1,51 @@
+const __mz=u=>{u=decodeURIComponent(String(u)); return u.replace(/dates=(\d{4})(\d{2})?(?=&|$)/,(m,y,mo)=>{ if(mo){const last=new Date(Date.UTC(+y,+mo,0)).getUTCDate(); return 'dates='+y+mo+'01-'+y+mo+String(last).padStart(2,'0');} return 'dates='+y+'0101-'+y+'1231';});};
+const {JSDOM,VirtualConsole,ResourceLoader}=require(process.env.NODE_PATH_JSDOM);const fs=require('fs');
+const vc=new VirtualConsole();const errs=[];vc.on('jsdomError',e=>errs.push('JSERR '+e.message));
+const RealDate=Date; const NOW=RealDate.UTC(2026,10,3,9,0);
+const U=(d,h)=>RealDate.UTC(2026,10,d,h);
+const EVS=[['e1','Benfica','Alverca',U(1,20),3,0],['e2','FC Porto','Estoril',U(1,18),1,1],['e3','Feyenoord','Internazionale',U(2,20),0,2],['e4','Arsenal','Chelsea',U(1,17),1,0],['e5','Sporting CP','SC Braga',U(1,18),2,2]];
+const ev=e=>({id:e[0],date:new RealDate(e[3]).toISOString(),status:{type:{completed:true,state:'post'}},competitions:[{competitors:[{homeAway:'home',team:{id:'h'+e[0],displayName:e[1],shortDisplayName:e[1]},score:String(e[4])},{homeAway:'away',team:{id:'a'+e[0],displayName:e[2],shortDisplayName:e[2]},score:String(e[5])}],details:[]}]});
+let recCalls=0;
+const dom=new JSDOM(fs.readFileSync('/home/claude/work/dossie_do_dia_v50.html','utf8'),{runScripts:'dangerously',virtualConsole:vc,url:'https://x.test/',pretendToBeVisual:true,beforeParse(w){ Object.defineProperty(w.navigator,'userAgent',{get:()=>'Mozilla/5.0 (Linux; Android 14; SM-S918B) Mobile'});
+ class FakeDate extends RealDate{constructor(...a){if(!a.length)super(NOW);else super(...a);} static now(){return NOW;}} w.Date=FakeDate;
+ w.localStorage.setItem('ze_user_v1',JSON.stringify({name:'Spongy'}));
+ w.scrollTo=()=>{};w.alert=m=>errs.push('ALERT '+m);w.confirm=()=>true;w.HTMLElement.prototype.scrollIntoView=()=>{};
+ w.Tesseract={createWorker:async()=>({setParameters:async()=>{},recognize:async()=>{recCalls++;return {data:{text:'x'}};},terminate:async()=>{}})};
+ w.fetch=async(u)=>{u=__mz(u);u=decodeURIComponent(String(u));const R=x=>({ok:true,status:200,json:async()=>x,text:async()=>JSON.stringify(x)});
+  const m=u.match(/soccer\/([a-z._0-9]+)\/scoreboard/); if(m) return R({events:m[1]==='por.1'?EVS.map(ev):[]}); if(/standings/.test(u)) return R({children:[]}); return {ok:false,status:404,text:async()=>'',json:async()=>({})};};}});
+const w=dom.window;const wait=ms=>new Promise(r=>setTimeout(r,ms));const bad=[];const chk=(c,m)=>{if(!c)bad.push(m);};
+setTimeout(async()=>{try{
+ // 1) nome
+ const views=['portal','dia','duelo','jogos','banca','ze','config'];
+ views.forEach(v=>{w.fmGo(v);});
+ const cl=w.document.body.cloneNode(true); cl.querySelectorAll('script').forEach(x=>x.remove()); const body=cl.textContent;
+ const hum=(body.match(/.{0,30}[Hh]umano.{0,30}/g)||[]); console.log('«Humano» no ecrã:',hum.length,JSON.stringify(hum.slice(0,3)));
+ chk(!hum.length,'ainda diz Humano');
+ console.log('cabeçalho:',w.document.getElementById('hdrSub').textContent,'| título duelo:',(w.document.getElementById('duelTitle')||{}).textContent,'| barra:',w.document.querySelector('.you')?.textContent.trim());
+ chk(/Spongy/.test(w.document.querySelector('.you').textContent),'barra sem nome');
+ // 2) apostas do utilizador com textos de boletim
+ const at=new RealDate(U(1,9)).toISOString();
+ const B=w.loadBank();
+ const add=(id,pick,odd,legs)=>B.bets.push({id,match:legs.map(l=>l.home+' vs '+l.away).join(' + '),pick,odd,stake:1,legs,at,status:'open'});
+ add('u1','Resultado Final: Benflca',1.2,[{home:'Benflca',away:'Alverca',sel:'Resultado Final: Benflca',odd:1.2}]);
+ add('u2','Total de Golos Mais/Menos 2.5: Menos de 2.5',2.0,[{home:'Arsenal',away:'Chelsea',sel:'Total de Golos Mais/Menos 2.5: Menos de 2.5',odd:2.0}]);
+ add('u3','Empate Anula Aposta: FC Porto',1.4,[{home:'FC Porto',away:'Estoril',sel:'Empate Anula Aposta: FC Porto',odd:1.4}]);
+ add('u4','Dupla',3.0,[{home:'Benfica',away:'Alverca',sel:'Benfica',odd:1.5},{home:'Sporting',away:'Braga',sel:'Empate anula aposta: Sporting',odd:2.0}]);
+ add('u5','Feyenoord ou empate (1X)',2.1,[{home:'Feyenoord',away:'Inter',sel:'Feyenoord ou empate (1X)',odd:2.1}]);
+ add('u6','Ambas Marcam: Sim',1.8,[{home:'Sporting CP',away:'SC Braga',sel:'Ambas as equipas marcam: Sim',odd:1.8}]);
+ B.bets.push({id:'u7',match:'Benfica vs Alverca',pick:'Benfica vence',odd:1.25,stake:1,at,status:'open',source:'duelo-humano'});
+ B.zeBets.push({id:'z1',match:'Benfica vs Alverca',pick:'Benfica vence',odd:1.25,stake:1,at,status:'open',market:'1'});
+ B.you-=7; B.ze-=1; w.saveBank(B);
+ const y0=w.loadBank().you;
+ await w.atualizarTudo(); await wait(50);
+ const S=w.loadBank(); const st=id=>{const x=S.bets.concat(S.zeBets).find(b=>b.id===id);return x.status+(x.voidAdj?'('+x.voidAdj+')':'');};
+ console.log('\nu1 Benflca:',st('u1'),'| u2 Mais/Menos→Menos:',st('u2'),'| u3 DNB empate:',st('u3'),'| u4 dupla c/ DNB:',st('u4'),'| u5 1X:',st('u5'),'| u6 ambas:',st('u6'),'| u7 duelo:',st('u7'),'| z1 Zé:',st('z1'));
+ chk(st('u1')==='win','u1');chk(st('u2')==='win','u2');chk(/^void/.test(st('u3')),'u3 void');chk(/^win/.test(st('u4')),'u4');chk(st('u5')==='loss','u5');chk(st('u6')==='win','u6');chk(st('u7')==='win','u7');chk(st('z1')==='win','z1');
+ const exp=y0+1.2+2+1+1.5+1.8+1.25; console.log('saldo',S.you.toFixed(2),'esperado',exp.toFixed(2)); chk(Math.abs(S.you-exp)<0.011,'saldo');
+ chk(w.buildLedger(S,'you').reconciled,'extrato');
+ w.fmGo('banca'); w.wlSetTab('apostas'); console.log('caixa «precisam de ti»:',!!w.document.getElementById('stuckBox'));
+ // 3) OCR no telemóvel: no máximo 2 passagens por imagem
+ const wk=await w.getOcrWorker(()=>{}); w.eval('OCR_PASS=0;OCR_LAST=null;'); for(let i=0;i<6;i++) await wk.recognize({}); console.log('\nOCR telemóvel: 6 pedidos de leitura →',recCalls,'leituras reais | IS_PHONE',w.eval('IS_PHONE'),'| máx px',w.eval('OCR_MAX_PX'));
+ chk(recCalls===2,'passagens');
+ console.log('mensagem de erro:',w.ocrErrorHTML(new Error("Failed to construct 'Worker': Script at blob: cannot be accessed from origin 'null'"),{legs:[{},{}]}).replace(/<[^>]+>/g,' ').replace(/\s+/g,' '));
+}catch(e){errs.push('EXC '+e.stack)} console.log('\n=== PROBLEMAS ===');console.log(bad.concat(errs).join('\n')||'NENHUM');process.exit(0);},600);

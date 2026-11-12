@@ -1,0 +1,2674 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b1120">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mister Zé">
+<meta name="application-name" content="Mister Zé Dossiê">
+<meta name="description" content="Dossiê tático 2026/27 — favoritos em casa, piores fora, Botão do Dia e Mister Zé">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Mister Zé · Dossiê 2026/27</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --card: #161b22;
+  --panel: #1c2129;
+  --border: #30363d;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --blue: #58a6ff;
+  --green: #3fb950;
+  --red: #f85149;
+  --red-light: #ff7b72;
+  --yellow: #d29922;
+  --purple: #a371f7;
+  --orange: #db6d28;
+  --accent: #1f6feb;
+  --nav: #010409;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 0 0 88px;
+  line-height: 1.45;
+}
+.container { max-width: 1140px; margin: 0 auto; padding: 12px 12px 24px; }
+
+/* ===== FM27-style top navigation ===== */
+.fm-topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: linear-gradient(180deg, #010409 0%, #0d1117 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 0;
+}
+.fm-topbar-inner {
+  max-width: 1140px; margin: 0 auto;
+  display: flex; align-items: center; gap: 4px;
+  padding: 8px 10px 0; overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+.fm-brand {
+  font-weight: 800; font-size: 0.85rem; color: var(--text);
+  white-space: nowrap; padding: 8px 10px 10px; margin-right: 4px;
+  border-bottom: 2px solid transparent;
+}
+.fm-brand span { color: var(--blue); }
+.fm-nav-btn {
+  background: none; border: none; color: var(--muted);
+  font-size: 0.78rem; font-weight: 600; padding: 10px 12px 12px;
+  cursor: pointer; white-space: nowrap;
+  border-bottom: 2px solid transparent; flex-shrink: 0;
+}
+.fm-nav-btn.active { color: var(--text); border-bottom-color: var(--blue); }
+.fm-nav-btn:active { color: var(--blue); }
+.fm-status {
+  max-width: 1140px; margin: 0 auto;
+  display: flex; gap: 10px; padding: 8px 12px 10px;
+  font-size: 0.72rem; color: var(--muted); flex-wrap: wrap;
+}
+.fm-status strong { color: var(--green); font-weight: 700; }
+.fm-status .ze { color: var(--purple); }
+
+/* Portal tiles (FM-style) */
+.fm-portal {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;
+}
+@media (min-width: 700px) { .fm-portal { grid-template-columns: repeat(4, 1fr); } }
+.fm-tile {
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px; cursor: pointer; min-height: 88px;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.fm-tile:active { border-color: var(--blue); }
+.fm-tile .t-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.fm-tile .t-value { font-size: 1.15rem; font-weight: 800; margin-top: 4px; }
+.fm-tile .t-sub { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+.fm-tile.accent { border-color: rgba(31,111,235,.45); background: linear-gradient(145deg, #161b22, #0d1b2a); }
+.fm-section-title {
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--muted); margin: 16px 0 8px; font-weight: 700;
+}
+.fm-view { display: none; }
+.fm-view.active { display: block; }
+
+header { text-align: left; margin-bottom: 12px; }
+h1 {
+  font-size: clamp(1.1rem, 3.5vw, 1.35rem);
+  font-weight: 800; color: var(--text); margin-bottom: 2px;
+}
+.subtitle { color: var(--muted); font-size: 0.8rem; }
+
+/* Botão do Dia */
+.day-btn-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+.day-btn {
+  padding: 13px 28px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #7c3aed, #db2777, #ea580c);
+  color: white;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(219, 39, 119, 0.35);
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.day-btn:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 28px rgba(219, 39, 119, 0.45);
+}
+.day-btn:active { transform: scale(0.98); }
+
+.day-result {
+  display: none;
+  background: var(--card);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 22px;
+  border: 1px solid var(--border);
+  animation: fade .3s ease;
+}
+.day-result.show { display: block; }
+.day-result h3 {
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.day-result .day-meta {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+}
+.day-result .day-pick {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 12px;
+  border-left: 4px solid var(--orange);
+}
+.day-result .day-pick.strong { border-left-color: var(--green); }
+.day-result .day-pick.danger { border-left-color: var(--red); }
+.day-result .day-verdict {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #e2e8f0;
+}
+.day-result .day-funny {
+  text-align: center;
+  padding: 20px 10px;
+  font-size: 1.05rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.day-result .day-funny span {
+  display: block;
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+/* Toggle principal */
+.toggle-bar {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.toggle-btn {
+  padding: 11px 20px;
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s;
+}
+.toggle-btn:hover { transform: translateY(-2px); }
+.toggle-btn.active-best {
+  background: linear-gradient(135deg, #0c4a6e, #0369a1);
+  border-color: var(--blue);
+  box-shadow: 0 0 20px rgba(56,189,248,.28);
+}
+.toggle-btn.active-worst {
+  background: linear-gradient(135deg, #7f1d1d, #b91c1c);
+  border-color: var(--red);
+  box-shadow: 0 0 20px rgba(239,68,68,.28);
+}
+
+/* Controles */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+  align-items: center;
+  justify-content: center;
+}
+.search-box {
+  flex: 1;
+  min-width: 180px;
+  max-width: 300px;
+  position: relative;
+}
+.search-box input {
+  width: 100%;
+  padding: 10px 12px 10px 38px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 0.92rem;
+  outline: none;
+}
+.search-box input:focus { border-color: var(--blue); }
+.search-box::before {
+  content: "🔍";
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.9rem;
+}
+.filter-chip {
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+.filter-chip:hover, .filter-chip.active {
+  background: #1e3a5f;
+  border-color: var(--blue);
+  color: var(--blue);
+}
+.filter-chip.fav.active {
+  background: #3b2a0a;
+  border-color: var(--orange);
+  color: var(--orange);
+}
+.filter-chip.worst-f.active {
+  background: #3f1a1a;
+  border-color: var(--red);
+  color: var(--red-light);
+}
+
+/* Secções de cards */
+.section { display: none; }
+.section.visible { display: block; animation: fade .25s ease; }
+@keyframes fade {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: none; }
+}
+
+.card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 16px 16px 14px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.25);
+}
+.card.best { border-left: 5px solid var(--blue); }
+.card.worst { border-left: 5px solid var(--red); }
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+  margin-bottom: 11px;
+}
+.club-name { font-size: 1.15rem; font-weight: 800; }
+.stats-badge {
+  background: var(--bg);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  border: 1px solid var(--border);
+}
+.badge-100 { color: var(--green); font-weight: 800; }
+.badge-80 { color: var(--yellow); font-weight: 800; }
+.badge-75 { color: var(--red-light); font-weight: 800; }
+.badge-fail { color: var(--red-light); font-weight: 800; }
+
+table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+th {
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  padding: 6px 7px;
+  text-align: left;
+}
+td {
+  padding: 8px 7px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.84rem;
+  vertical-align: top;
+}
+.match-type { font-weight: 700; color: #cbd5e1; width: 12%; }
+.match-details { width: 28%; }
+.h2h-vals { font-family: ui-monospace, monospace; width: 26%; font-size: 0.8rem; }
+.card.best .h2h-vals { color: #86efac; }
+.card.worst .h2h-vals { color: #fca5a5; }
+.analysis-text { color: var(--muted); font-style: italic; width: 34%; font-size: 0.82rem; }
+.prob {
+  display: inline-block;
+  margin-top: 3px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.prob-high { background: rgba(74,222,128,.15); color: var(--green); }
+.prob-mid { background: rgba(251,191,36,.15); color: var(--yellow); }
+.prob-low { background: rgba(239,68,68,.15); color: var(--red-light); }
+
+.general-note {
+  background: var(--bg);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  line-height: 1.45;
+}
+.card.best .general-note { border-top: 2px solid #0284c7; }
+.card.worst .general-note { border-top: 2px solid var(--red); }
+
+/* Calendário */
+.calendar-section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+.calendar-section h2 {
+  text-align: center;
+  font-size: 1.25rem;
+  margin-bottom: 4px;
+}
+.calendar-hint {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.84rem;
+  margin-bottom: 14px;
+}
+.cal-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.phase-block { margin-bottom: 22px; }
+.phase-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  padding-left: 3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--blue);
+}
+.phase-title span.count {
+  font-size: 0.72rem;
+  background: var(--card);
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.match-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+.match-chip {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 13px;
+  cursor: pointer;
+  transition: all .18s;
+  position: relative;
+}
+.match-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,.3);
+}
+.match-chip.best-chip:hover { border-color: var(--blue); }
+.match-chip.worst-chip:hover { border-color: var(--red); }
+.match-chip.fav-chip {
+  border-color: rgba(251,146,60,.45);
+  background: linear-gradient(145deg, #1e293b, #2a1f12);
+}
+.match-chip.fav-chip:hover {
+  border-color: var(--orange);
+  box-shadow: 0 0 16px rgba(251,146,60,.2);
+}
+.chip-league {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+.chip-teams { font-weight: 700; font-size: 0.9rem; margin-bottom: 3px; }
+.chip-date { font-size: 0.76rem; color: var(--muted); }
+.chip-tag {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 0.6rem;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+.tag-best { background: rgba(56,189,248,.18); color: var(--blue); }
+.tag-worst { background: rgba(239,68,68,.18); color: var(--red-light); }
+.tag-fav { background: rgba(251,146,60,.2); color: var(--orange); }
+.chip-risk {
+  margin-top: 5px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--red-light);
+}
+
+/* Modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(11,17,32,.88);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--card);
+  border-radius: 14px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 20px;
+  border: 1px solid var(--border);
+  position: relative;
+  animation: modalIn .2s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(.96) translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+  line-height: 1;
+}
+.modal-close:hover { color: var(--text); }
+.modal h3 { font-size: 1.15rem; margin-bottom: 3px; padding-right: 26px; }
+.modal-meta { color: var(--muted); font-size: 0.82rem; margin-bottom: 10px; }
+.modal .h2h {
+  font-family: ui-monospace, monospace;
+  background: var(--bg);
+  padding: 9px 12px;
+  border-radius: 8px;
+  margin-bottom: 11px;
+  font-size: 0.86rem;
+}
+.modal .analysis {
+  color: #e2e8f0;
+  line-height: 1.5;
+  font-size: 0.92rem;
+  margin-bottom: 12px;
+}
+.modal .note {
+  background: var(--bg);
+  padding: 11px;
+  border-radius: 8px;
+  font-size: 0.83rem;
+  color: var(--muted);
+  border-left: 3px solid var(--blue);
+  margin-bottom: 12px;
+}
+.modal.worst-modal .note { border-left-color: var(--red); }
+.copy-btn {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #0c4a6e, #0369a1);
+  color: white;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+.copy-btn:hover { opacity: .9; }
+.copy-btn.copied { background: #166534; }
+
+@media (max-width: 700px) {
+  .toggle-btn { padding: 9px 14px; font-size: 0.85rem; }
+  .day-btn { padding: 12px 18px; font-size: 0.92rem; }
+
+  /* Tabelas viram blocos legíveis no telemóvel */
+  table, thead, tbody, th, td, tr { display: block; width: 100%; }
+  thead { display: none; }
+  tr {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 12px 12px 10px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+  }
+  td {
+    border: none !important;
+    padding: 3px 0 !important;
+    font-size: 0.88rem !important;
+    width: 100% !important;
+  }
+  .match-type {
+    display: inline-block !important;
+    background: #334155;
+    color: #e2e8f0;
+    font-size: 0.72rem !important;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+  }
+  .match-details {
+    font-weight: 700;
+    font-size: 0.98rem !important;
+    color: #f1f5f9;
+    margin-bottom: 4px;
+  }
+  .h2h-vals {
+    font-size: 0.82rem !important;
+    margin-bottom: 6px;
+    opacity: 0.9;
+  }
+  .analysis-text {
+    font-style: normal !important;
+    color: #cbd5e1 !important;
+    font-size: 0.9rem !important;
+    line-height: 1.45;
+    margin-top: 4px;
+  }
+  .prob {
+    display: inline-block;
+    margin-top: 6px;
+  }
+  .club-name { font-size: 1.05rem; }
+  .card { padding: 14px 12px 12px; }
+}
+</style>
+</head>
+<body>
+<!-- FM27-style top navigation -->
+<nav class="fm-topbar">
+  <div class="fm-topbar-inner">
+    <div class="fm-brand">Mister <span>Zé</span></div>
+    <button type="button" class="fm-nav-btn active" data-view="portal" onclick="fmGo('portal')">Portal</button>
+    <button type="button" class="fm-nav-btn" data-view="jogos" onclick="fmGo('jogos')">Jogos</button>
+    <button type="button" class="fm-nav-btn" data-view="dia" onclick="fmGo('dia')">Match Day</button>
+    <button type="button" class="fm-nav-btn" data-view="banca" onclick="fmGo('banca')">Finanças</button>
+    <button type="button" class="fm-nav-btn" data-view="ze" onclick="fmGo('ze')">Inbox Zé</button>
+    <button type="button" class="fm-nav-btn" data-view="scout" onclick="fmGo('scout')">Scouting</button>
+  </div>
+  <div class="fm-status">
+    <span>Banca: <strong id="fmBankYou">20.00 €</strong></span>
+    <span>Zé: <strong class="ze" id="fmBankZe">20.00 €</strong></span>
+    <span id="fmBankRoi">ROI —</span>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- PORTAL (FM home) -->
+  <div id="view-portal" class="fm-view active">
+    <div class="fm-section-title">Portal · visão geral</div>
+    <div class="fm-portal">
+      <div class="fm-tile accent" onclick="fmGo('dia'); gerarDia();">
+        <div class="t-label">Match Day</div>
+        <div class="t-value">Botão do Dia</div>
+        <div class="t-sub">Melhor pick · meteo · cenário</div>
+      </div>
+      <div class="fm-tile" onclick="fmGo('banca')">
+        <div class="t-label">Finanças</div>
+        <div class="t-value" id="tileBank">20 €</div>
+        <div class="t-sub">Carteira · W/L · vs Zé</div>
+      </div>
+      <div class="fm-tile" onclick="fmGo('jogos')">
+        <div class="t-label">Próximos</div>
+        <div class="t-value">Calendário</div>
+        <div class="t-sub">Filtros · favoráveis</div>
+      </div>
+      <div class="fm-tile" onclick="fmGo('ze')">
+        <div class="t-label">Inbox</div>
+        <div class="t-value">Mister Zé</div>
+        <div class="t-sub">Análise · roast · mercados</div>
+      </div>
+    </div>
+    <div class="fm-section-title">Ações rápidas</div>
+    <div class="day-btn-wrap" style="flex-wrap:wrap;gap:8px;justify-content:flex-start;">
+      <button class="day-btn" onclick="fmGo('dia'); gerarDia();">🔮 Match Day</button>
+      <button class="day-btn" style="background:linear-gradient(135deg,#0f766e,#0369a1);" onclick="verificarAtualizacoes()">🔄 Atualizar</button>
+      <button class="day-btn" id="btnInstallApp" style="display:none;background:linear-gradient(135deg,#334155,#0f172a);" onclick="instalarApp()">📲 Instalar</button>
+    </div>
+    <div class="day-result" id="dayResultPortal" style="display:none;"></div>
+    <div class="fm-section-title">Scouting · atalho</div>
+    <p class="subtitle" style="margin-bottom:10px;">Cards completos do estudo (melhores casa / piores fora) no separador Scouting.</p>
+  </div>
+
+  <!-- MATCH DAY -->
+  <div id="view-dia" class="fm-view">
+    <div class="fm-section-title">Match Day · Duelo Zé vs <span class="pname">Tu</span></div>
+    <div class="day-btn-wrap" style="flex-wrap:wrap;gap:8px;justify-content:flex-start;">
+      <button class="day-btn" onclick="gerarDia()">🔮 Análise do dia</button>
+      <button class="day-btn" style="background:linear-gradient(135deg,#5b21b6,#7c3aed);" onclick="prepararDuelo()">⚔️ Preparar duelo</button>
+      <button class="day-btn" style="background:linear-gradient(135deg,#0f766e,#0369a1);" onclick="verificarAtualizacoes()">🔄 Verificar</button>
+    </div>
+    <div id="dueloBox" style="display:none;margin:12px 0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;"></div>
+    <div class="day-result" id="dayResult"></div>
+  </div>
+
+  <!-- BANCA view wrapper: content is bancaBox moved via JS or duplicate show -->
+  <div id="view-banca" class="fm-view"></div>
+  <div id="view-ze" class="fm-view"></div>
+  <div id="view-jogos" class="fm-view">
+    <div class="fm-section-title">Competição · calendário</div>
+  </div>
+  <div id="view-scout" class="fm-view">
+    <div class="fm-section-title">Scouting · dossiê completo</div>
+  </div>
+
+  <!-- BANCA / HISTÓRICO -->
+  <div id="bancaBox" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:22px;">
+    <h3 style="margin-bottom:6px;">💰 Centro de Banca <span style="font-size:0.75rem;color:var(--muted);font-weight:500;">controlo de carteira · local</span></h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div style="background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.25);border-radius:10px;padding:12px;">
+        <div style="font-size:0.72rem;color:#86efac;text-transform:uppercase;">A tua banca</div>
+        <div id="bankYou" style="font-size:1.4rem;font-weight:800;color:#4ade80;">20.00 €</div>
+        <div id="bankYouMeta" style="font-size:0.75rem;color:var(--muted);"></div>
+      </div>
+      <div style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.3);border-radius:10px;padding:12px;">
+        <div style="font-size:0.72rem;color:#c4b5fd;text-transform:uppercase;">Banca Mister Zé</div>
+        <div id="bankZe" style="font-size:1.4rem;font-weight:800;color:#a78bfa;">20.00 €</div>
+        <div id="bankZeMeta" style="font-size:0.75rem;color:var(--muted);"></div>
+      </div>
+    </div>
+    <div style="background:var(--bg);border-radius:10px;padding:12px;margin-bottom:12px;border:1px solid var(--border);">
+      <div style="font-weight:700;margin-bottom:8px;">📥 Registar boletim</div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:8px;">Do teu print Betclic:</div>
+      <div style="font-size:0.88rem;margin-bottom:10px;padding:10px;background:rgba(56,189,248,.08);border-radius:8px;border:1px solid rgba(56,189,248,.2);">
+        <strong>Benfica vs Alverca</strong><br>
+        Pick: <strong>SL Benfica e Mais 2.5</strong><br>
+        Odd: <strong>1.45</strong> · Resultado Final / Total de Golos
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:end;">
+        <label style="font-size:0.78rem;color:var(--muted);">Valor (€)<br>
+          <input id="betStake" type="number" min="0.1" step="0.1" placeholder="ex. 2" style="width:100px;padding:8px;border-radius:8px;border:1px solid var(--border);background:#0f172a;color:var(--text);">
+        </label>
+        <button onclick="registarBoletimPrint()" style="padding:10px 14px;border:none;border-radius:8px;background:linear-gradient(135deg,#0369a1,#0ea5e9);color:#fff;font-weight:700;cursor:pointer;">Registar este boletim</button>
+      </div>
+      <div style="margin-top:10px;font-size:0.78rem;color:var(--muted);">Manual:</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
+        <input id="betManualMatch" placeholder="Jogo" style="flex:1;min-width:110px;padding:8px;border-radius:8px;border:1px solid var(--border);background:#0f172a;color:var(--text);font-size:0.85rem;">
+        <input id="betManualPick" placeholder="Pick" style="flex:1;min-width:90px;padding:8px;border-radius:8px;border:1px solid var(--border);background:#0f172a;color:var(--text);font-size:0.85rem;">
+        <input id="betManualOdd" type="number" step="0.01" placeholder="Odd" style="width:72px;padding:8px;border-radius:8px;border:1px solid var(--border);background:#0f172a;color:var(--text);font-size:0.85rem;">
+        <input id="betManualStake" type="number" step="0.1" placeholder="€" style="width:64px;padding:8px;border-radius:8px;border:1px solid var(--border);background:#0f172a;color:var(--text);font-size:0.85rem;">
+        <button onclick="registarApostaManual()" style="padding:8px 12px;border:none;border-radius:8px;background:#334155;color:#fff;cursor:pointer;font-size:0.85rem;">+</button>
+      </div>
+    </div>
+    <div style="font-weight:700;margin-bottom:6px;">📜 Histórico</div>
+    <div id="betHistory" style="max-height:280px;overflow-y:auto;font-size:0.85rem;"></div>
+    <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">
+      <button onclick="renderBanca()" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;font-size:0.8rem;">Atualizar</button>
+      <button onclick="if(confirm('Reset 20€ e limpar histórico?'))resetBanca()" style="padding:8px 12px;border-radius:8px;border:1px solid #7f1d1d;background:#450a0a;color:#fca5a5;cursor:pointer;font-size:0.8rem;">Reset 20€</button>
+    </div>
+    <div id="zeRoast" style="margin-top:12px;padding:12px;border-radius:10px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);font-size:0.88rem;line-height:1.45;"></div>
+  </div>
+
+  <!-- MISTER ZÉ — ASSISTENTE OFFLINE -->
+  <div id="assistenteBox" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:22px;">
+    <h3 style="margin-bottom:8px;">🤖 Mister Zé <span style="font-size:0.75rem;color:var(--muted);font-weight:500;">(tático offline · dossiê + futebol geral)</span></h3>
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:12px;line-height:1.45;">
+      Memória do último jogo · follow-ups · mercados · futebol em geral.
+      Links Flashscore extraem equipas (não abrem a página). Acertos/falhas neste telemóvel.
+    </p>
+    <div id="zeContext" style="display:none;margin-bottom:8px;padding:8px 12px;background:rgba(124,58,237,.15);border:1px solid rgba(167,139,250,.35);border-radius:8px;font-size:0.82rem;color:#c4b5fd;"></div>
+    <div id="chatLog" style="max-height:280px;overflow-y:auto;background:var(--bg);border-radius:10px;padding:12px;margin-bottom:10px;font-size:0.88rem;line-height:1.45;"></div>
+    <textarea id="pasteCtx" placeholder="Cola texto de antevisão / odds / lesões OU o link Flashscore…" style="width:100%;min-height:56px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;font-size:0.85rem;margin-bottom:8px;resize:vertical;"></textarea>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+      <button type="button" class="ze-chip" onclick="zeAsk('jogo do dia')">🔮 jogo do dia</button>
+      <button type="button" class="ze-chip" onclick="zeAsk('over 2.5')">Over 2.5</button>
+      <button type="button" class="ze-chip" onclick="zeAsk('over 3.5')">Over 3.5</button>
+      <button type="button" class="ze-chip" onclick="zeAsk('ambas marcam?')">BTTS</button>
+      <button type="button" class="ze-chip" onclick="zeAsk('casa vence')">Casa vence</button>
+      <button type="button" class="ze-chip" onclick="zeAsk('quem marca?')">Marcador</button>
+      <button type="button" class="ze-chip" onclick="zeAsk('placar?')">Placar</button>
+      <button type="button" class="ze-chip" onclick="zeAsk('é seguro?')">Confiança</button>
+      <button type="button" class="ze-chip" onclick="zeAsk('placar acertos')">📊 placar</button>
+      <button type="button" class="ze-chip" onclick="zeAsk('ajuda')">ajuda</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <input id="chatInput" type="text" placeholder="Pergunta ao Mister Zé…" style="flex:1;min-width:160px;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.9rem;">
+      <button onclick="enviarChat()" style="padding:10px 16px;border:none;border-radius:8px;background:linear-gradient(135deg,#4c1d95,#7c3aed);color:#fff;font-weight:700;cursor:pointer;">Enviar</button>
+    </div>
+  </div>
+  <style>
+    .ze-chip{background:#1e293b;border:1px solid #334155;color:#cbd5e1;border-radius:999px;padding:5px 10px;font-size:0.72rem;cursor:pointer;}
+    .ze-chip:active{background:#334155;}
+  </style>
+
+  <div class="toggle-bar">
+    <button class="toggle-btn active-best" id="btn-best" onclick="showSection('best')">🏠 Melhores em Casa</button>
+    <button class="toggle-btn" id="btn-worst" onclick="showSection('worst')">✈️ Piores Fora</button>
+  </div>
+
+  <div class="controls">
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Pesquisar equipa ou jogo..." oninput="filterAll()">
+    </div>
+  </div>
+
+  <!-- MELHORES -->
+  <div id="section-best" class="section visible">
+    <div class="card best" data-team="fc porto">
+      <div class="card-header">
+        <span class="club-name">1. FC Porto 🇵🇹</span>
+        <span class="stats-badge">Casa: <span class="badge-100">100%</span> · Média 2,20</span>
+      </div>
+      <table>
+        <thead><tr><th>Fase</th><th>Confronto</th><th>H2H</th><th>Análise</th></tr></thead>
+        <tbody>
+          <tr><td class="match-type">Imediato</td><td class="match-details">vs Estoril ✅</td><td class="h2h-vals">1-0 · 4-0 · 0-1</td><td class="analysis-text">Já jogado (≈4-0). Nogueira apitou; leitura do dossiê confirmada. <span class="prob prob-high">feito</span></td></tr>
+          <tr><td class="match-type">Inverno</td><td class="match-details">vs Sporting</td><td class="h2h-vals">2-2 · 3-0 · 2-1</td><td class="analysis-text">Teste real aos 100%. <span class="prob prob-mid">55-60%</span></td></tr>
+          <tr><td class="match-type">Reta Final</td><td class="match-details">vs Benfica</td><td class="h2h-vals">5-0 · 0-1 · 3-1</td><td class="analysis-text">Quando aperta, o Dragão responde. <span class="prob prob-mid">~58%</span></td></tr>
+        </tbody>
+      </table>
+      <div class="general-note"><strong>Nota:</strong> Solidez quase obscena em casa. O título passa obrigatoriamente pelo Dragão.</div>
+    </div>
+
+    <div class="card best" data-team="inter">
+      <div class="card-header">
+        <span class="club-name">2. Inter de Milão 🇮🇹</span>
+        <span class="stats-badge">Casa: <span class="badge-100">100%</span> · Média 3,40</span>
+      </div>
+      <table>
+        <thead><tr><th>Fase</th><th>Confronto</th><th>H2H</th><th>Análise</th></tr></thead>
+        <tbody>
+          <tr><td class="match-type">Imediato</td><td class="match-details">vs Venezia</td><td class="h2h-vals">2-1 · 5-1</td><td class="analysis-text">Alvo fácil. <span class="prob prob-high">~85%</span></td></tr>
+          <tr><td class="match-type">Inverno</td><td class="match-details">vs Milan</td><td class="h2h-vals">5-1 · 1-0 · 2-1</td><td class="analysis-text">Superioridade psicológica clara. <span class="prob prob-high">~70%</span></td></tr>
+          <tr><td class="match-type">Reta Final</td><td class="match-details">vs Juventus</td><td class="h2h-vals">1-0 · 0-1 · 4-4</td><td class="analysis-text">Ataque fura blocos baixos. <span class="prob prob-mid">~57%</span></td></tr>
+        </tbody>
+      </table>
+      <div class="general-note"><strong>Nota:</strong> O ataque mais assustador da Europa no seu estádio. San Siro é câmara de gás.</div>
+    </div>
+
+    <div class="card best" data-team="real madrid">
+      <div class="card-header">
+        <span class="club-name">3. Real Madrid 🇪🇸</span>
+        <span class="stats-badge">Casa: <span class="badge-100">100%</span> · Média 2,80</span>
+      </div>
+      <table>
+        <thead><tr><th>Fase</th><th>Confronto</th><th>H2H</th><th>Análise</th></tr></thead>
+        <tbody>
+          <tr><td class="match-type">Imediato</td><td class="match-details">vs Milan (UCL)</td><td class="h2h-vals">2-0 · 2-2</td><td class="analysis-text">Noites europeias transformam o Real. <span class="prob prob-high">~72%</span></td></tr>
+          <tr><td class="match-type">Inverno</td><td class="match-details">vs Atlético</td><td class="h2h-vals">1-1 · 3-1 · 1-1</td><td class="analysis-text">Derby sujo e de nervos. <span class="prob prob-mid">~52%</span></td></tr>
+          <tr><td class="match-type">Reta Final</td><td class="match-details">vs Barcelona</td><td class="h2h-vals">3-2 · 0-4 · 2-1</td><td class="analysis-text">El Clásico. Teste definitivo. <span class="prob prob-mid">50-50</span></td></tr>
+        </tbody>
+      </table>
+      <div class="general-note"><strong>Nota:</strong> Eficácia fria. Quando aperta, alguém de branco resolve.</div>
+    </div>
+
+    <div class="card best" data-team="manchester city">
+      <div class="card-header">
+        <span class="club-name">4. Manchester City 🏴󠁧󠁢󠁥󠁮󠁧󠁿</span>
+        <span class="stats-badge">Casa: <span class="badge-100">100%</span> · Média 2,60</span>
+      </div>
+      <table>
+        <thead><tr><th>Fase</th><th>Confronto</th><th>H2H</th><th>Análise</th></tr></thead>
+        <tbody>
+          <tr><td class="match-type">Imediato</td><td class="match-details">vs Feyenoord (UCL)</td><td class="h2h-vals">3-3 · 1-0</td><td class="analysis-text">City asfixia. Favoritismo alto. <span class="prob prob-high">~75%</span></td></tr>
+          <tr><td class="match-type">Inverno</td><td class="match-details">vs Man United</td><td class="h2h-vals">3-1 · 6-3 · 4-1</td><td class="analysis-text">Histórico humilhante para o United. <span class="prob prob-high">~80%</span></td></tr>
+          <tr><td class="match-type">Reta Final</td><td class="match-details">vs Liverpool</td><td class="h2h-vals">1-1 · 4-1 · 2-2</td><td class="analysis-text">Xadrez de elite. <span class="prob prob-mid">~54%</span></td></tr>
+        </tbody>
+      </table>
+      <div class="general-note"><strong>Nota:</strong> Monopólio territorial. Etihad continua o sítio mais difícil de pontuar em Inglaterra.</div>
+    </div>
+
+    <div class="card best" data-team="southampton">
+      <div class="card-header">
+        <span class="club-name">5. Southampton 🏴󠁧󠁢󠁥󠁮󠁧󠁿</span>
+        <span class="stats-badge">Casa: <span class="badge-100">100%</span> · Média 3,40</span>
+      </div>
+      <table>
+        <thead><tr><th>Fase</th><th>Confronto</th><th>H2H</th><th>Análise</th></tr></thead>
+        <tbody>
+          <tr><td class="match-type">Imediato</td><td class="match-details">vs Stoke</td><td class="h2h-vals">0-1 · 3-1</td><td class="analysis-text">Stoke em crise fora. <span class="prob prob-high">~75%</span></td></tr>
+          <tr><td class="match-type">Inverno</td><td class="match-details">vs West Brom</td><td class="h2h-vals">3-1 · 2-1</td><td class="analysis-text">Ataque asfixiante vs muralha. <span class="prob prob-high">~70%</span></td></tr>
+          <tr><td class="match-type">Reta Final</td><td class="match-details">vs Leeds</td><td class="h2h-vals">3-1 · 1-1</td><td class="analysis-text">Jogo direto à subida. <span class="prob prob-mid">~58%</span></td></tr>
+        </tbody>
+      </table>
+      <div class="general-note"><strong>Nota:</strong> Máquina de golos na Championship. Em St. Mary's quase ninguém sobrevive.</div>
+    </div>
+
+    <div class="card best" data-team="almería">
+      <div class="card-header">
+        <span class="club-name">6. Almería 🇪🇸</span>
+        <span class="stats-badge">Casa: <span class="badge-100">100%</span> · Média 2,20</span>
+      </div>
+      <table>
+        <thead><tr><th>Fase</th><th>Confronto</th><th>H2H</th><th>Análise</th></tr></thead>
+        <tbody>
+          <tr><td class="match-type">Imediato</td><td class="match-details">vs Córdoba</td><td class="h2h-vals">3-1 · 1-0</td><td class="analysis-text">Córdoba defende mal fora. <span class="prob prob-high">~72%</span></td></tr>
+          <tr><td class="match-type">Inverno</td><td class="match-details">vs Granada</td><td class="h2h-vals">3-3 · 2-0</td><td class="analysis-text">Derby andaluz sujo. <span class="prob prob-mid">~55%</span></td></tr>
+          <tr><td class="match-type">Reta Final</td><td class="match-details">vs Deportivo</td><td class="h2h-vals">1-0 · 0-0</td><td class="analysis-text">Teste de paciência. <span class="prob prob-mid">~60%</span></td></tr>
+        </tbody>
+      </table>
+      <div class="general-note"><strong>Nota:</strong> Qualidade e investimento acima da média da Segunda. Em casa quase invencíveis.</div>
+    </div>
+
+    <div class="card best" data-team="bayern">
+      <div class="card-header">
+        <span class="club-name">7. Bayern Munique 🇩🇪</span>
+        <span class="stats-badge">Casa: <span class="badge-100">100%</span> · Média 3,25</span>
+      </div>
+      <table>
+        <thead><tr><th>Fase</th><th>Confronto</th><th>H2H</th><th>Análise</th></tr></thead>
+        <tbody>
+          <tr><td class="match-type">Imediato</td><td class="match-details">vs Benfica (UCL)</td><td class="h2h-vals">5-2 · 1-0</td><td class="analysis-text">Allianz engole equipas portuguesas. <span class="prob prob-high">~80%</span></td></tr>
+          <tr><td class="match-type">Inverno</td><td class="match-details">vs Leipzig</td><td class="h2h-vals">2-1 · 1-3 · 1-1</td><td class="analysis-text">Adversário mais inconveniente. <span class="prob prob-mid">~58%</span></td></tr>
+          <tr><td class="match-type">Reta Final</td><td class="match-details">vs Dortmund</td><td class="h2h-vals">0-2 · 4-2 · 3-1</td><td class="analysis-text">Der Klassiker. Bancada pesa. <span class="prob prob-high">~65%</span></td></tr>
+        </tbody>
+      </table>
+      <div class="general-note"><strong>Nota:</strong> Rolo compressor. Allianz Arena continua um dos sítios mais difíceis da Europa.</div>
+    </div>
+
+    <div class="card best" data-team="twente">
+      <div class="card-header">
+        <span class="club-name">8. FC Twente 🇳🇱</span>
+        <span class="stats-badge">Casa: <span class="badge-80">80%</span> · Média ~1,80</span>
+      </div>
+      <table>
+        <thead><tr><th>Fase</th><th>Confronto</th><th>H2H</th><th>Análise</th></tr></thead>
+        <tbody>
+          <tr><td class="match-type">Imediato</td><td class="match-details">vs Ajax</td><td class="h2h-vals">3-1 · 1-3</td><td class="analysis-text">Ajax instável. Twente morde. <span class="prob prob-mid">~52%</span></td></tr>
+          <tr><td class="match-type">Inverno</td><td class="match-details">vs PSV</td><td class="h2h-vals">0-3 · 1-1</td><td class="analysis-text">PSV é patamar acima. <span class="prob prob-low">~35%</span></td></tr>
+          <tr><td class="match-type">Reta Final</td><td class="match-details">vs Feyenoord</td><td class="h2h-vals">2-1 · 0-0</td><td class="analysis-text">Batalha por lugares europeus. <span class="prob prob-mid">~48%</span></td></tr>
+        </tbody>
+      </table>
+      <div class="general-note"><strong>Nota:</strong> Excelente em casa contra a meio-tabela. Contra tubarões o 100% caiu.</div>
+    </div>
+
+    <div class="card best" data-team="santa clara">
+      <div class="card-header">
+        <span class="club-name">9. Santa Clara 🇵🇹</span>
+        <span class="stats-badge">Casa: <span class="badge-80">80%</span> · Média 2,00</span>
+      </div>
+      <table>
+        <thead><tr><th>Fase</th><th>Confronto</th><th>H2H</th><th>Análise</th></tr></thead>
+        <tbody>
+          <tr><td class="match-type">Imediato</td><td class="match-details">vs Vitória SC</td><td class="h2h-vals">1-1 · 1-3</td><td class="analysis-text">Jogo físico e fechado. <span class="prob prob-mid">~48%</span></td></tr>
+          <tr><td class="match-type">Inverno</td><td class="match-details">vs Sporting</td><td class="h2h-vals">1-2 · 0-3</td><td class="analysis-text">Sporting superior. <span class="prob prob-low">~28%</span></td></tr>
+          <tr><td class="match-type">Reta Final</td><td class="match-details">vs Porto</td><td class="h2h-vals">1-1 · 0-2</td><td class="analysis-text">Clima ajuda, mas Porto é Porto. <span class="prob prob-low">~30%</span></td></tr>
+        </tbody>
+      </table>
+      <div class="general-note"><strong>Nota:</strong> Fator ilha ainda existe. Contra os grandes vendem caro.</div>
+    </div>
+
+    <div class="card best" data-team="lourosa">
+      <div class="card-header">
+        <span class="club-name">10. Lusitânia Lourosa 🇵🇹</span>
+        <span class="stats-badge">Casa: <span class="badge-75">75%</span> · Média ~1,75</span>
+      </div>
+      <table>
+        <thead><tr><th>Fase</th><th>Confronto</th><th>H2H</th><th>Análise</th></tr></thead>
+        <tbody>
+          <tr><td class="match-type">Imediato</td><td class="match-details">vs Fafe</td><td class="h2h-vals">1-0 · 1-1</td><td class="analysis-text">Lourosa deve dominar. <span class="prob prob-high">~65%</span></td></tr>
+          <tr><td class="match-type">Inverno</td><td class="match-details">vs Varzim</td><td class="h2h-vals">2-1 · 0-1</td><td class="analysis-text">Clássico nortenho. <span class="prob prob-mid">~55%</span></td></tr>
+          <tr><td class="match-type">Reta Final</td><td class="match-details">vs Sanjoanense</td><td class="h2h-vals">2-0 · 3-1</td><td class="analysis-text">Derby. Lourosa impõe-se. <span class="prob prob-high">~68%</span></td></tr>
+        </tbody>
+      </table>
+      <div class="general-note"><strong>Nota:</strong> Candidato sério à subida. Em casa são muito difíceis de bater.</div>
+    </div>
+  </div>
+
+  <!-- PIORES -->
+  <div id="section-worst" class="section">
+    <div class="card worst" data-team="estoril">
+      <div class="card-header">
+        <span class="club-name">1. GD Estoril Praia 🇵🇹</span>
+        <span class="stats-badge">Fora: <span class="badge-fail">0%</span> · 4J 4D</span>
+      </div>
+      <table>
+        <thead><tr><th>Fase</th><th>Viagem</th><th>H2H</th><th>Análise</th></tr></thead>
+        <tbody>
+          <tr><td class="match-type">Imediato</td><td class="match-details">@ Porto ✅</td><td class="h2h-vals">0-1 · 0-4 · 1-0</td><td class="analysis-text">Já jogado (≈0-4). Confirmação total da crise fora. <span class="prob prob-low">feito</span></td></tr>
+          <tr><td class="match-type">Inverno</td><td class="match-details">@ Sporting</td><td class="h2h-vals">1-5 · 0-3</td><td class="analysis-text">Alvalade come este Estoril. <span class="prob prob-low">~10%</span></td></tr>
+          <tr><td class="match-type">Reta Final</td><td class="match-details">@ Vitória SC</td><td class="h2h-vals">1-3 · 1-1</td><td class="analysis-text">Desmoronam na 2ª parte. <span class="prob prob-low">~18%</span></td></tr>
+        </tbody>
+      </table>
+      <div class="general-note"><strong>Nota:</strong> Pior visitante de Portugal. 7 sofridos, 2 marcados. Longe da Amoreira o sistema desaba.</div>
+    </div>
+
+    <div class="card worst" data-team="vitoria guimaraes">
+      <div class="card-header">
+        <span class="club-name">2. Vitória Guimarães 🇵🇹</span>
+        <span class="stats-badge">Fora: <span class="badge-fail">0%</span> · 0 pts</span>
+      </div>
+      <table>
+        <thead><tr><th>Fase</th><th>Viagem</th><th>H2H</th><th>Análise</th></tr></thead>
+        <tbody>
+          <tr><td class="match-type">Imediato</td><td class="match-details">@ Benfica</td><td class="h2h-vals">0-4 · 1-5</td><td class="analysis-text">Histórico cruel. <span class="prob prob-low">~8%</span></td></tr>
+          <tr><td class="match-type">Inverno</td><td class="match-details">@ Braga</td><td class="h2h-vals">1-2 · 1-1</td><td class="analysis-text">Perdem agressividade fora. <span class="prob prob-low">~22%</span></td></tr>
+          <tr><td class="match-type">Reta Final</td><td class="match-details">@ Porto</td><td class="h2h-vals">1-2 · 0-3</td><td class="analysis-text">Dragão não perdoa ansiedade. <span class="prob prob-low">~10%</span></td></tr>
+        </tbody>
+      </table>
+      <div class="general-note"><strong>Nota:</strong> Contraste bizarro com a força em casa. Lanterna vermelha dos visitantes.</div>
+    </div>
+
+    <div class="card worst" data-team="sunderland">
+      <div class="card-header">
+        <span class="club-name">3. Sunderland 🏴</span>
+        <span class="stats-badge">Fora: <span class="badge-fail">0%</span> · 4J 3D 1E</span>
+      </div>
+      <table>
+        <thead><tr><th>Fase</th><th>Confronto</th><th>H2H</th><th>Análise</th></tr></thead>
+        <tbody>
+          <tr><td class="match-type">Imediato</td><td class="match-details">@ Bournemouth</td><td class="h2h-vals">0-2 · 1-2</td><td class="analysis-text">Média 2,5 sofridos fora. <span class="prob prob-low">~15%</span></td></tr>
+          <tr><td class="match-type">Inverno</td><td class="match-details">@ Man City</td><td class="h2h-vals">1-4 · 0-3</td><td class="analysis-text">Pesadelo absoluto. <span class="prob prob-low">~5%</span></td></tr>
+          <tr><td class="match-type">Reta Final</td><td class="match-details">@ Arsenal</td><td class="h2h-vals">0-2 · 1-3</td><td class="analysis-text">Emirates sufoca. <span class="prob prob-low">~7%</span></td></tr>
+        </tbody>
+      </table>
+      <div class="general-note"><strong>Nota:</strong> Último da Premier. 10 golos sofridos em 4 jogos fora. A estrada está a matá-los.</div>
+    </div>
+
+    <div class="card worst" data-team="manchester united">
+      <div class="card-header">
+        <span class="club-name">4. Manchester United 🏴</span>
+        <span class="stats-badge">Fora: <span class="badge-fail">0%</span> · 4J 3E 1D</span>
+      </div>
+      <table>
+        <thead><tr><th>Fase</th><th>Confronto</th><th>H2H</th><th>Análise</th></tr></thead>
+        <tbody>
+          <tr><td class="match-type">Imediato</td><td class="match-details">@ Chelsea</td><td class="h2h-vals">1-1 · 3-4</td><td class="analysis-text">Transição defensiva é crime. <span class="prob prob-low">~28%</span></td></tr>
+          <tr><td class="match-type">Inverno</td><td class="match-details">@ Hull</td><td class="h2h-vals">0-2 · 1-1</td><td class="analysis-text">Equipas físicas partem o miolo. <span class="prob prob-mid">~40%</span></td></tr>
+          <tr><td class="match-type">Reta Final</td><td class="match-details">@ Everton</td><td class="h2h-vals">2-2 · 2-1</td><td class="analysis-text">Bolas paradas = calcanhar de Aquiles. <span class="prob prob-mid">~35%</span></td></tr>
+        </tbody>
+      </table>
+      <div class="general-note"><strong>Nota:</strong> Um dos piores arranques fora do século (3 pts em 12). Colapso mental longe de Old Trafford.</div>
+    </div>
+
+    <div class="card worst" data-team="palermo">
+      <div class="card-header">
+        <span class="club-name">5. Palermo 🇮🇹</span>
+        <span class="stats-badge">Fora: <span class="badge-fail">14%</span></span>
+      </div>
+      <table>
+        <thead><tr><th>Fase</th><th>Confronto</th><th>H2H</th><th>Análise</th></tr></thead>
+        <tbody>
+          <tr><td class="match-type">Imediato</td><td class="match-details">@ Frosinone</td><td class="h2h-vals">0-1 · 1-1</td><td class="analysis-text">Jogam para 0-0 e sofrem de bola parada. <span class="prob prob-low">~25%</span></td></tr>
+          <tr><td class="match-type">Inverno</td><td class="match-details">@ Sassuolo</td><td class="h2h-vals">1-3 · 0-2</td><td class="analysis-text">Transições rápidas destroem. <span class="prob prob-low">~18%</span></td></tr>
+          <tr><td class="match-type">Reta Final</td><td class="match-details">@ Sampdoria</td><td class="h2h-vals">1-1 · 0-1</td><td class="analysis-text">Ferraris anula criatividade. <span class="prob prob-low">~22%</span></td></tr>
+        </tbody>
+      </table>
+      <div class="general-note"><strong>Nota:</strong> 100% em casa, medrosos no avião. O Palermo fora é outra equipa — e pior.</div>
+    </div>
+
+    <div class="card worst" data-team="genoa">
+      <div class="card-header">
+        <span class="club-name">6. Genoa 🇮🇹</span>
+        <span class="stats-badge">Fora: <span class="badge-fail">Crise</span></span>
+      </div>
+      <table>
+        <thead><tr><th>Fase</th><th>Confronto</th><th>H2H</th><th>Análise</th></tr></thead>
+        <tbody>
+          <tr><td class="match-type">Imediato</td><td class="match-details">@ Fiorentina</td><td class="h2h-vals">1-3 · 1-1</td><td class="analysis-text">Sofrem o 1º e desunem-se. <span class="prob prob-low">~20%</span></td></tr>
+          <tr><td class="match-type">Inverno</td><td class="match-details">@ Inter</td><td class="h2h-vals">0-4 · 1-2</td><td class="analysis-text">Goleada quase garantida. <span class="prob prob-low">~6%</span></td></tr>
+          <tr><td class="match-type">Reta Final</td><td class="match-details">@ Roma</td><td class="h2h-vals">0-1 · 0-2</td><td class="analysis-text">Defendam 90 min na área. <span class="prob prob-low">~15%</span></td></tr>
+        </tbody>
+      </table>
+      <div class="general-note"><strong>Nota:</strong> Uma das piores dinâmicas táticas da Europa como visitante.</div>
+    </div>
+
+    <div class="card worst" data-team="espanyol">
+      <div class="card-header">
+        <span class="club-name">7. RCD Espanyol 🇪🇸</span>
+        <span class="stats-badge">Fora: <span class="badge-fail">PPG 0.33</span></span>
+      </div>
+      <table>
+        <thead><tr><th>Fase</th><th>Confronto</th><th>H2H</th><th>Análise</th></tr></thead>
+        <tbody>
+          <tr><td class="match-type">Imediato</td><td class="match-details">@ Athletic</td><td class="h2h-vals">0-2 · 0-0</td><td class="analysis-text">San Mamés é rotação física. <span class="prob prob-low">~18%</span></td></tr>
+          <tr><td class="match-type">Inverno</td><td class="match-details">@ Real Madrid</td><td class="h2h-vals">1-4 · 0-3</td><td class="analysis-text">Bernabéu anula tudo. <span class="prob prob-low">~5%</span></td></tr>
+          <tr><td class="match-type">Reta Final</td><td class="match-details">@ Betis</td><td class="h2h-vals">1-3 · 1-1</td><td class="analysis-text">Betis explora laterais. <span class="prob prob-low">~22%</span></td></tr>
+        </tbody>
+      </table>
+      <div class="general-note"><strong>Nota:</strong> Só pontuam com 0-0 milagrosos. Vitória consistente na estrada? Zero.</div>
+    </div>
+
+    <div class="card worst" data-team="heidenheim">
+      <div class="card-header">
+        <span class="club-name">8. 1. FC Heidenheim 🇩🇪</span>
+        <span class="stats-badge">Fora: <span class="badge-fail">PPG 0.33</span></span>
+      </div>
+      <table>
+        <thead><tr><th>Fase</th><th>Confronto</th><th>H2H</th><th>Análise</th></tr></thead>
+        <tbody>
+          <tr><td class="match-type">Imediato</td><td class="match-details">@ Bayern</td><td class="h2h-vals">2-4 · 0-3</td><td class="analysis-text">Over 3.5 quase garantido. <span class="prob prob-low">~4%</span></td></tr>
+          <tr><td class="match-type">Inverno</td><td class="match-details">@ Leverkusen</td><td class="h2h-vals">1-4 · 0-2</td><td class="analysis-text">Combinações rápidas destroem. <span class="prob prob-low">~8%</span></td></tr>
+          <tr><td class="match-type">Reta Final</td><td class="match-details">@ Frankfurt</td><td class="h2h-vals">0-2 · 1-1</td><td class="analysis-text">Erros infantis na saída. <span class="prob prob-low">~18%</span></td></tr>
+        </tbody>
+      </table>
+      <div class="general-note"><strong>Nota:</strong> Síndrome da segunda época em força. Plantel curto e morto nas deslocações.</div>
+    </div>
+
+    <div class="card worst" data-team="verona">
+      <div class="card-header">
+        <span class="club-name">9. Hellas Verona 🇮🇹</span>
+        <span class="stats-badge">Fora: <span class="badge-fail">PPG 0.43</span></span>
+      </div>
+      <table>
+        <thead><tr><th>Fase</th><th>Confronto</th><th>H2H</th><th>Análise</th></tr></thead>
+        <tbody>
+          <tr><td class="match-type">Imediato</td><td class="match-details">@ Atalanta</td><td class="h2h-vals">1-3 · 0-2</td><td class="analysis-text">Não seguram a bola. <span class="prob prob-low">~12%</span></td></tr>
+          <tr><td class="match-type">Inverno</td><td class="match-details">@ Milan</td><td class="h2h-vals">0-1 · 1-3</td><td class="analysis-text">Linha de fora de jogo descoordenada. <span class="prob prob-low">~10%</span></td></tr>
+          <tr><td class="match-type">Reta Final</td><td class="match-details">@ Lazio</td><td class="h2h-vals">0-1 · 1-1</td><td class="analysis-text">Lazio controla o ritmo. <span class="prob prob-low">~20%</span></td></tr>
+        </tbody>
+      </table>
+      <div class="general-note"><strong>Nota:</strong> Média de 2 sofridos por jogo fora. Incapacidade crónica de parar ataques organizados.</div>
+    </div>
+
+    <div class="card worst" data-team="middlesbrough">
+      <div class="card-header">
+        <span class="club-name">10. Middlesbrough 🏴</span>
+        <span class="stats-badge">Fora: <span class="badge-fail">Só 1 vitória</span></span>
+      </div>
+      <table>
+        <thead><tr><th>Fase</th><th>Confronto</th><th>H2H</th><th>Análise</th></tr></thead>
+        <tbody>
+          <tr><td class="match-type">Imediato</td><td class="match-details">@ Southampton</td><td class="h2h-vals">1-3 · 1-2</td><td class="analysis-text">100% caseiros dos Saints. <span class="prob prob-low">~18%</span></td></tr>
+          <tr><td class="match-type">Inverno</td><td class="match-details">@ Leeds</td><td class="h2h-vals">2-3 · 1-1</td><td class="analysis-text">Elland Road hostil. <span class="prob prob-low">~25%</span></td></tr>
+          <tr><td class="match-type">Reta Final</td><td class="match-details">@ Burnley</td><td class="h2h-vals">0-1 · 1-2</td><td class="analysis-text">Burnley mata o jogo aéreo. <span class="prob prob-low">~22%</span></td></tr>
+        </tbody>
+      </table>
+      <div class="general-note"><strong>Nota:</strong> Grande desilusão fora. Falta de foco nos minutos finais custa pontos todas as semanas.</div>
+    </div>
+  </div>
+
+  <!-- CALENDÁRIO -->
+  <div class="calendar-section">
+    <h2>📅 Calendário de Jogos</h2>
+    <p class="calendar-hint">Todos os jogos · Clica em <strong>Favoráveis</strong> para ver só o estudo (os melhores/piores confrontos)</p>
+
+    <div class="cal-controls">
+      <button class="filter-chip active" data-filter="all" onclick="filterCal('all')">Todos</button>
+      <button class="filter-chip fav" data-filter="fav" onclick="filterCal('fav')">⭐ Favoráveis</button>
+      <button class="filter-chip" data-filter="best" onclick="filterCal('best')">Casa forte</button>
+      <button class="filter-chip worst-f" data-filter="worst" onclick="filterCal('worst')">Fora fraco</button>
+      <button class="filter-chip" data-filter="portugal" onclick="filterCal('portugal')">Portugal</button>
+      <button class="filter-chip" data-filter="premier" onclick="filterCal('premier')">Premier</button>
+      <button class="filter-chip" data-filter="seriea" onclick="filterCal('seriea')">Serie A</button>
+      <button class="filter-chip" data-filter="bundesliga" onclick="filterCal('bundesliga')">Bundesliga</button>
+      <button class="filter-chip" data-filter="laliga" onclick="filterCal('laliga')">La Liga</button>
+      <button class="filter-chip" data-filter="ucl" onclick="filterCal('ucl')">UCL / Europa</button>
+      <button class="filter-chip" data-filter="eredivisie" onclick="filterCal('eredivisie')">Eredivisie</button>
+    </div>
+
+    <div class="phase-block">
+      <div class="phase-title">⚡ Fase Imediata <span class="count" id="count-imediato">0</span></div>
+      <div class="match-grid" id="cal-imediato"></div>
+    </div>
+    <div class="phase-block">
+      <div class="phase-title">❄️ Inverno <span class="count" id="count-inverno">0</span></div>
+      <div class="match-grid" id="cal-inverno"></div>
+    </div>
+    <div class="phase-block">
+      <div class="phase-title">🏁 Reta Final <span class="count" id="count-final">0</span></div>
+      <div class="match-grid" id="cal-final"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal" id="modal-content" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal()">&times;</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+const matches = [
+  // ========== FAVORÁVEIS (estudo original) ==========
+  // Imediato Best
+  {phase:'imediato',type:'best',fav:true,past:true,home:'FC Porto',away:'Estoril',date:'Sáb 7 Nov',league:'Liga Portugal',h2h:'1-0 · 4-0 · 0-1',analysis:'JÁ JOGADO (≈4-0). Miguel Nogueira apitou; arbitragem bem avaliada. Leitura do dossiê confirmada.',note:'Solidez quase obscena em casa.',team:'FC Porto 🇵🇹',stats:'Casa 100%',prob:'feito',risk:false,fatores:'Árbitro: Miguel Nogueira (histórico confortável para o Porto). Jogo já disputado.'},
+  {phase:'imediato',type:'best',fav:true,home:'Inter',away:'Venezia',date:'Dom 8 Nov',league:'Serie A',h2h:'2-1 · 5-1',analysis:'Venezia é alvo de tiro ao alvo. Inter não costuma perdoar.',note:'O ataque mais assustador da Europa no seu estádio.',team:'Inter 🇮🇹',stats:'Casa 100%',prob:'~85%',risk:false},
+  {phase:'imediato',type:'best',fav:true,home:'Real Madrid',away:'Milan',date:'Qua 4 Nov',league:'Champions',h2h:'2-0 · 2-2',analysis:'Noites europeias transformam o Real. Favoritismo claro.',note:'Eficácia fria e pragmática.',team:'Real Madrid 🇪🇸',stats:'Casa 100%',prob:'~72%',risk:false},
+  {phase:'imediato',type:'best',fav:true,home:'Man City',away:'Feyenoord',date:'Qui 5 Nov',league:'Champions',h2h:'3-3 · 1-0',analysis:'City asfixia. Favoritismo alto no Etihad.',note:'Monopólio territorial.',team:'Man City 🏴󠁧󠁢󠁥󠁮󠁧󠁿',stats:'Casa 100%',prob:'~75%',risk:false},
+  {phase:'imediato',type:'best',fav:true,home:'Southampton',away:'Stoke',date:'Sáb 7 Nov',league:'Championship',h2h:'0-1 · 3-1',analysis:'Stoke em crise fora. Saints devem resolver cedo.',note:'Máquina de golos na Championship.',team:'Southampton 🏴󠁧󠁢󠁥󠁮󠁧󠁿',stats:'Casa 100%',prob:'~75%',risk:false},
+  {phase:'imediato',type:'best',fav:true,home:'Almería',away:'Córdoba',date:'Dom 8 Nov',league:'Segunda',h2h:'3-1 · 1-0',analysis:'Córdoba defende mal fora. Favoritismo claro.',note:'Qualidade acima da média da Segunda.',team:'Almería 🇪🇸',stats:'Casa 100%',prob:'~72%',risk:false},
+  {phase:'imediato',type:'best',fav:true,home:'Bayern',away:'Benfica',date:'Qua 4 Nov',league:'Champions',h2h:'5-2 · 1-0',analysis:'Allianz costuma engolir equipas portuguesas.',note:'Rolo compressor.',team:'Bayern 🇩🇪',stats:'Casa 100%',prob:'~80%',risk:true},
+  {phase:'imediato',type:'best',fav:true,home:'Twente',away:'Ajax',date:'Dom 8 Nov',league:'Eredivisie',h2h:'3-1 · 1-3',analysis:'Ajax instável. Twente morde em casa.',note:'Excelente baluarte regional.',team:'Twente 🇳🇱',stats:'Casa 80%',prob:'~52%',risk:false},
+  {phase:'imediato',type:'best',fav:true,home:'Santa Clara',away:'Vitória SC',date:'Sáb 7 Nov',league:'Liga Portugal',h2h:'1-1 · 1-3',analysis:'Jogo físico e fechado nos Açores.',note:'Fator ilha ainda existe.',team:'Santa Clara 🇵🇹',stats:'Casa 80%',prob:'~48%',risk:false},
+  {phase:'imediato',type:'best',fav:true,home:'Lourosa',away:'Fafe',date:'Dom 8 Nov',league:'Liga 3',h2h:'1-0 · 1-1',analysis:'Lourosa deve dominar.',note:'Candidato sério à subida.',team:'Lourosa 🇵🇹',stats:'Casa 75%',prob:'~65%',risk:false},
+
+  // Imediato Worst
+  {phase:'imediato',type:'worst',fav:true,past:true,home:'Porto',away:'Estoril',date:'Sáb 7 Nov',league:'Liga Portugal',h2h:'0-1 · 0-4 · 1-0',analysis:'JÁ JOGADO (≈0-4). Confirmação total da fragilidade fora do Estoril.',note:'Pior visitante de Portugal.',team:'Estoril 🇵🇹',stats:'Fora 0%',prob:'feito',risk:true,fatores:'Árbitro Nogueira; resultado alinhado com o estudo.'},
+  {phase:'imediato',type:'worst',fav:true,home:'Benfica',away:'Vitória SC',date:'Dom 8 Nov',league:'Liga Portugal',h2h:'0-4 · 1-5',analysis:'Vitória em crise total fora. Histórico cruel.',note:'Lanterna vermelha dos visitantes.',team:'Vitória SC 🇵🇹',stats:'Fora 0%',prob:'~8%',risk:true},
+  {phase:'imediato',type:'worst',fav:true,home:'Bournemouth',away:'Sunderland',date:'Sáb 7 Nov',league:'Premier League',h2h:'0-2 · 1-2',analysis:'Média de 2,5 sofridos fora. Linha defensiva exposta.',note:'Último da Premier. A estrada está a matá-los.',team:'Sunderland 🏴',stats:'Fora 0%',prob:'~15%',risk:false},
+  {phase:'imediato',type:'worst',fav:true,home:'Chelsea',away:'Man United',date:'Dom 8 Nov',league:'Premier League',h2h:'1-1 · 3-4',analysis:'Transição defensiva pós-perda é um crime.',note:'Um dos piores arranques fora do século.',team:'Man United 🏴',stats:'Fora 0%',prob:'~28%',risk:false},
+  {phase:'imediato',type:'worst',fav:true,home:'Frosinone',away:'Palermo',date:'Sáb 7 Nov',league:'Serie B',h2h:'0-1 · 1-1',analysis:'Jogam para o 0-0 e sofrem de bola parada.',note:'100% em casa, medrosos no avião.',team:'Palermo 🇮🇹',stats:'Fora 14%',prob:'~25%',risk:false},
+  {phase:'imediato',type:'worst',fav:true,home:'Fiorentina',away:'Genoa',date:'Dom 8 Nov',league:'Serie A',h2h:'1-3 · 1-1',analysis:'Sofrem o primeiro e desunem-se.',note:'Piores dinâmicas táticas da Europa como visitante.',team:'Genoa 🇮🇹',stats:'Fora crise',prob:'~20%',risk:false},
+  {phase:'imediato',type:'worst',fav:true,home:'Athletic',away:'Espanyol',date:'Sáb 7 Nov',league:'La Liga',h2h:'0-2 · 0-0',analysis:'San Mamés é rotação física que este meio-campo não aguenta.',note:'Só pontuam com 0-0 milagrosos.',team:'Espanyol 🇪🇸',stats:'Fora PPG 0.33',prob:'~18%',risk:false},
+  {phase:'imediato',type:'worst',fav:true,home:'Bayern',away:'Heidenheim',date:'Sáb 7 Nov',league:'Bundesliga',h2h:'2-4 · 0-3',analysis:'Allianz + pior forma fora = over 3.5 quase garantido.',note:'Síndrome da segunda época em força.',team:'Heidenheim 🇩🇪',stats:'Fora PPG 0.33',prob:'~4%',risk:true},
+  {phase:'imediato',type:'worst',fav:true,home:'Atalanta',away:'Verona',date:'Dom 8 Nov',league:'Serie A',h2h:'1-3 · 0-2',analysis:'Atalanta sufoca. Verona não segura a bola.',note:'Média de 2 sofridos por jogo fora.',team:'Verona 🇮🇹',stats:'Fora PPG 0.43',prob:'~12%',risk:false},
+  {phase:'imediato',type:'worst',fav:true,home:'Southampton',away:'Middlesbrough',date:'Sáb 7 Nov',league:'Championship',h2h:'1-3 · 1-2',analysis:'Enfrentam os 100% caseiros dos Saints.',note:'Grande desilusão fora.',team:'Middlesbrough 🏴',stats:'Fora só 1 vitória',prob:'~18%',risk:false},
+
+  // Inverno Favoráveis
+  {phase:'inverno',type:'best',fav:true,home:'Porto',away:'Sporting',date:'Sáb 24 Jan',league:'Liga Portugal',h2h:'2-2 · 3-0 · 2-1',analysis:'O verdadeiro teste aos 100%.',note:'Solidez quase obscena em casa.',team:'FC Porto 🇵🇹',stats:'Casa 100%',prob:'55-60%',risk:false},
+  {phase:'inverno',type:'best',fav:true,home:'Inter',away:'Milan',date:'Dom 25 Jan',league:'Serie A',h2h:'5-1 · 1-0 · 2-1',analysis:'Superioridade psicológica clara.',note:'San Siro é câmara de gás.',team:'Inter 🇮🇹',stats:'Casa 100%',prob:'~70%',risk:false},
+  {phase:'inverno',type:'best',fav:true,home:'Real Madrid',away:'Atlético',date:'Sáb 31 Jan',league:'La Liga',h2h:'1-1 · 3-1 · 1-1',analysis:'Derby sujo e de nervos.',note:'Eficácia fria.',team:'Real Madrid 🇪🇸',stats:'Casa 100%',prob:'~52%',risk:false},
+  {phase:'inverno',type:'best',fav:true,home:'Man City',away:'Man United',date:'Dom 1 Fev',league:'Premier League',h2h:'3-1 · 6-3 · 4-1',analysis:'Histórico humilhante para o United.',note:'Monopólio territorial.',team:'Man City 🏴󠁧󠁢󠁥󠁮󠁧󠁿',stats:'Casa 100%',prob:'~80%',risk:false},
+  {phase:'inverno',type:'best',fav:true,home:'Southampton',away:'West Brom',date:'Sáb 24 Jan',league:'Championship',h2h:'3-1 · 2-1',analysis:'Ataque asfixiante vs muralha.',note:'Máquina de golos.',team:'Southampton 🏴󠁧󠁢󠁥󠁮󠁧󠁿',stats:'Casa 100%',prob:'~70%',risk:false},
+  {phase:'inverno',type:'best',fav:true,home:'Almería',away:'Granada',date:'Dom 25 Jan',league:'Segunda',h2h:'3-3 · 2-0',analysis:'Derby andaluz sujo.',note:'Qualidade acima da média.',team:'Almería 🇪🇸',stats:'Casa 100%',prob:'~55%',risk:false},
+  {phase:'inverno',type:'best',fav:true,home:'Bayern',away:'Leipzig',date:'Sáb 31 Jan',league:'Bundesliga',h2h:'2-1 · 1-3 · 1-1',analysis:'Adversário mais inconveniente.',note:'Rolo compressor.',team:'Bayern 🇩🇪',stats:'Casa 100%',prob:'~58%',risk:false},
+  {phase:'inverno',type:'best',fav:true,home:'Twente',away:'PSV',date:'Dom 1 Fev',league:'Eredivisie',h2h:'0-3 · 1-1',analysis:'PSV é patamar acima.',note:'Contra tubarões o 100% caiu.',team:'Twente 🇳🇱',stats:'Casa 80%',prob:'~35%',risk:false},
+  {phase:'inverno',type:'best',fav:true,home:'Santa Clara',away:'Sporting',date:'Sáb 24 Jan',league:'Liga Portugal',h2h:'1-2 · 0-3',analysis:'Sporting superior.',note:'Fator ilha ajuda pouco aqui.',team:'Santa Clara 🇵🇹',stats:'Casa 80%',prob:'~28%',risk:false},
+  {phase:'inverno',type:'best',fav:true,home:'Lourosa',away:'Varzim',date:'Dom 25 Jan',league:'Liga 3',h2h:'2-1 · 0-1',analysis:'Clássico nortenho.',note:'Candidato sério à subida.',team:'Lourosa 🇵🇹',stats:'Casa 75%',prob:'~55%',risk:false},
+
+  {phase:'inverno',type:'worst',fav:true,home:'Sporting',away:'Estoril',date:'Sáb 24 Jan',league:'Liga Portugal',h2h:'1-5 · 0-3',analysis:'Alvalade come este Estoril.',note:'Pior visitante de Portugal.',team:'Estoril 🇵🇹',stats:'Fora 0%',prob:'~10%',risk:true},
+  {phase:'inverno',type:'worst',fav:true,home:'Braga',away:'Vitória SC',date:'Dom 25 Jan',league:'Liga Portugal',h2h:'1-2 · 1-1',analysis:'Perdem agressividade fora.',note:'Lanterna vermelha.',team:'Vitória SC 🇵🇹',stats:'Fora 0%',prob:'~22%',risk:false},
+  {phase:'inverno',type:'worst',fav:true,home:'Man City',away:'Sunderland',date:'Sáb 31 Jan',league:'Premier League',h2h:'1-4 · 0-3',analysis:'Pesadelo absoluto no Etihad.',note:'A estrada está a matá-los.',team:'Sunderland 🏴',stats:'Fora 0%',prob:'~5%',risk:true},
+  {phase:'inverno',type:'worst',fav:true,home:'Hull',away:'Man United',date:'Dom 1 Fev',league:'Championship',h2h:'0-2 · 1-1',analysis:'Equipas físicas partem o miolo.',note:'Pior arranque fora do século.',team:'Man United 🏴',stats:'Fora 0%',prob:'~40%',risk:false},
+  {phase:'inverno',type:'worst',fav:true,home:'Sassuolo',away:'Palermo',date:'Sáb 24 Jan',league:'Serie B',h2h:'1-3 · 0-2',analysis:'Transições rápidas destroem.',note:'Medrosos no avião.',team:'Palermo 🇮🇹',stats:'Fora 14%',prob:'~18%',risk:false},
+  {phase:'inverno',type:'worst',fav:true,home:'Inter',away:'Genoa',date:'Dom 25 Jan',league:'Serie A',h2h:'0-4 · 1-2',analysis:'Goleada quase garantida.',note:'Piores dinâmicas táticas.',team:'Genoa 🇮🇹',stats:'Fora crise',prob:'~6%',risk:true},
+  {phase:'inverno',type:'worst',fav:true,home:'Real Madrid',away:'Espanyol',date:'Sáb 31 Jan',league:'La Liga',h2h:'1-4 · 0-3',analysis:'Bernabéu anula tudo.',note:'Só pontuam com 0-0 milagrosos.',team:'Espanyol 🇪🇸',stats:'Fora PPG 0.33',prob:'~5%',risk:true},
+  {phase:'inverno',type:'worst',fav:true,home:'Leverkusen',away:'Heidenheim',date:'Dom 1 Fev',league:'Bundesliga',h2h:'1-4 · 0-2',analysis:'Combinações rápidas destroem.',note:'Síndrome da segunda época.',team:'Heidenheim 🇩🇪',stats:'Fora PPG 0.33',prob:'~8%',risk:true},
+  {phase:'inverno',type:'worst',fav:true,home:'Milan',away:'Verona',date:'Sáb 24 Jan',league:'Serie A',h2h:'0-1 · 1-3',analysis:'Linha de fora de jogo descoordenada.',note:'Média 2 sofridos fora.',team:'Verona 🇮🇹',stats:'Fora PPG 0.43',prob:'~10%',risk:false},
+  {phase:'inverno',type:'worst',fav:true,home:'Leeds',away:'Middlesbrough',date:'Dom 25 Jan',league:'Championship',h2h:'2-3 · 1-1',analysis:'Elland Road hostil.',note:'Grande desilusão fora.',team:'Middlesbrough 🏴',stats:'Fora só 1 vitória',prob:'~25%',risk:false},
+
+  // Reta Final Favoráveis
+  {phase:'final',type:'best',fav:true,home:'Porto',away:'Benfica',date:'Sáb 9 Mai',league:'Liga Portugal',h2h:'5-0 · 0-1 · 3-1',analysis:'Quando a classificação aperta, o Dragão responde.',note:'Solidez obscena em casa.',team:'FC Porto 🇵🇹',stats:'Casa 100%',prob:'~58%',risk:false},
+  {phase:'final',type:'best',fav:true,home:'Inter',away:'Juventus',date:'Dom 10 Mai',league:'Serie A',h2h:'1-0 · 0-1 · 4-4',analysis:'Ataque fura blocos baixos.',note:'Ataque mais assustador da Europa.',team:'Inter 🇮🇹',stats:'Casa 100%',prob:'~57%',risk:false},
+  {phase:'final',type:'best',fav:true,home:'Real Madrid',away:'Barcelona',date:'Sáb 16 Mai',league:'La Liga',h2h:'3-2 · 0-4 · 2-1',analysis:'El Clásico. Teste definitivo.',note:'Eficácia fria.',team:'Real Madrid 🇪🇸',stats:'Casa 100%',prob:'50-50',risk:false},
+  {phase:'final',type:'best',fav:true,home:'Man City',away:'Liverpool',date:'Dom 17 Mai',league:'Premier League',h2h:'1-1 · 4-1 · 2-2',analysis:'Xadrez de elite.',note:'Monopólio territorial.',team:'Man City 🏴󠁧󠁢󠁥󠁮󠁧󠁿',stats:'Casa 100%',prob:'~54%',risk:false},
+  {phase:'final',type:'best',fav:true,home:'Southampton',away:'Leeds',date:'Sáb 9 Mai',league:'Championship',h2h:'3-1 · 1-1',analysis:'Jogo direto à subida.',note:'Máquina de golos.',team:'Southampton 🏴󠁧󠁢󠁥󠁮󠁧󠁿',stats:'Casa 100%',prob:'~58%',risk:false},
+  {phase:'final',type:'best',fav:true,home:'Almería',away:'Deportivo',date:'Dom 10 Mai',league:'Segunda',h2h:'1-0 · 0-0',analysis:'Teste de paciência.',note:'Qualidade acima da média.',team:'Almería 🇪🇸',stats:'Casa 100%',prob:'~60%',risk:false},
+  {phase:'final',type:'best',fav:true,home:'Bayern',away:'Dortmund',date:'Sáb 16 Mai',league:'Bundesliga',h2h:'0-2 · 4-2 · 3-1',analysis:'Der Klassiker. Bancada pesa.',note:'Rolo compressor.',team:'Bayern 🇩🇪',stats:'Casa 100%',prob:'~65%',risk:false},
+  {phase:'final',type:'best',fav:true,home:'Twente',away:'Feyenoord',date:'Dom 17 Mai',league:'Eredivisie',h2h:'2-1 · 0-0',analysis:'Batalha por lugares europeus.',note:'Excelente baluarte.',team:'Twente 🇳🇱',stats:'Casa 80%',prob:'~48%',risk:false},
+  {phase:'final',type:'best',fav:true,home:'Santa Clara',away:'Porto',date:'Sáb 9 Mai',league:'Liga Portugal',h2h:'1-1 · 0-2',analysis:'Clima ajuda, mas Porto é Porto.',note:'Fator ilha.',team:'Santa Clara 🇵🇹',stats:'Casa 80%',prob:'~30%',risk:false},
+  {phase:'final',type:'best',fav:true,home:'Lourosa',away:'Sanjoanense',date:'Dom 10 Mai',league:'Liga 3',h2h:'2-0 · 3-1',analysis:'Derby. Lourosa impõe-se.',note:'Candidato à subida.',team:'Lourosa 🇵🇹',stats:'Casa 75%',prob:'~68%',risk:false},
+
+  {phase:'final',type:'worst',fav:true,home:'Vitória SC',away:'Estoril',date:'Sáb 9 Mai',league:'Liga Portugal',h2h:'1-3 · 1-1',analysis:'Desmoronam na 2ª parte.',note:'Pior visitante de Portugal.',team:'Estoril 🇵🇹',stats:'Fora 0%',prob:'~18%',risk:false},
+  {phase:'final',type:'worst',fav:true,home:'Porto',away:'Vitória SC',date:'Dom 10 Mai',league:'Liga Portugal',h2h:'1-2 · 0-3',analysis:'Dragão não perdoa ansiedade.',note:'Lanterna vermelha.',team:'Vitória SC 🇵🇹',stats:'Fora 0%',prob:'~10%',risk:true},
+  {phase:'final',type:'worst',fav:true,home:'Arsenal',away:'Sunderland',date:'Sáb 16 Mai',league:'Premier League',h2h:'0-2 · 1-3',analysis:'Emirates sufoca.',note:'A estrada matou-os.',team:'Sunderland 🏴',stats:'Fora 0%',prob:'~7%',risk:true},
+  {phase:'final',type:'worst',fav:true,home:'Everton',away:'Man United',date:'Dom 17 Mai',league:'Premier League',h2h:'2-2 · 2-1',analysis:'Bolas paradas = calcanhar de Aquiles.',note:'Pior arranque fora do século.',team:'Man United 🏴',stats:'Fora 0%',prob:'~35%',risk:false},
+  {phase:'final',type:'worst',fav:true,home:'Sampdoria',away:'Palermo',date:'Sáb 9 Mai',league:'Serie B',h2h:'1-1 · 0-1',analysis:'Ferraris anula criatividade.',note:'Medrosos no avião.',team:'Palermo 🇮🇹',stats:'Fora 14%',prob:'~22%',risk:false},
+  {phase:'final',type:'worst',fav:true,home:'Roma',away:'Genoa',date:'Dom 10 Mai',league:'Serie A',h2h:'0-1 · 0-2',analysis:'Defendam 90 min na área.',note:'Piores dinâmicas táticas.',team:'Genoa 🇮🇹',stats:'Fora crise',prob:'~15%',risk:false},
+  {phase:'final',type:'worst',fav:true,home:'Betis',away:'Espanyol',date:'Sáb 16 Mai',league:'La Liga',h2h:'1-3 · 1-1',analysis:'Betis explora laterais.',note:'Só pontuam com 0-0.',team:'Espanyol 🇪🇸',stats:'Fora PPG 0.33',prob:'~22%',risk:false},
+  {phase:'final',type:'worst',fav:true,home:'Frankfurt',away:'Heidenheim',date:'Dom 17 Mai',league:'Bundesliga',h2h:'0-2 · 1-1',analysis:'Erros infantis na saída de bola.',note:'Síndrome da segunda época.',team:'Heidenheim 🇩🇪',stats:'Fora PPG 0.33',prob:'~18%',risk:false},
+  {phase:'final',type:'worst',fav:true,home:'Lazio',away:'Verona',date:'Sáb 9 Mai',league:'Serie A',h2h:'0-1 · 1-1',analysis:'Lazio controla o ritmo.',note:'Média 2 sofridos fora.',team:'Verona 🇮🇹',stats:'Fora PPG 0.43',prob:'~20%',risk:false},
+  {phase:'final',type:'worst',fav:true,home:'Burnley',away:'Middlesbrough',date:'Dom 10 Mai',league:'Championship',h2h:'0-1 · 1-2',analysis:'Burnley mata o jogo aéreo.',note:'Grande desilusão fora.',team:'Middlesbrough 🏴',stats:'Fora só 1 vitória',prob:'~22%',risk:false},
+
+  // ========== JOGOS EXTRA (não favoráveis) ==========
+  // Mais jogos para "Todos"
+  {phase:'imediato',type:'best',fav:true,home:'Benfica',away:'Alverca',date:'Seg 2 Nov',league:'Liga Portugal',h2h:'2-1 · 1-2 · 2-0',analysis:'Benfica em casa, 2.º lugar (22 pts), forma sólida. Alverca a meio da tabela. Árbitro Bruno Costa. Favoritismo claro na Luz — atenção a possível gestão de esforço se houver Europa a seguir.',note:'Casa do Benfica continua terreno difícil para meio-tabela.',team:'Benfica 🇵🇹',stats:'Casa forte',prob:'~78%',risk:false,fatores:'Árbitro: Bruno Costa. Meteo seca ~18°C. Pavlidis melhor marcador da Liga. H2H recente favorece Benfica.',bet:'🏠 Casa vence (prioritário) · Over 2.5 secundário'},
+  {phase:'imediato',type:'best',fav:false,home:'Porto',away:'Arouca',date:'Sáb 14 Nov',league:'Liga Portugal',h2h:'2-0 · 1-0',analysis:'Jogo de gestão. Porto deve controlar sem grandes sustos. Tendência de chuva no Porto nesta altura — favorece pressão e 2.ª bola.',note:'Solidez em casa.',team:'FC Porto 🇵🇹',stats:'Casa 100%',prob:'~82%',risk:false,fatores:'Meteo típica Novembro no Dragão: chuva/relvado molhado = ligeiro + para quem pressiona alto (Porto). Árbitro ainda por nomear (sai ~3-4 dias antes).'},
+  {phase:'imediato',type:'best',fav:false,home:'Inter',away:'Cagliari',date:'Sáb 14 Nov',league:'Serie A',h2h:'3-0 · 2-1',analysis:'Mais um jogo para manter a média goleadora.',note:'Ataque assustador.',team:'Inter 🇮🇹',stats:'Casa 100%',prob:'~80%',risk:false},
+  {phase:'imediato',type:'best',fav:false,home:'Man City',away:'Brighton',date:'Sáb 14 Nov',league:'Premier League',h2h:'2-1 · 3-1',analysis:'Brighton incomoda, mas Etihad costuma resolver.',note:'Monopólio territorial.',team:'Man City 🏴󠁧󠁢󠁥󠁮󠁧󠁿',stats:'Casa 100%',prob:'~70%',risk:false},
+  {phase:'imediato',type:'best',fav:false,home:'Bayern',away:'Wolfsburg',date:'Sáb 14 Nov',league:'Bundesliga',h2h:'4-0 · 3-1',analysis:'Jogo para manter o ritmo goleador.',note:'Rolo compressor.',team:'Bayern 🇩🇪',stats:'Casa 100%',prob:'~85%',risk:false},
+  {phase:'imediato',type:'best',fav:false,home:'Southampton',away:'QPR',date:'Sáb 14 Nov',league:'Championship',h2h:'2-0 · 3-1',analysis:'Mais três pontos quase garantidos em casa.',note:'Máquina de golos.',team:'Southampton 🏴󠁧󠁢󠁥󠁮󠁧󠁿',stats:'Casa 100%',prob:'~78%',risk:false},
+
+  {phase:'imediato',type:'worst',fav:false,home:'Moreirense',away:'Estoril',date:'Sáb 14 Nov',league:'Liga Portugal',h2h:'1-1 · 0-1',analysis:'Mesmo contra equipas do meio da tabela o Estoril sofre fora.',note:'Pior visitante de Portugal.',team:'Estoril 🇵🇹',stats:'Fora 0%',prob:'~25%',risk:false},
+  {phase:'imediato',type:'worst',fav:false,home:'West Ham',away:'Sunderland',date:'Sáb 14 Nov',league:'Premier League',h2h:'2-0 · 1-1',analysis:'Mais um jogo difícil na estrada para o Sunderland.',note:'A estrada está a matá-los.',team:'Sunderland 🏴',stats:'Fora 0%',prob:'~20%',risk:false},
+  {phase:'imediato',type:'worst',fav:false,home:'Crystal Palace',away:'Man United',date:'Sáb 14 Nov',league:'Premier League',h2h:'1-1 · 2-1',analysis:'United continua a sofrer longe de Old Trafford.',note:'Colapso mental fora.',team:'Man United 🏴',stats:'Fora 0%',prob:'~32%',risk:false},
+  {phase:'imediato',type:'worst',fav:false,home:'Bologna',away:'Genoa',date:'Sáb 14 Nov',league:'Serie A',h2h:'1-0 · 2-0',analysis:'Genoa continua sem conseguir ditar ritmo fora.',note:'Piores dinâmicas táticas.',team:'Genoa 🇮🇹',stats:'Fora crise',prob:'~18%',risk:false},
+  {phase:'imediato',type:'worst',fav:false,home:'Stuttgart',away:'Heidenheim',date:'Sáb 14 Nov',league:'Bundesliga',h2h:'2-0 · 3-1',analysis:'Mais um jogo complicado na estrada.',note:'Síndrome da segunda época.',team:'Heidenheim 🇩🇪',stats:'Fora PPG 0.33',prob:'~15%',risk:false},
+
+  {phase:'inverno',type:'best',fav:false,home:'Porto',away:'Rio Ave',date:'Sáb 7 Fev',league:'Liga Portugal',h2h:'2-0 · 3-1',analysis:'Jogo de controlo. Porto deve gerir sem stress.',note:'Solidez em casa.',team:'FC Porto 🇵🇹',stats:'Casa 100%',prob:'~80%',risk:false},
+  {phase:'inverno',type:'best',fav:false,home:'Inter',away:'Torino',date:'Sáb 7 Fev',league:'Serie A',h2h:'2-0 · 1-0',analysis:'Mais três pontos no San Siro.',note:'Ataque assustador.',team:'Inter 🇮🇹',stats:'Casa 100%',prob:'~78%',risk:false},
+  {phase:'inverno',type:'best',fav:false,home:'Man City',away:'Everton',date:'Sáb 7 Fev',league:'Premier League',h2h:'2-0 · 3-1',analysis:'Everton sofre no Etihad.',note:'Monopólio territorial.',team:'Man City 🏴󠁧󠁢󠁥󠁮󠁧󠁿',stats:'Casa 100%',prob:'~75%',risk:false},
+  {phase:'inverno',type:'best',fav:false,home:'Bayern',away:'Augsburg',date:'Sáb 7 Fev',league:'Bundesliga',h2h:'5-1 · 3-0',analysis:'Jogo para golear.',note:'Rolo compressor.',team:'Bayern 🇩🇪',stats:'Casa 100%',prob:'~88%',risk:false},
+
+  {phase:'inverno',type:'worst',fav:false,home:'Casa Pia',away:'Estoril',date:'Sáb 7 Fev',league:'Liga Portugal',h2h:'1-0 · 2-1',analysis:'Estoril continua a sofrer longe de casa.',note:'Pior visitante.',team:'Estoril 🇵🇹',stats:'Fora 0%',prob:'~22%',risk:false},
+  {phase:'inverno',type:'worst',fav:false,home:'Fulham',away:'Sunderland',date:'Sáb 7 Fev',league:'Premier League',h2h:'2-1 · 1-0',analysis:'Mais um teste difícil na estrada.',note:'A estrada mata.',team:'Sunderland 🏴',stats:'Fora 0%',prob:'~18%',risk:false},
+  {phase:'inverno',type:'worst',fav:false,home:'Brentford',away:'Man United',date:'Sáb 7 Fev',league:'Premier League',h2h:'1-1 · 2-0',analysis:'United continua irregular fora.',note:'Colapso mental.',team:'Man United 🏴',stats:'Fora 0%',prob:'~35%',risk:false},
+  {phase:'inverno',type:'worst',fav:false,home:'Udinese',away:'Genoa',date:'Sáb 7 Fev',league:'Serie A',h2h:'1-0 · 2-1',analysis:'Genoa sem soluções fora.',note:'Piores dinâmicas.',team:'Genoa 🇮🇹',stats:'Fora crise',prob:'~20%',risk:false},
+
+  {phase:'final',type:'best',fav:false,home:'Porto',away:'Famalicão',date:'Sáb 2 Mai',league:'Liga Portugal',h2h:'2-1 · 1-0',analysis:'Jogo de gestão na reta final.',note:'Solidez em casa.',team:'FC Porto 🇵🇹',stats:'Casa 100%',prob:'~75%',risk:false},
+  {phase:'final',type:'best',fav:false,home:'Inter',away:'Lazio',date:'Sáb 2 Mai',league:'Serie A',h2h:'2-1 · 1-1',analysis:'Jogo importante para a classificação.',note:'Ataque assustador.',team:'Inter 🇮🇹',stats:'Casa 100%',prob:'~65%',risk:false},
+  {phase:'final',type:'best',fav:false,home:'Man City',away:'Wolves',date:'Sáb 2 Mai',league:'Premier League',h2h:'3-0 · 2-1',analysis:'Três pontos quase certos.',note:'Monopólio territorial.',team:'Man City 🏴󠁧󠁢󠁥󠁮󠁧󠁿',stats:'Casa 100%',prob:'~80%',risk:false},
+  {phase:'final',type:'best',fav:false,home:'Bayern',away:'Mainz',date:'Sáb 2 Mai',league:'Bundesliga',h2h:'4-1 · 3-0',analysis:'Jogo para golear na reta final.',note:'Rolo compressor.',team:'Bayern 🇩🇪',stats:'Casa 100%',prob:'~85%',risk:false},
+
+  {phase:'final',type:'worst',fav:false,home:'Gil Vicente',away:'Estoril',date:'Sáb 2 Mai',league:'Liga Portugal',h2h:'1-1 · 2-0',analysis:'Estoril continua a sofrer fora mesmo contra equipas do fundo.',note:'Pior visitante.',team:'Estoril 🇵🇹',stats:'Fora 0%',prob:'~28%',risk:false},
+  {phase:'final',type:'worst',fav:false,home:'Nottingham',away:'Sunderland',date:'Sáb 2 Mai',league:'Premier League',h2h:'2-0 · 1-1',analysis:'Mais um jogo complicado na estrada.',note:'A estrada matou.',team:'Sunderland 🏴',stats:'Fora 0%',prob:'~20%',risk:false},
+  {phase:'final',type:'worst',fav:false,home:'Newcastle',away:'Man United',date:'Sáb 2 Mai',league:'Premier League',h2h:'1-0 · 2-1',analysis:'United ainda sem vitórias consistentes fora.',note:'Colapso mental.',team:'Man United 🏴',stats:'Fora 0%',prob:'~30%',risk:false},
+  {phase:'final',type:'worst',fav:false,home:'Monza',away:'Genoa',date:'Sáb 2 Mai',league:'Serie A',h2h:'1-0 · 2-0',analysis:'Genoa sem respostas fora de casa.',note:'Piores dinâmicas.',team:'Genoa 🇮🇹',stats:'Fora crise',prob:'~22%',risk:false},
+];
+
+let currentCalFilter = 'all';
+
+function showSection(which) {
+  document.getElementById('section-best').classList.toggle('visible', which === 'best');
+  document.getElementById('section-worst').classList.toggle('visible', which === 'worst');
+  document.getElementById('btn-best').classList.toggle('active-best', which === 'best');
+  document.getElementById('btn-worst').classList.toggle('active-worst', which === 'worst');
+  filterAll();
+}
+
+function filterAll() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  document.querySelectorAll('#section-best .card, #section-worst .card').forEach(card => {
+    const team = (card.dataset.team || '').toLowerCase();
+    const text = card.innerText.toLowerCase();
+    card.style.display = (!q || team.includes(q) || text.includes(q)) ? '' : 'none';
+  });
+  renderCalendar();
+}
+
+function filterCal(f) {
+  currentCalFilter = f;
+  document.querySelectorAll('.cal-controls .filter-chip').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.cal-controls [data-filter="${f}"]`).classList.add('active');
+  renderCalendar();
+}
+
+function leagueMatchFilter(m, f) {
+  const L = (m.league || '').toLowerCase();
+  if (f === 'portugal') return L.includes('liga portugal') || L.includes('liga 3') || L.includes('portugal');
+  if (f === 'premier') return L.includes('premier');
+  if (f === 'seriea') return L.includes('serie a') || L.includes('série a');
+  if (f === 'bundesliga') return L.includes('bundesliga');
+  if (f === 'laliga') return L.includes('la liga') || L.includes('laliga');
+  if (f === 'ucl') return L.includes('champion') || L.includes('europa') || L.includes('ucl') || L.includes('conference');
+  if (f === 'eredivisie') return L.includes('eredivisie') || L.includes('dutch') || L.includes('netherlands');
+  return true;
+}
+
+function renderCalendar() {
+  const phases = {imediato:'cal-imediato', inverno:'cal-inverno', final:'cal-final'};
+  const counts = {imediato:0, inverno:0, final:0};
+  const searchEl = document.getElementById('searchInput');
+  const q = searchEl ? searchEl.value.toLowerCase().trim() : '';
+
+  Object.keys(phases).forEach(p => {
+    const container = document.getElementById(phases[p]);
+    if (!container) return;
+    container.innerHTML = '';
+    const list = matches
+      .filter(m => m.phase === p && !m.past)
+      .filter(m => {
+        if (currentCalFilter === 'fav' && !m.fav) return false;
+        if (currentCalFilter === 'best' && m.type !== 'best') return false;
+        if (currentCalFilter === 'worst' && m.type !== 'worst') return false;
+        if (['portugal','premier','seriea','bundesliga','laliga','ucl','eredivisie'].includes(currentCalFilter) && !leagueMatchFilter(m, currentCalFilter)) return false;
+        if (q && !(m.home + m.away + m.team + m.league).toLowerCase().includes(q)) return false;
+        return true;
+      })
+      .map(m => {
+        const d = parseDayLabel(m.date);
+        return { m, ts: d ? d.getTime() : 9e15 };
+      })
+      .sort((a, b) => a.ts - b.ts);
+
+    list.forEach(({ m }) => {
+      counts[p]++;
+      const chip = document.createElement('div');
+      let cls = 'match-chip ' + (m.type === 'best' ? 'best-chip' : 'worst-chip');
+      if (m.fav) cls += ' fav-chip';
+      chip.className = cls;
+      chip.innerHTML = `
+        <div class="chip-league">${m.league}</div>
+        <div class="chip-teams">${m.home} vs ${m.away}</div>
+        <div class="chip-date">${m.date}</div>
+        <span class="chip-tag ${m.fav ? 'tag-fav' : (m.type === 'best' ? 'tag-best' : 'tag-worst')}">
+          ${m.fav ? '⭐ FAVORÁVEL' : (m.type === 'best' ? 'CASA' : 'FORA')}
+        </span>
+        ${m.risk ? '<div class="chip-risk">⚠️ Risco goleada</div>' : ''}
+      `;
+      chip.onclick = () => openModal(m);
+      container.appendChild(chip);
+    });
+  });
+  const ci = document.getElementById('count-imediato');
+  const cv = document.getElementById('count-inverno');
+  const cf = document.getElementById('count-final');
+  if (ci) ci.textContent = counts.imediato;
+  if (cv) cv.textContent = counts.inverno;
+  if (cf) cf.textContent = counts.final;
+}
+
+function deriveBet(m) {
+  if (m.bet) return m.bet;
+  if (m.past) return '— (já jogado)';
+  const risk = m.risk;
+  const best = m.type === 'best';
+  const fav = m.fav;
+  // Heurística a partir da leitura do dossiê
+  if (best && risk) return '🏠 Casa vence + Over 2.5 (goleada no radar)';
+  if (best && fav) return '🏠 Casa vence (favorito do estudo)';
+  if (best) return '🏠 Casa vence ou Casa +0.5 AH';
+  if (!best && risk) return '✈️ Fora não vence / Under visitante ou Over 2.5 a favor da casa';
+  if (!best && fav) return '🚫 Visitante frágil — evitar vitória fora; casa ou X preferível';
+  return 'Ver contexto (prob. moderada)';
+}
+
+function pitchXI(m) {
+  // XI esquemático (FM-lite) — nomes quando conhecidos na cabeça do Zé
+  const h = getTeamKB(m.home);
+  const scorers = (h && h.marcadores) ? h.marcadores.slice(0, 3).map(s => s.split('(')[0].trim()) : [];
+  const st = scorers[0] || 'ST';
+  const rw = scorers[1] || 'ED';
+  const lw = scorers[2] || 'EE';
+  return `<div style="margin:12px 0;padding:12px;background:#14532d;border-radius:12px;border:1px solid #166534;">
+    <div style="font-size:0.72rem;color:#86efac;margin-bottom:8px;text-align:center;">⚽ XI PROVÁVEL (esquema · não oficial)</div>
+    <div style="display:flex;flex-direction:column;gap:8px;align-items:center;font-size:0.72rem;color:#dcfce7;">
+      <div style="padding:4px 10px;background:#052e16;border-radius:6px;">${st}</div>
+      <div style="display:flex;gap:12px;"><span style="padding:4px 8px;background:#052e16;border-radius:6px;">${lw}</span><span style="padding:4px 8px;background:#052e16;border-radius:6px;">MO</span><span style="padding:4px 8px;background:#052e16;border-radius:6px;">${rw}</span></div>
+      <div style="display:flex;gap:12px;"><span style="padding:4px 8px;background:#052e16;border-radius:6px;">MDC</span><span style="padding:4px 8px;background:#052e16;border-radius:6px;">MDC</span></div>
+      <div style="display:flex;gap:8px;"><span style="padding:4px 8px;background:#052e16;border-radius:6px;">LE</span><span style="padding:4px 8px;background:#052e16;border-radius:6px;">DC</span><span style="padding:4px 8px;background:#052e16;border-radius:6px;">DC</span><span style="padding:4px 8px;background:#052e16;border-radius:6px;">LD</span></div>
+      <div style="padding:4px 10px;background:#052e16;border-radius:6px;">GR</div>
+    </div>
+    <div style="font-size:0.7rem;color:#86efac;margin-top:8px;text-align:center;">${m.home} · 4-2-3-1 ilustrativo</div>
+  </div>`;
+}
+
+function openModal(m) {
+  const body = document.getElementById('modal-body');
+  const modal = document.getElementById('modal-content');
+  modal.className = 'modal' + (m.type === 'worst' ? ' worst-modal' : '');
+  const bet = deriveBet(m);
+  const q = encodeURIComponent(m.home + ' ' + m.away);
+  body.innerHTML = `
+    <h3>${m.team}</h3>
+    <div class="modal-meta">${m.stats} · ${m.league}</div>
+    <div style="font-size:1.05rem;font-weight:700;margin-bottom:5px;">${m.home} vs ${m.away}</div>
+    <div class="modal-meta" style="margin-bottom:10px;">📅 ${m.date} · ${m.phase === 'imediato' ? 'Imediata' : m.phase === 'inverno' ? 'Inverno' : 'Reta Final'}${m.fav ? ' · ⭐ Favorável (estudo)' : ''}</div>
+    <div class="h2h"><strong>H2H recente:</strong> ${m.h2h}</div>
+    <div class="analysis">${m.analysis}</div>
+    <div class="note"><strong>Nota:</strong> ${m.note}</div>
+    ${m.fatores ? `<div class="note" style="border-left-color:#fb923c;margin-top:8px;"><strong>🌤📋 Fatores extra (árbitro / tempo):</strong> ${m.fatores}</div>` : ''}
+    <div style="margin:12px 0;padding:12px;background:linear-gradient(135deg,rgba(74,222,128,.12),rgba(56,189,248,.1));border-radius:10px;border:1px solid rgba(74,222,128,.25);">
+      <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:.04em;color:#86efac;margin-bottom:4px;">💡 Aposta mais lógica (leitura do dossiê)</div>
+      <div style="font-weight:800;font-size:1.02rem;color:#f1f5f9;">${bet}</div>
+    </div>
+    <div style="margin-bottom:12px;font-size:0.9rem;"><strong>Probabilidade:</strong> <span style="color:${m.type==='best'?'#4ade80':'#f87171'}">${m.prob}</span></div>
+    ${pitchXI(m)}
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+      <a target="_blank" rel="noopener" href="https://www.google.com/search?q=${q}+árbitro+nomeado" style="font-size:0.78rem;padding:7px 10px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;text-decoration:none;">🔎 Árbitro</a>
+      <a target="_blank" rel="noopener" href="https://www.google.com/search?q=${q}+preview+forma" style="font-size:0.78rem;padding:7px 10px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;text-decoration:none;">📊 Forma</a>
+      <a target="_blank" rel="noopener" href="https://www.flashscore.pt/pesquisa/?q=${encodeURIComponent(m.home)}" style="font-size:0.78rem;padding:7px 10px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;text-decoration:none;">⚡ Flashscore</a>
+    </div>
+    <button class="copy-btn" onclick="copyAnalysis(this)">📋 Copiar análise</button>
+  `;
+  document.getElementById('modal').classList.add('open');
+}
+
+function copyAnalysis(btn) {
+  const text = document.getElementById('modal-body').innerText.replace('📋 Copiar análise','').trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✅ Copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '📋 Copiar análise'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+function closeModal(e) {
+  if (!e || e.target.id === 'modal' || e.target.classList.contains('modal-close')) {
+    document.getElementById('modal').classList.remove('open');
+  }
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+renderCalendar();
+
+/* ========== METEO (Open-Meteo — grátis, sem chave) ========== */
+const CITY_COORDS = {
+  'FC Porto': { lat: 41.15, lon: -8.61, name: 'Porto' },
+  'Porto': { lat: 41.15, lon: -8.61, name: 'Porto' },
+  'Estoril': { lat: 38.72, lon: -9.14, name: 'Lisboa' },
+  'Benfica': { lat: 38.75, lon: -9.16, name: 'Lisboa' },
+  'Alverca': { lat: 38.90, lon: -9.04, name: 'Alverca' },
+  'Sporting': { lat: 38.76, lon: -9.16, name: 'Lisboa' },
+  'Vitória SC': { lat: 41.45, lon: -8.29, name: 'Guimarães' },
+  'Braga': { lat: 41.55, lon: -8.43, name: 'Braga' },
+  'Santa Clara': { lat: 37.74, lon: -25.67, name: 'Ponta Delgada' },
+  'Lourosa': { lat: 40.98, lon: -8.50, name: 'Santa Maria da Feira' },
+  'Bayern': { lat: 48.14, lon: 11.58, name: 'Munique' },
+  'Heidenheim': { lat: 48.68, lon: 10.15, name: 'Heidenheim' },
+  'Inter': { lat: 45.48, lon: 9.12, name: 'Milão' },
+  'Milan': { lat: 45.48, lon: 9.12, name: 'Milão' },
+  'Juventus': { lat: 45.11, lon: 7.64, name: 'Turim' },
+  'Genoa': { lat: 44.41, lon: 8.93, name: 'Génova' },
+  'Palermo': { lat: 38.12, lon: 13.36, name: 'Palermo' },
+  'Verona': { lat: 45.44, lon: 10.99, name: 'Verona' },
+  'Real Madrid': { lat: 40.42, lon: -3.71, name: 'Madrid' },
+  'Atlético': { lat: 40.44, lon: -3.69, name: 'Madrid' },
+  'Barcelona': { lat: 41.39, lon: 2.17, name: 'Barcelona' },
+  'Espanyol': { lat: 41.35, lon: 2.08, name: 'Barcelona' },
+  'Almería': { lat: 36.84, lon: -2.46, name: 'Almería' },
+  'Man City': { lat: 53.48, lon: -2.24, name: 'Manchester' },
+  'Man United': { lat: 53.46, lon: -2.29, name: 'Manchester' },
+  'Liverpool': { lat: 53.43, lon: -2.96, name: 'Liverpool' },
+  'Arsenal': { lat: 51.56, lon: -0.11, name: 'Londres' },
+  'Chelsea': { lat: 51.48, lon: -0.19, name: 'Londres' },
+  'Sunderland': { lat: 54.91, lon: -1.39, name: 'Sunderland' },
+  'Southampton': { lat: 50.91, lon: -1.39, name: 'Southampton' },
+  'Middlesbrough': { lat: 54.57, lon: -1.23, name: 'Middlesbrough' },
+  'Twente': { lat: 52.24, lon: 6.84, name: 'Enschede' },
+  'Ajax': { lat: 52.31, lon: 4.94, name: 'Amesterdão' },
+  'Feyenoord': { lat: 51.89, lon: 4.52, name: 'Roterdão' },
+  'PSV': { lat: 51.44, lon: 5.47, name: 'Eindhoven' }
+};
+
+/* ========== CONHECIMENTO OFFLINE DO ZÉ (cabeça local) ========== */
+const TEAM_KB = {
+  'Benfica': {
+    liga: 'Liga Portugal', pos: '2.º (~22 pts)', casa: 'forte', rating: 86,
+    forma: ['W vs Santa Clara 2-1', 'W Taça Liga Gil Vicente 4-1', 'W'],
+    marcadores: ['Pavlidis (~9 golos, melhor da Liga)', 'Lukebakio', 'Prestianni'],
+    notas: 'Marco Silva. Barreiro lesionado (coxa). Europa a seguir (Lech) → risco de rotação leve.',
+    h2h_tips: 'Vs Alverca: 2-1 em casa época passada; H2H global favorável.',
+    estilo: 'posse + pressão média-alta na Luz'
+  },
+  'Alverca': {
+    liga: 'Liga Portugal', pos: '~8.º–10.º (~11 pts)', casa: 'modesta', rating: 62,
+    forma: ['mista', 'derrota possível vs Arouca'],
+    marcadores: ['Dawda Camara (~3)', 'Vivaldo (~3)', 'Chiquinho (assist.)'],
+    notas: 'Sérgio Ferreira. Não é lanterna; fora da Luz costuma sofrer.',
+    h2h_tips: 'Historicamente sofre no Estádio da Luz.',
+    estilo: 'bloco médio, contra-ataque'
+  },
+  'FC Porto': {
+    liga: 'Liga Portugal', pos: 'topo / candidatos', casa: '100% estudo', rating: 88,
+    forma: ['dominante em casa no dossiê', 'Estoril ~4-0 confirmado'],
+    marcadores: ['referência ofensiva da casa'],
+    notas: 'Dragão = solidez obscena no estudo. Casa é o trunfo.',
+    h2h_tips: 'Vs Estoril confirmado. Vs Arouca = gestão.',
+    estilo: 'controlo territorial, pressão'
+  },
+  'Porto': {
+    liga: 'Liga Portugal', pos: 'topo', casa: '100% estudo', rating: 88,
+    forma: ['dominante em casa'], marcadores: ['ataque da casa'],
+    notas: 'Alias FC Porto no dossiê.', h2h_tips: '—', estilo: 'controlo'
+  },
+  'Estoril': {
+    liga: 'Liga Portugal', pos: 'crise fora (0% estudo)', casa: '—', rating: 48,
+    forma: ['0% fora confirmado no Dragão'], marcadores: ['—'],
+    notas: 'Pior visitante de Portugal no dossiê.', h2h_tips: 'Fragilidade extrema fora.',
+    estilo: 'sofre pressão alta'
+  },
+  'Sporting': {
+    liga: 'Liga Portugal', pos: 'candidatos', casa: 'Alvalade fortíssimo', rating: 87,
+    forma: ['casa pune visitantes frágeis'], marcadores: ['ataque leonino'],
+    notas: 'Terreno hostil para crises.', h2h_tips: '—', estilo: 'intensidade alta'
+  },
+  'Vitória SC': {
+    liga: 'Liga Portugal', pos: 'crise fora', casa: '—', rating: 50,
+    forma: ['0% fora no bloco piores'], marcadores: ['—'],
+    notas: 'Risco de goleada sofrida fora vs grandes.', h2h_tips: 'Histórico cruel vs grandes.',
+    estilo: 'fragilidade defensiva fora'
+  },
+  'Braga': {
+    liga: 'Liga Portugal', pos: 'zona europeia', casa: 'forte', rating: 78,
+    forma: ['competitivo'], marcadores: ['referências do ataque'],
+    notas: 'Fora dos 3 grandes mas casa respeitável.', h2h_tips: '—', estilo: 'vertical'
+  },
+  'Bayern': {
+    liga: 'Bundesliga/UCL', pos: 'dominante', casa: '100% estudo', rating: 92,
+    forma: ['Allianz engole médios'], marcadores: ['linha ofensiva elite'],
+    notas: 'Favorito pesado em casa no dossiê.', h2h_tips: '—', estilo: 'rolo compressor'
+  },
+  'Inter': {
+    liga: 'Serie A', pos: 'topo', casa: '100% estudo', rating: 90,
+    forma: ['casa goleadora'], marcadores: ['ataque Inter'],
+    notas: 'San Siro favorito claro.', h2h_tips: '—', estilo: 'intensidade + finalização'
+  },
+  'Man City': {
+    liga: 'Premier League', pos: 'elite', casa: '100% estudo', rating: 93,
+    forma: ['Etihad resolve'], marcadores: ['Haaland (referência)'],
+    notas: 'Monopólio territorial em casa.', h2h_tips: '—', estilo: 'posse dominante'
+  },
+  'Real Madrid': {
+    liga: 'La Liga/UCL', pos: 'elite', casa: 'fortíssimo', rating: 92,
+    forma: ['Bernabéu decide'], marcadores: ['linha ofensiva elite'],
+    notas: 'Favorito estrutural em casa.', h2h_tips: '—', estilo: 'transições letais'
+  },
+  'Barcelona': {
+    liga: 'La Liga', pos: 'elite', casa: 'muito forte', rating: 89,
+    forma: ['Camp Nou / Montjuïc pressão'], marcadores: ['ataque Barça'],
+    notas: 'Casa no dossiê = favoritismo alto.', h2h_tips: '—', estilo: 'posse'
+  },
+  'Arsenal': {
+    liga: 'Premier League', pos: 'topo', casa: 'forte', rating: 88,
+    forma: ['Emirates dominante'], marcadores: ['ataque Arsenal'],
+    notas: 'Favorito em casa no estudo.', h2h_tips: '—', estilo: 'pressão alta'
+  },
+  'Liverpool': {
+    liga: 'Premier League', pos: 'topo', casa: 'fortíssimo', rating: 90,
+    forma: ['Anfield'], marcadores: ['ataque Liverpool'],
+    notas: 'Casa histórica.', h2h_tips: '—', estilo: 'intensidade'
+  },
+  'Sunderland': {
+    liga: 'contexto estudo', pos: 'bloco piores fora se aplicável', casa: '—', rating: 55,
+    forma: ['ver card'], marcadores: ['—'],
+    notas: 'Consultar análise no dossiê.', h2h_tips: '—', estilo: '—'
+  },
+  'Heidenheim': {
+    liga: 'Bundesliga', pos: 'meio/baixo', casa: 'modesta', rating: 60,
+    forma: ['sofrer vs Bayern'], marcadores: ['—'],
+    notas: 'Visitante frágil vs elite.', h2h_tips: '—', estilo: '—'
+  },
+  'Arouca': {
+    liga: 'Liga Portugal', pos: 'meio-tabela', casa: 'modesta', rating: 58,
+    forma: ['gestão para o Porto'], marcadores: ['—'],
+    notas: 'Fora do Dragão = favoritismo claro do Porto.', h2h_tips: '—', estilo: '—'
+  }
+};
+
+function getTeamKB(name) {
+  if (!name) return null;
+  if (TEAM_KB[name]) return TEAM_KB[name];
+  const k = Object.keys(TEAM_KB).find(x => name.toLowerCase().includes(x.toLowerCase()) || x.toLowerCase().includes(name.toLowerCase().split(' ')[0]));
+  return k ? TEAM_KB[k] : null;
+}
+
+function kbBlurb(name) {
+  const kb = getTeamKB(name);
+  if (!kb) return '';
+  const forma = Array.isArray(kb.forma) ? kb.forma.join(' · ') : kb.forma;
+  return `<br>📚 <strong>${name}</strong> (rating ${kb.rating || '?'}/100) · ${kb.pos}<br>` +
+    `Casa: ${kb.casa} · Estilo: ${kb.estilo || '—'}<br>` +
+    `Forma: ${forma}<br>` +
+    `Marcadores: ${kb.marcadores.join(', ')}<br>` +
+    (kb.notas ? `Notas: ${kb.notas}<br>` : '') +
+    (kb.h2h_tips && kb.h2h_tips !== '—' ? `H2H: ${kb.h2h_tips}` : '');
+}
+
+/** Placar mais provável (heurística simples a partir do dossiê + ratings) */
+function preverPlacar(m) {
+  const h = getTeamKB(m.home);
+  const a = getTeamKB(m.away);
+  const rh = h?.rating || (m.type === 'best' ? 82 : 70);
+  const ra = a?.rating || (m.type === 'worst' ? 50 : 65);
+  const diff = rh - ra;
+  let hg = 1, ag = 0;
+  if (m.risk || diff >= 30) { hg = 3; ag = 0; }
+  else if (diff >= 20) { hg = 2; ag = 0; }
+  else if (diff >= 12) { hg = 2; ag = 1; }
+  else if (diff >= 5) { hg = 1; ag = 0; }
+  else { hg = 1; ag = 1; }
+  if (m.type === 'worst' && m.risk) { hg = 3; ag = 0; } // casa goleia visitante crise
+  return { hg, ag, label: `${hg}-${ag}`, diff };
+}
+
+function getCoords(m) {
+  return CITY_COORDS[m.home] || CITY_COORDS[m.away] || null;
+}
+
+function isoDateFromMatch(m) {
+  const d = parseDayLabel(m.date);
+  if (!d) return null;
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  const da = String(d.getDate()).padStart(2, '0');
+  return `${y}-${mo}-${da}`;
+}
+
+async function fetchWeather(m) {
+  const c = getCoords(m);
+  const iso = isoDateFromMatch(m);
+  if (!c || !iso) return null;
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}&daily=precipitation_sum,precipitation_probability_max,weathercode,temperature_2m_max,temperature_2m_min,windspeed_10m_max&timezone=auto&start_date=${iso}&end_date=${iso}`;
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const j = await r.json();
+    const precip = j.daily?.precipitation_sum?.[0] ?? 0;
+    const precipProb = j.daily?.precipitation_probability_max?.[0] ?? 0;
+    const code = j.daily?.weathercode?.[0] ?? 0;
+    const tmax = j.daily?.temperature_2m_max?.[0];
+    const tmin = j.daily?.temperature_2m_min?.[0];
+    const wind = j.daily?.windspeed_10m_max?.[0];
+    const rainy = precip >= 1 || precipProb >= 50 || code >= 51;
+    const heavy = precip >= 5 || code >= 61;
+    return {
+      city: c.name, precip, precipProb, code, tmax, tmin, wind, rainy, heavy,
+      label: rainy
+        ? (heavy ? `🌧 Chuva forte (~${Math.round(precip)} mm)` : `🌦 Chuva possível (~${Math.round(precip)} mm, ${precipProb}%)`)
+        : `☀️ Seco / sem chuva relevante (${Math.round(precip)} mm)`
+    };
+  } catch (e) { return null; }
+}
+
+function weatherDelta(m, wx) {
+  if (!wx) return { delta: 0, note: '' };
+  let delta = 0, note = '';
+  if (wx.heavy) {
+    if (m.type === 'best') { delta = m.risk ? 2 : 1; note = 'Chuva forte: ligeiro + para casa que pressiona / 2.ª bola.'; }
+    else { delta = -1; note = 'Chuva forte: visitante frágil tende a sofrer mais.'; }
+  } else if (wx.rainy) {
+    if (m.type === 'best') { delta = 1; note = 'Chuva: efeito mínimo a favor de quem controla o ritmo em casa.'; }
+    else { delta = -1; note = 'Chuva: efeito mínimo negativo para visitante já em crise.'; }
+  }
+  return { delta, note };
+}
+
+function applyWeatherToProb(m, wx) {
+  const { delta, note } = weatherDelta(m, wx);
+  if (!delta) return { text: m.prob, note: note || (wx ? wx.label : ''), delta: 0 };
+  const raw = String(m.prob || '');
+  const num = parseInt(raw.replace(/[~%\s]/g, '').split('-')[0], 10);
+  if (isNaN(num) || raw.includes('feito')) return { text: m.prob, note, delta: 0 };
+  const adj = Math.max(5, Math.min(95, num + delta));
+  return { text: `~${adj}% (aj. meteo)`, note: note + ` (${delta > 0 ? '+' : ''}${delta} pp)`, delta };
+}
+
+/* ========== BOTÃO DO DIA ========== */
+const funnyEmpty = [
+  { emoji: "😴", text: "Hoje o futebol está de folga.<br>Nem o Estoril consegue perder fora... porque não há jogos." },
+  { emoji: "🛋️", text: "Dia de sofá e Netflix.<br>O dossiê olhou para o calendário e disse: «nada para ti hoje, chef.»" },
+  { emoji: "☕", text: "Hoje é dia de café e zero stress.<br>Nenhuma combinação no radar próximo. Aproveita." },
+  { emoji: "🎲", text: "O algoritmo olhou para os próximos dias e deu de ombros.<br>«Sem dados próximos.» Volta em breve." },
+  { emoji: "🛰️", text: "Sinal do dossiê: silêncio total no horizonte próximo.<br>Nem o Heidenheim está a sofrer goleada já." },
+  { emoji: "🍕", text: "Sem jogos quentes no menu próximo.<br>Sugestão do chef: pizza e esperar pelo próximo clássico." }
+];
+
+const monthsMap = {jan:0,fev:1,mar:2,abr:3,mai:4,jun:5,jul:6,ago:7,set:8,out:9,nov:10,dez:11};
+
+function parseDayLabel(dateStr) {
+  // "Sáb 7 Nov" → Date object (ano corrente ou seguinte)
+  const m = dateStr.toLowerCase().match(/(\d{1,2})\s*(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)/);
+  if (!m) return null;
+  const day = parseInt(m[1], 10);
+  const month = monthsMap[m[2]];
+  const now = new Date();
+  let year = now.getFullYear();
+  // se o mês já passou este ano, assume ano seguinte (para Jan/Fev etc.)
+  let d = new Date(year, month, day);
+  if (month < now.getMonth() - 1) d = new Date(year + 1, month, day);
+  return d;
+}
+
+function daysFromToday(dateObj) {
+  const now = new Date();
+  const a = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const b = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+  return Math.round((b - a) / 86400000);
+}
+
+function scoreMatch(m) {
+  let s = 0;
+  if (m.fav) s += 50;
+  if (m.risk) s += 30;
+  if (m.type === 'best') s += 10;
+  const num = parseInt((m.prob || '').replace(/[~%\s]/g,'').split('-')[0], 10);
+  if (!isNaN(num)) s += (m.type === 'best' ? num : (100 - num)) / 10;
+  return s;
+}
+
+function renderMatchBlock(m, isBest, wx) {
+  const border = m.risk ? 'danger' : (m.fav && m.type === 'best' ? 'strong' : '');
+  let verdict = '';
+  if (m.type === 'best') {
+    verdict = m.risk
+      ? `🔥 <strong>Goleada à vista.</strong> ${m.home} em casa contra visitante em crise.`
+      : `✅ <strong>Favorito.</strong> ${m.analysis}`;
+  } else {
+    verdict = m.risk
+      ? `💣 <strong>Armadilha / goleada sofrida.</strong> ${m.away} em modo pior visitante.`
+      : `⚠️ <strong>Visitante frágil.</strong> ${m.analysis}`;
+  }
+  const adj = applyWeatherToProb(m, wx);
+  const probShow = adj.text || m.prob;
+  const wxHtml = wx
+    ? `<div style="margin-top:8px;padding:8px 10px;background:rgba(56,189,248,.1);border-radius:8px;font-size:0.82rem;color:#7dd3fc;">
+        <strong>🌤 Meteo (${wx.city}):</strong> ${wx.label}
+        ${wx.tmax != null ? ` · ${Math.round(wx.tmin)}–${Math.round(wx.tmax)}°C` : ''}
+        ${wx.wind != null ? ` · vento ~${Math.round(wx.wind)} km/h` : ''}
+        ${adj.note ? `<br><em style="color:#94a3b8;">${adj.note}</em>` : ''}
+      </div>`
+    : '';
+  const fatoresHtml = m.fatores
+    ? `<div style="margin-top:8px;padding:8px 10px;background:rgba(251,146,60,.12);border-radius:8px;font-size:0.82rem;color:#fdba74;"><strong>📋 Fatores extra:</strong> ${m.fatores}</div>`
+    : '';
+  const bet = (typeof deriveBet === 'function' ? deriveBet(m) : (m.bet || ''));
+  const betHtml = bet
+    ? `<div style="margin-top:8px;padding:8px 10px;background:rgba(74,222,128,.1);border-radius:8px;font-size:0.84rem;color:#86efac;"><strong>💡 Aposta lógica:</strong> ${bet}</div>`
+    : '';
+  return `
+    <div class="day-pick ${border}" style="margin-bottom:10px;">
+      <div style="font-weight:800;font-size:1.02rem;margin-bottom:3px;">
+        ${isBest ? '⭐ ' : ''}${m.home} vs ${m.away}
+      </div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:6px;">
+        ${m.league} · ${m.date}${m.fav ? ' · ⭐ Favorável (estudo)' : ''}
+      </div>
+      <div style="font-size:0.88rem;margin-bottom:4px;"><strong>H2H:</strong> ${m.h2h}</div>
+      <div style="font-size:0.88rem;margin-bottom:6px;">
+        <strong>Prob:</strong> <span style="color:${m.type==='best'?'#4ade80':'#f87171'}">${probShow}</span>
+        ${m.risk ? ' · ⚠️ Risco goleada' : ''}
+      </div>
+      <div class="day-verdict" style="font-size:0.9rem;">${verdict}</div>
+      ${betHtml}
+      ${wxHtml}
+      ${fatoresHtml}
+    </div>`;
+}
+
+async function gerarDia() {
+  const box = document.getElementById('dayResult');
+  const now = new Date();
+  box.innerHTML = `<div class="day-meta" style="text-align:center;padding:20px;">⏳ A carregar meteo e combinações…</div>`;
+  box.classList.add('show');
+
+  const withDates = matches.filter(m => !m.past).map(m => {
+    const d = parseDayLabel(m.date);
+    return d ? { ...m, _date: d, _days: daysFromToday(d) } : null;
+  }).filter(Boolean);
+
+  let list = withDates.filter(m => m._days === 0);
+  let mode = 'hoje';
+  if (list.length === 0) {
+    list = withDates.filter(m => m._days > 0 && m._days <= 10).sort((a,b) => a._days - b._days || scoreMatch(b) - scoreMatch(a));
+    mode = 'proximos';
+  }
+  if (list.length === 0) {
+    const funny = funnyEmpty[Math.floor(Math.random() * funnyEmpty.length)];
+    box.innerHTML = `
+      <div class="day-funny">
+        <span>${funny.emoji}</span>
+        ${funny.text}
+        <div style="margin-top:14px;font-size:0.82rem;color:#64748b;">
+          Hoje é ${now.toLocaleDateString('pt-PT', {weekday:'long', day:'numeric', month:'long', year:'numeric'})}
+        </div>
+      </div>`;
+    return;
+  }
+
+  const ranked = [...list].sort((a,b) => scoreMatch(b) - scoreMatch(a));
+  // meteo em paralelo (máx ~8 para não spam)
+  const wxList = await Promise.all(ranked.slice(0, 8).map(m => fetchWeather(m)));
+
+  const title = mode === 'hoje'
+    ? '🔮 Jogos de Hoje'
+    : `🔮 Próximos jogos (a partir de ${ranked[0].date})`;
+  const meta = mode === 'hoje'
+    ? `${now.toLocaleDateString('pt-PT', {weekday:'long', day:'numeric', month:'long', year:'numeric'})} · ${ranked.length} jogo(s) · meteo Open-Meteo`
+    : `Sem jogos exactamente hoje · Próximos ${ranked.length} (≤10 dias) · meteo em tempo real`;
+
+  let blocks = ranked.map((m, i) => renderMatchBlock(m, i === 0, wxList[i] || null)).join('');
+
+  box.innerHTML = `
+    <h3>${title}</h3>
+    <div class="day-meta">${meta}</div>
+    ${blocks}
+    <div style="margin-top:12px;">
+      <button class="copy-btn" style="background:linear-gradient(135deg,#7c3aed,#db2777);" onclick="copyDay(this)">📋 Copiar dica do dia</button>
+    </div>
+  `;
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function copyDay(btn) {
+  const text = document.getElementById('dayResult').innerText.replace('📋 Copiar dica do dia','').trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✅ Copiado!';
+    setTimeout(() => { btn.textContent = '📋 Copiar dica do dia'; }, 1600);
+  });
+}
+
+/* ========== VERIFICAR ATUALIZAÇÕES (grátis, sem API paga) ========== */
+/* ========== TRACKING ACERTOS + ASSISTENTE OFFLINE ========== */
+function loadTrack() {
+  try { return JSON.parse(localStorage.getItem('dossie_track_v1') || '{"hits":0,"miss":0,"log":[]}'); }
+  catch(e) { return {hits:0,miss:0,log:[]}; }
+}
+function saveTrack(t) { localStorage.setItem('dossie_track_v1', JSON.stringify(t)); }
+
+function registarResultado(key, hit, note) {
+  const t = loadTrack();
+  if (hit) t.hits++; else t.miss++;
+  t.log.unshift({ key, hit, note, at: new Date().toISOString() });
+  t.log = t.log.slice(0, 40);
+  saveTrack(t);
+  return t;
+}
+
+let zeLastMatch = null; // memória do último jogo falado
+
+function updateZeContext() {
+  const bar = document.getElementById('zeContext');
+  if (!bar) return;
+  if (!zeLastMatch) { bar.style.display = 'none'; return; }
+  const pred = typeof preverPlacar === 'function' ? preverPlacar(zeLastMatch) : null;
+  bar.style.display = 'block';
+  bar.innerHTML = `🎯 Em foco: <strong>${zeLastMatch.home} vs ${zeLastMatch.away}</strong> · ${zeLastMatch.date}` +
+    (pred ? ` · cenário <strong>${pred.label}</strong>` : '') +
+    ` · <span style="opacity:.85">${zeLastMatch.prob}</span>`;
+}
+
+function zeAsk(text) {
+  document.getElementById('chatInput').value = text;
+  enviarChat();
+}
+
+function toggleAssistente() {
+  const el = document.getElementById('assistenteBox');
+  const opening = el.style.display === 'none';
+  el.style.display = opening ? 'block' : 'none';
+  if (opening && !document.getElementById('chatLog').innerHTML) {
+    addChat('bot', 'Olá, sou o <strong>Mister Zé</strong> 🤖<br>Dossiê + cabeça tática. Usa os botões rápidos ou escreve.<br>Diz o jogo ou toca em <em>jogo do dia</em> — depois Over / BTTS / Marcador / Placar.');
+    // auto foco no jogo de hoje se existir
+    const withDates = matches.filter(m => !m.past).map(m => {
+      const d = parseDayLabel(m.date);
+      return d ? { ...m, _days: daysFromToday(d) } : null;
+    }).filter(Boolean);
+    const today = withDates.filter(m => m._days === 0).sort((a,b) => scoreMatch(b) - scoreMatch(a));
+    if (today.length) {
+      zeLastMatch = today[0];
+      updateZeContext();
+      addChat('bot', `Hoje no radar: <strong>${today[0].home} vs ${today[0].away}</strong> (${today[0].prob}).<br>💡 ${deriveBet(today[0])} · cenário ${preverPlacar(today[0]).label}<br><em>Podes carregar nos chips: Over 2.5, BTTS, Marcador…</em>`);
+    }
+  }
+  if (opening) updateZeContext();
+}
+
+function addChat(who, text) {
+  const log = document.getElementById('chatLog');
+  const div = document.createElement('div');
+  div.style.marginBottom = '10px';
+  div.innerHTML = who === 'bot'
+    ? `<div style="color:#a78bfa;font-size:0.72rem;margin-bottom:2px;">🤖 Mister Zé</div><div>${text}</div>`
+    : `<div style="color:#94a3b8;font-size:0.72rem;margin-bottom:2px;">${esc(pname())}</div><div style="color:#e2e8f0;">${text}</div>`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+function parseFlashscoreUrl(text) {
+  // Flashscore: /alverca-xxx/benfica-yyy/
+  const m = text.match(/flashscore[^/]*\/jogo\/futebol\/([^/?#]+)/i);
+  if (m) {
+    const parts = m[1].split('/').filter(Boolean);
+    const names = [];
+    parts.forEach(p => {
+      const base = p.split('-')[0];
+      if (base && base.length > 2) names.push(base);
+    });
+    if (names.length) return names;
+  }
+  // ESPN: não traz nomes no URL (só gameId) — avisar
+  if (/espn\.com\/soccer\/match/i.test(text)) {
+    return ['__espn__'];
+  }
+  return null;
+}
+
+function findMatchesByQuery(q) {
+  const s = q.toLowerCase();
+  // URL flashscore?
+  const fromUrl = parseFlashscoreUrl(s);
+  if (fromUrl) {
+    const hit = matches.filter(m => {
+      const blob = (m.home + ' ' + m.away).toLowerCase();
+      return fromUrl.some(n => blob.includes(n));
+    });
+    if (hit.length) return hit;
+  }
+  return matches.filter(m => {
+    const blob = (m.home + ' ' + m.away + ' ' + m.team + ' ' + m.league).toLowerCase();
+    if (blob.includes(s) || s.includes(m.home.toLowerCase()) || s.includes(m.away.toLowerCase())) return true;
+    return s.split(/[\s,?]+/).filter(w => w.length > 3).some(w => blob.includes(w));
+  });
+}
+
+function analisarMercados(m, q, ctx) {
+  let ans = '';
+  const overM = q.match(/(?:over|mais de|acima de)\s*([0-9]+(?:[.,][0-9]+)?)/i) || q.match(/([0-9]+(?:[.,][0-9]+)?)\s*golos/i);
+  const overAsk = /over|mais de|golos|gols|\+3|\+4|mais golos/.test(q);
+  const bttsAsk = /ambas|btts|as duas marcam|ambos marcam/.test(q);
+  const scorerAsk = /marcador|quem marca|goleador|scorer|pavlidis|jogador/.test(q);
+  const casaAsk = /casa vence|home|ganha|1x2|vit[oó]ria/.test(q);
+  const underAsk = /under|menos de/.test(q);
+  const placarAsk = /placar|resultado|quanto|score|previs[aã]o/.test(q);
+  const confAsk = /confian[cç]a|seguro|risco|vale a pena|aposto/.test(q);
+  const pred = preverPlacar(m);
+  const totalPrev = pred.hg + pred.ag;
+  const hKb = getTeamKB(m.home);
+  const aKb = getTeamKB(m.away);
+
+  // sempre que perguntam mercados, âncora no placar heurístico
+  if (overAsk || bttsAsk || casaAsk || placarAsk || confAsk || scorerAsk) {
+    ans += `<br>📐 <strong>Cenário base Mister Zé:</strong> ${m.home} <strong>${pred.label}</strong> ${m.away}`;
+    ans += ` <span style="color:#94a3b8">(diff rating ~${pred.diff || '?'})</span>`;
+  }
+
+  if (overAsk) {
+    let line = overM ? parseFloat(String(overM[1]).replace(',', '.')) : 2.5;
+    if (/mais de 4|\+4|over 4/.test(q)) line = 4.5;
+    else if (/mais de 3\.5|over 3\.5/.test(q)) line = 3.5;
+    else if (/mais de 3|\+3|over 3(?!\.)/.test(q)) line = 3.5;
+    else if (/mais de 2\.5|over 2\.5|\+2\.5/.test(q)) line = 2.5;
+    else if (/mais de 2|\+2|over 2/.test(q)) line = 2.5;
+
+    ans += `<br>🎯 <strong>Over ${line}:</strong> `;
+    if (totalPrev > line) ans += `cenário base (${pred.label}) <strong>já passa</strong> esta linha → leitura a favor.`;
+    else if (totalPrev === Math.floor(line) || totalPrev === line - 0.5) ans += `cenário base (${pred.label}) fica <strong>no limite</strong> — só com ritmo alto / descontrolo.`;
+    else ans += `cenário base (${pred.label}) <strong>fica abaixo</strong> → Over ${line} é agressivo.`;
+
+    if (line >= 4) {
+      ans += m.risk
+        ? ' Goleada no dossiê ajuda, mas 3-0/4-0 sem golo visitante pode falhar Over 4.5.'
+        : ' Preferia Over 2.5 antes de linhas altas.';
+    } else if (line <= 2.5 && (m.risk || (m.fav && m.type === 'best'))) {
+      ans += ' Over 2.5 é o secundário mais coerente atrás de casa vence.';
+    }
+  }
+
+  if (bttsAsk) {
+    ans += `<br>🔄 <strong>BTTS:</strong> `;
+    if (pred.ag === 0) ans += `cenário base ${pred.label} <strong>sem golo visitante</strong> → BTTS não é prioritário. Casa vence limpo faz mais sentido.`;
+    else ans += `cenário ${pred.label} inclui golo fora → BTTS <strong>possível</strong>, mas casa vence continua #1.`;
+    if (aKb && aKb.rating && aKb.rating < 55) ans += ' Rating baixo do visitante reforça “não marcar”.';
+  }
+
+  if (scorerAsk) {
+    ans += `<br>👟 <strong>Marcador:</strong> `;
+    if (hKb && hKb.marcadores && hKb.marcadores[0] && !hKb.marcadores[0].includes('—') && !hKb.marcadores[0].includes('referência')) {
+      ans += `lado casa: <strong>${hKb.marcadores[0]}</strong> é o nome mais coerente na cabeça do Mister Zé.`;
+    } else if (m.type === 'best') {
+      ans += 'sem nome fechado — avançado titular da casa é o lado estatístico.';
+    } else {
+      ans += 'sem dados de goleadores fiáveis neste confronto.';
+    }
+  }
+
+  if (casaAsk) {
+    ans += `<br>🏠 <strong>Casa vence:</strong> `;
+    if (m.type === 'best' || pred.hg > pred.ag) ans += `<strong>sim, lado principal</strong> (${m.prob}). Cenário ${pred.label}.`;
+    else ans += 'não é o lado óbvio nesta leitura.';
+  }
+
+  if (underAsk) {
+    ans += `<br>📉 <strong>Under:</strong> `;
+    if (totalPrev <= 2) ans += `cenário ${pred.label} alinha com under moderado.`;
+    else ans += 'não é o cenário base para favoritos em casa no dossiê (salvo rotação pesada).';
+  }
+
+  if (placarAsk && !overAsk) {
+    ans += `<br>📊 Placar mais lógico: <strong>${pred.label}</strong>. Alternativas: ${pred.hg + 1}-${pred.ag} (se pressionar cedo) ou ${Math.max(1, pred.hg - 1)}-${pred.ag} (se gerir).`;
+  }
+
+  if (confAsk) {
+    const conf = m.fav && m.type === 'best' ? 'alta' : m.risk ? 'média-alta no lado da goleada' : 'média';
+    ans += `<br>🎚️ <strong>Confiança:</strong> ${conf} no pick principal (💡 ${deriveBet(m)}). Não é certeza — é o lado mais coerente com o dossiê.`;
+  }
+
+  if (ctx && ctx.length > 15) {
+    const low = ctx.toLowerCase();
+    const flags = [];
+    if (/les[aã]o|ausente|desfalque|dúvida|duvida/.test(low)) flags.push('desfalques');
+    if (/rotação|poupar|europa|champions|liga europa|conference/.test(low)) flags.push('rotação/Europa');
+    if (/chuva|vento/.test(low)) flags.push('meteo');
+    if (flags.length) {
+      ans += `<br><br>📎 Do que colaste: ${flags.join(' · ')}.`;
+      if (/rotação|poupar|europa/.test(low)) ans += ' Rotação → casa vence mantém-se; over alto e “show” perdem força.';
+    } else if (/flashscore/.test(low)) {
+      ans += `<br><br>📎 Flashscore: associei equipas do URL (não abro a página).`;
+    }
+  }
+
+  return ans;
+}
+
+function assistenteResposta(msg) {
+  const raw = msg.trim();
+  const q = raw.toLowerCase();
+  let ctx = (document.getElementById('pasteCtx').value || '').trim();
+  const track = loadTrack();
+
+  // se a mensagem for um URL, trata como contexto
+  if (/^https?:\/\//i.test(raw) || /flashscore/i.test(raw)) {
+    ctx = raw + '\n' + ctx;
+    document.getElementById('pasteCtx').value = ctx;
+  }
+
+  // cumprimentos
+  if (/^(oi|ol[aá]|hey|hello|boas|bom dia|boa tarde|boa noite)\s*[!.]*$/i.test(q)) {
+    return 'Olá! 👋 Sou o <strong>Mister Zé</strong>. Jogo do dossiê, mercados, ou pergunta de futebol geral — manda vir.';
+  }
+
+  // ajuda
+  if (/^(ajuda|help|o que sabes|comandos)\s*[?!.]*$/i.test(q)) {
+    return 'Comandos úteis:<br>• <em>jogo do dia</em> · nome do jogo (<em>Benfica Alverca</em>)<br>• mercados: <em>over 2.5</em> · <em>ambas</em> · <em>quem marca</em> · <em>placar</em> · <em>é seguro?</em><br>• <em>acerto …</em> / <em>falha …</em> · <em>placar acertos</em><br>• futebol geral: o que é xG, BTTS, AH, bankroll, offside…<br>• cola link Flashscore ou texto de antevisão em cima';
+  }
+
+  // glossário / futebol geral
+  const gloss = {
+    'xg': '<strong>xG</strong> (expected goals): qualidade das ocasiões. 1.0 xG ≈ 1 golo “merecido” em média. Útil para ver se o resultado foi justo.',
+    'btts': '<strong>BTTS</strong> = Both Teams To Score (ambas marcam). Sim = as duas equipas marcam ≥1 golo.',
+    'ah': '<strong>Asian Handicap (AH)</strong>: linha de vantagem/desvantagem. Ex. Casa -1.5 precisa de ganhar por 2+ para a aposta passar.',
+    'over': '<strong>Over/Under</strong>: total de golos. Over 2.5 = 3 ou mais golos no jogo.',
+    'bankroll': '<strong>Bankroll</strong>: dinheiro total para apostas. Regra de ouro: unidades pequenas (1–2%) e disciplina.',
+    'value': '<strong>Value bet</strong>: quando a tua probabilidade estimada é maior que a implícita nas odds.',
+    'offside': '<strong>Fora de jogo</strong>: atacante mais perto da baliza adversária que o penúltimo defensor no momento do passe, estando envolvido na jogada.',
+    'var': '<strong>VAR</strong>: vídeo-árbitro para erros claros em golo, penálti, vermelho direto e identidade errada.',
+    'pressing': '<strong>Pressing / pressão alta</strong>: recuperar a bola perto da área adversária. Em relvado molhado costuma render 2.ª bolas.',
+    'rotação': '<strong>Rotação</strong>: poupar titulares (Europa, congestionamento). Pode baixar a intensidade e os overs altos.',
+    '1x2': '<strong>1X2</strong>: 1=casa, X=empate, 2=fora.',
+    'draw no bet': '<strong>Draw No Bet (DNB)</strong>: empate = reembolso. Mais seguro que 1X2 puro.',
+    'double chance': '<strong>Dupla hipótese</strong>: 1X, X2 ou 12 — cobre dois dos três resultados.',
+    'corners': '<strong>Cantos</strong>: mercado de cantos. Equipas de pressão alta e cruzamentos geram mais.',
+    'cartoes': '<strong>Cartões</strong>: árbitros “cartoneiros” e jogos quentes sobem o over de cartões.',
+    'forma': '<strong>Forma</strong>: últimos resultados. O dossiê mistura forma com perfil casa/fora (ex. 0% fora).'
+  };
+  for (const [k, v] of Object.entries(gloss)) {
+    if (q.includes(k) || (k === 'cartoes' && /cart[oõ]es/.test(q)) || (k === 'xg' && /expected goals/.test(q))) {
+      return v + '<br><br>Se for sobre um jogo do dossiê, diz o confronto que eu cruzo com a análise.';
+    }
+  }
+  if (/o que [eé] |explica |significa /.test(q) && /futebol|aposta|mercado|odd/.test(q)) {
+    return 'Pergunta concreta (ex. <em>o que é xG?</em> · <em>o que é AH -1.5?</em> · <em>o que é BTTS?</em>) e eu explico em linguagem de bancada.';
+  }
+  if (/melhor aposta|como apostar|dica de gest|gest[aã]o de banca/.test(q)) {
+    return 'Regra Mister Zé: (1) só jogos do dossiê com leitura clara, (2) unidade pequena, (3) pick principal > combo louco, (4) regista acerto/falha para calibrar. O botão do dia + favoráveis existem para filtrar ruído.';
+  }
+  if (/mourinho|special one|4-4-2|t[aá]tica|4-3-3|low block|contra-?ataque/.test(q)) {
+    return 'Em modo tático geral: low block = bloco baixo a defender a área; contra-ataque = transição rápida. 4-3-3 favorece amplitude; 4-4-2 clássico equilibra faixas. No dossiê, casas “rolo compressor” vivem de pressão e território — visitantes a 0% fora rebentam nesse cenário.';
+  }
+
+  // placar
+  if (/placar|acertos|score|performance/.test(q) && !/golos|over|marca/.test(q)) {
+    const total = track.hits + track.miss;
+    const pct = total ? Math.round(100 * track.hits / total) : 0;
+    return `📊 Placar (neste telemóvel): <strong>${track.hits} acertos</strong> · <strong>${track.miss} falhas</strong> · ${pct}%` +
+      (track.log[0] ? `<br>Último: ${track.log[0].hit ? '✅' : '❌'} ${track.log[0].key}` : '');
+  }
+
+  // acerto/falha
+  const hitM = q.match(/^(acerto|acertou|hit)\s+(.+)/i);
+  const missM = q.match(/^(falha|falhou|miss|erro)\s+(.+)/i);
+  if (hitM || missM) {
+    const key = (hitM || missM)[2].trim();
+    const hit = !!hitM;
+    registarResultado(key, hit, hit ? 'user' : 'falha');
+    return (hit ? '✅' : '❌') + ` Registado: <strong>${key}</strong>. Placar: ${loadTrack().hits}A / ${loadTrack().miss}F.` +
+      (!hit ? ' Fico mais conservador da próxima vez.' : '');
+  }
+
+  // jogo do dia
+  if (/^(jogo do dia|hoje|sugest[aã]o)(\s|$)/i.test(q) || q === 'hoje o que') {
+    const withDates = matches.filter(m => !m.past).map(m => {
+      const d = parseDayLabel(m.date);
+      return d ? { ...m, _days: daysFromToday(d) } : null;
+    }).filter(Boolean);
+    let list = withDates.filter(m => m._days === 0);
+    if (!list.length) list = withDates.filter(m => m._days >= 0 && m._days <= 3).sort((a,b) => a._days - b._days);
+    if (!list.length) return 'Sem jogos no radar imediato do dossiê. Usa o Botão do Dia.';
+    const ranked = list.sort((a,b) => scoreMatch(b) - scoreMatch(a));
+    zeLastMatch = ranked[0];
+    return ranked.slice(0, 5).map((m,i) => {
+      if (i === 0) zeLastMatch = m;
+      return `• <strong>${m.home} vs ${m.away}</strong> (${m.date}) — ${m.prob}<br>&nbsp;&nbsp;💡 ${deriveBet(m)}<br>&nbsp;&nbsp;${m.analysis.slice(0, 140)}…`;
+    }).join('<br><br>') + '<br><br><em>Podes continuar: “mais de 4 golos?”, “ambas marcam?”, “quem marca?”</em>';
+  }
+
+  // encontrar jogo: query OU memória OU URL no ctx
+  let found = findMatchesByQuery(q);
+  if (!found.length && ctx) found = findMatchesByQuery(ctx);
+  if (!found.length && zeLastMatch && /over|golos|ambas|btts|marca|casa|ganha|under|aposta|prob|e se|mais de|\?/.test(q)) {
+    found = [zeLastMatch];
+  }
+
+  // pergunta só sobre equipa (sem jogo)
+  if (!found.length) {
+    const teamOnly = Object.keys(TEAM_KB).find(t => q.includes(t.toLowerCase()));
+    if (teamOnly) {
+      return `📚 Cabeça do Mister Zé sobre <strong>${teamOnly}</strong>:` + kbBlurb(teamOnly) +
+        '<br><br>Para mercados (over, BTTS, casa), indica o jogo: ex. <em>' + teamOnly + ' vs …</em> ou <em>jogo do dia</em>.';
+    }
+  }
+
+  if (found.length) {
+    const m = found.sort((a,b) => scoreMatch(b) - scoreMatch(a))[0];
+    zeLastMatch = m;
+    const pred = preverPlacar(m);
+    let ans = `<strong>${m.home} vs ${m.away}</strong> · ${m.date} · ${m.league}<br>`;
+    ans += `Prob: <strong>${m.prob}</strong> · ${m.stats}<br>`;
+    ans += `💡 <strong>${deriveBet(m)}</strong> · Cenário: <strong>${pred.label}</strong><br>`;
+    const isFollow = q.length < 45 && /over|golos|ambas|btts|marca|casa|ganha|under|placar|seguro|confian|\?/.test(q);
+    if (!isFollow) {
+      ans += `${m.analysis}`;
+      if (m.fatores) ans += `<br>📋 ${m.fatores}`;
+      ans += kbBlurb(m.home) + kbBlurb(m.away);
+    }
+    ans += analisarMercados(m, q, ctx);
+    if (/espn\.com/i.test(ctx + q)) {
+      ans += `<br><br>📎 ESPN: só tem gameId — não abro a página. Usa Flashscore ou escreve o jogo.`;
+    }
+    if (track.miss > track.hits && track.miss >= 2) {
+      ans += `<br><br>⚠️ Calibração: mais falhas (${track.miss}) que acertos — tom mais conservador.`;
+    }
+    return ans;
+  }
+
+  if (/espn\.com/i.test(q + ctx)) {
+    return 'Esse link da ESPN não traz nomes no URL (só um número de jogo) e o browser não me deixa abrir a página. Cola o link do <strong>Flashscore</strong> do mesmo jogo ou escreve <em>Benfica Alverca</em>.';
+  }
+
+  // fallback inteligente — tenta responder a futebol geral
+  if (/futebol|liga|champions|jogador|treinador|est[aá]dio|campeonato|mundial|euro/.test(q)) {
+    return 'Isso é futebol geral. No modo offline sei bem o <strong>dossiê</strong> (casa/fora, favoritos, piores visitantes) e conceitos (xG, BTTS, AH, bankroll…).<br>Para análise de um jogo concreto: nomeia o confronto que esteja no dossiê, ou cola antevisão. Ex. <em>Benfica Alverca</em> · <em>o que é xG?</em> · <em>jogo do dia</em>.';
+  }
+
+  return 'Não apanhei essa, chef. Experimenta:<br>• jogo do dossiê: <em>Benfica Alverca</em><br>• <em>jogo do dia</em> · <em>ajuda</em><br>• conceito: <em>o que é BTTS?</em> · <em>o que é xG?</em><br>• mercados em follow-up: <em>mais de 4?</em> · <em>ambas?</em>';
+}
+
+function enviarChat() {
+  const input = document.getElementById('chatInput');
+  const msg = (input.value || '').trim();
+  if (!msg) return;
+  addChat('user', msg);
+  input.value = '';
+  addChat('bot', assistenteResposta(msg));
+  updateZeContext();
+}
+
+document.getElementById('chatInput')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); enviarChat(); }
+});
+
+function verificarAtualizacoes() {
+  const box = document.getElementById('dayResult');
+  const now = new Date();
+  const withDates = matches.filter(m => !m.past).map(m => {
+    const d = parseDayLabel(m.date);
+    return d ? { ...m, _days: daysFromToday(d) } : null;
+  }).filter(Boolean);
+  let list = withDates.filter(m => m._days >= 0 && m._days <= 10).sort((a,b) => a._days - b._days || scoreMatch(b) - scoreMatch(a));
+  if (!list.length) list = withDates.filter(m => m._days > 0).sort((a,b) => a._days - b._days).slice(0, 8);
+
+  let rows = list.map(m => {
+    const q = encodeURIComponent(m.home + ' vs ' + m.away);
+    const qRef = encodeURIComponent(m.home + ' ' + m.away + ' árbitro nomeado');
+    const bet = deriveBet(m);
+    return `
+      <div style="background:var(--bg);border-radius:10px;padding:12px;margin-bottom:10px;border:1px solid var(--border);">
+        <div style="font-weight:800;margin-bottom:4px;">${m.home} vs ${m.away}</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-bottom:8px;">${m.league} · ${m.date} · ${m.prob}</div>
+        <div style="font-size:0.88rem;color:#86efac;margin-bottom:8px;"><strong>💡 Aposta lógica:</strong> ${bet}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <a target="_blank" rel="noopener" href="https://www.google.com/search?q=${qRef}" style="font-size:0.75rem;padding:6px 9px;background:#334155;border-radius:6px;color:#e2e8f0;text-decoration:none;">🔎 Árbitro</a>
+          <a target="_blank" rel="noopener" href="https://www.google.com/search?q=${q}+preview+OR+antevisão+OR+forma" style="font-size:0.75rem;padding:6px 9px;background:#334155;border-radius:6px;color:#e2e8f0;text-decoration:none;">📊 Forma / preview</a>
+          <a target="_blank" rel="noopener" href="https://www.flashscore.pt/" style="font-size:0.75rem;padding:6px 9px;background:#334155;border-radius:6px;color:#e2e8f0;text-decoration:none;">⚡ Flashscore</a>
+          <a target="_blank" rel="noopener" href="https://www.google.com/search?q=meteorologia+${encodeURIComponent(m.home)}+futebol" style="font-size:0.75rem;padding:6px 9px;background:#334155;border-radius:6px;color:#e2e8f0;text-decoration:none;">🌤 Meteo</a>
+        </div>
+      </div>`;
+  }).join('');
+
+  box.innerHTML = `
+    <h3>🔄 Verificar atualizações</h3>
+    <div class="day-meta">
+      ${now.toLocaleDateString('pt-PT', {weekday:'long', day:'numeric', month:'long'})} · 
+      HTML estático <strong>não pesquisa sozinho</strong> a web (bloqueio CORS). 
+      Em vez disso: links diretos grátis + aposta lógica do dossiê.
+    </div>
+    <div style="background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);border-radius:10px;padding:12px;margin-bottom:14px;font-size:0.88rem;line-height:1.5;">
+      <strong>Checklist rápida (30–60 seg por jogo):</strong><br>
+      1. Árbitro nomeado? → muda cartões / penáltis<br>
+      2. Lesões de última hora? → ajusta confiança<br>
+      3. Meteo (chuva/vento)? → favorece 2.ª bola / under ou over<br>
+      4. Confirma se a <em>aposta lógica</em> do dossiê ainda faz sentido
+    </div>
+    ${rows || '<div class="day-funny"><span>🛰️</span>Sem jogos próximos no radar do dossiê.</div>'}
+    <div style="margin-top:12px;">
+      <button class="copy-btn" style="background:linear-gradient(135deg,#0f766e,#0369a1);" onclick="copyDay(this)">📋 Copiar checklist</button>
+    </div>
+  `;
+  box.classList.add('show');
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/* ========== FM27 navigation ========== */
+function fmGo(view) {
+  document.querySelectorAll('.fm-nav-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-view') === view);
+  });
+  document.querySelectorAll('.fm-view').forEach(v => v.classList.remove('active'));
+  const map = {
+    portal: 'view-portal',
+    dia: 'view-dia',
+    jogos: 'view-jogos',
+    banca: 'view-banca',
+    ze: 'view-ze',
+    scout: 'view-scout'
+  };
+  const id = map[view] || 'view-portal';
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+
+  // show/hide legacy blocks
+  const cal = document.querySelector('.calendar-section');
+  const togg = document.querySelector('.toggle-bar');
+  const best = document.getElementById('section-best');
+  const worst = document.getElementById('section-worst');
+  const ctrl = document.querySelector('.controls');
+  const banca = document.getElementById('bancaBox');
+  const ze = document.getElementById('assistenteBox');
+
+  if (cal) cal.style.display = (view === 'jogos') ? 'block' : 'none';
+  if (togg) togg.style.display = (view === 'scout') ? 'flex' : 'none';
+  if (ctrl) ctrl.style.display = (view === 'scout') ? 'block' : 'none';
+  if (best) best.style.display = (view === 'scout') ? '' : 'none';
+  if (worst) {
+    if (view !== 'scout') worst.style.display = 'none';
+  }
+  if (banca) {
+    banca.style.display = (view === 'banca') ? 'block' : 'none';
+    if (view === 'banca') renderBanca();
+  }
+  if (ze) {
+    if (view === 'ze') {
+      ze.style.display = 'block';
+      const log = document.getElementById('chatLog');
+      if (log && !log.innerHTML.trim()) {
+        addChat('bot', 'Olá, sou o <strong>Mister Zé</strong> 🤖<br>Dossiê + duelo + banca. Diz o jogo, <em>jogo do dia</em>, ou usa os chips.');
+      }
+      updateZeContext();
+    } else {
+      ze.style.display = 'none';
+    }
+  }
+  // sync bank strip
+  try {
+    const b = loadBank();
+    const y = document.getElementById('fmBankYou');
+    const z = document.getElementById('fmBankZe');
+    const r = document.getElementById('fmBankRoi');
+    const t = document.getElementById('tileBank');
+    if (y) y.textContent = b.you.toFixed(2) + ' €';
+    if (z) z.textContent = b.ze.toFixed(2) + ' €';
+    if (r) r.textContent = 'ROI ' + (((b.you - b.start) / b.start) * 100).toFixed(1) + '%';
+    if (t) t.textContent = b.you.toFixed(0) + ' €';
+  } catch (e) {}
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// default: hide scout/calendar until chosen
+document.addEventListener('DOMContentLoaded', () => {
+  fmGo('portal');
+});
+
+/* ========== DUELO ZÉ vs HUMANO ========== */
+let dueloAtual = null;
+
+function confiancaMatch(m) {
+  // 1–5: usado para % da banca
+  let c = 2;
+  if (m.fav && m.type === 'best') c = 3;
+  if (m.risk && m.type === 'best') c = 4;
+  if (m.fav && m.risk) c = 5;
+  if (m.type === 'worst' && m.risk) c = 4; // lado casa implícito
+  const num = parseInt(String(m.prob || '').replace(/[~%\s]/g, '').split('-')[0], 10);
+  if (!isNaN(num)) {
+    if (num >= 75) c = Math.max(c, 4);
+    if (num >= 85) c = 5;
+    if (num < 55) c = Math.min(c, 2);
+  }
+  return Math.max(1, Math.min(5, c));
+}
+
+function stakePctFromConf(conf) {
+  // regras de sucesso: unidades pequenas, sobe com confiança
+  // 1→1%, 2→1.5%, 3→2%, 4→3%, 5→4% (máx 4% da banca)
+  return ({ 1: 0.01, 2: 0.015, 3: 0.02, 4: 0.03, 5: 0.04 })[conf] || 0.02;
+}
+
+function pickDueloMatch() {
+  try {
+    const withDates = matches.filter(m => !m.past).map(m => {
+      const d = parseDayLabel(m.date);
+      return d ? { ...m, _days: daysFromToday(d) } : { ...m, _days: 999 };
+    });
+    let list = withDates.filter(m => m._days === 0);
+    if (!list.length) list = withDates.filter(m => m._days >= 0 && m._days <= 7);
+    if (!list.length) list = withDates.filter(m => m._days >= 0 && m._days <= 21);
+    if (!list.length) list = withDates.filter(m => m.phase === 'imediato');
+    if (!list.length) return matches.find(m => !m.past) || null;
+    return [...list].sort((a, b) => (a._days - b._days) || (scoreMatch(b) - scoreMatch(a)))[0];
+  } catch (e) {
+    console.error(e);
+    return matches.find(m => !m.past) || null;
+  }
+}
+
+function prepararDuelo() {
+  try {
+  // garantir que estamos no Match Day
+  const dia = document.getElementById('view-dia');
+  if (dia && !dia.classList.contains('active')) {
+    if (typeof fmGo === 'function') fmGo('dia');
+  }
+  const box = document.getElementById('dueloBox');
+  if (!box) { alert('Erro: caixa de duelo não encontrada.'); return; }
+  const m = pickDueloMatch();
+  if (!m) {
+    box.style.display = 'block';
+    box.innerHTML = '<div style="color:var(--muted);">Sem jogos no dossiê para duelo. Verifica o calendário.</div>';
+    return;
+  }
+  const conf = confiancaMatch(m);
+  const pick = deriveBet(m);
+  const bank = loadBank();
+  const pct = stakePctFromConf(conf);
+  const stakeSug = Math.max(0.5, Math.round(bank.ze * pct * 100) / 100);
+  const pred = preverPlacar(m);
+  dueloAtual = { m, conf, pick, stakeSug, pct };
+
+  box.style.display = 'block';
+  box.innerHTML = `
+    <div style="font-size:0.72rem;text-transform:uppercase;color:var(--purple);font-weight:700;margin-bottom:6px;">⚔️ Duelo do dia</div>
+    <div style="font-size:1.05rem;font-weight:800;margin-bottom:4px;">${m.home} vs ${m.away}</div>
+    <div style="font-size:0.82rem;color:var(--muted);margin-bottom:10px;">${m.league} · ${m.date} · cenário ${pred.label}</div>
+    <div style="background:var(--bg);border-radius:10px;padding:12px;margin-bottom:12px;border-left:3px solid var(--purple);">
+      <div style="font-size:0.75rem;color:var(--muted);">Pick do Mister Zé</div>
+      <div style="font-weight:800;font-size:1.02rem;">${pick}</div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-top:4px;">Confiança <strong style="color:#c4b5fd;">${conf}/5</strong> · regra de stake <strong>${(pct*100).toFixed(1)}%</strong> da banca Zé</div>
+      <div style="font-size:0.85rem;margin-top:6px;">Stake calculada: <strong style="color:#a78bfa;">${stakeSug.toFixed(2)} €</strong> (banca Zé ${bank.ze.toFixed(2)} €)</div>
+    </div>
+    <div style="font-size:0.85rem;margin-bottom:8px;line-height:1.45;">
+      <strong>Tu só metes a odd real</strong> da casa de apostas para este pick (ou o mais próximo). O Zé trava a stake sozinho. Depois podes registar a tua aposta à parte para competir.
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin-bottom:10px;">
+      <label style="font-size:0.78rem;color:var(--muted);">Odd real (Zé)<br>
+        <input id="dueloOddZe" type="number" step="0.01" min="1.01" placeholder="ex. 1.45" style="width:100px;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);">
+      </label>
+      <button onclick="confirmarDueloZe()" style="padding:10px 14px;border:none;border-radius:8px;background:linear-gradient(135deg,#5b21b6,#7c3aed);color:#fff;font-weight:700;cursor:pointer;">Confirmar aposta Zé</button>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:6px;">A tua aposta rival (opcional — podes divergir do Zé)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <input id="dueloPickYou" placeholder="O teu pick" style="flex:1;min-width:120px;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.85rem;">
+        <input id="dueloOddYou" type="number" step="0.01" placeholder="Odd" style="width:80px;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);">
+        <input id="dueloStakeYou" type="number" step="0.1" placeholder="€" style="width:70px;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);">
+        <button onclick="confirmarDueloHumano()" style="padding:8px 12px;border:none;border-radius:8px;background:#334155;color:#fff;cursor:pointer;font-size:0.85rem;">Registar-me</button>
+      </div>
+    </div>
+    <div id="dueloMsg" style="margin-top:10px;font-size:0.85rem;color:#c4b5fd;"></div>
+  `;
+  // preencher pick humano sugerido
+  const py = document.getElementById('dueloPickYou');
+  if (py) py.value = pick;
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch (err) {
+    console.error(err);
+    alert('Erro no duelo: ' + (err && err.message ? err.message : err));
+  }
+}
+
+function confirmarDueloZe() {
+  if (!dueloAtual) return prepararDuelo();
+  const odd = Number(document.getElementById('dueloOddZe').value);
+  if (!(odd > 1)) {
+    alert('Mete a odd real da casa de apostas (ex. 1.45).');
+    return;
+  }
+  const bank = loadBank();
+  const conf = dueloAtual.conf;
+  const pct = stakePctFromConf(conf);
+  let stake = Math.max(0.5, Math.round(bank.ze * pct * 100) / 100);
+  if (stake > bank.ze) stake = Math.round(bank.ze * 100) / 100;
+  if (stake < 0.1) {
+    alert('Banca do Zé sem saldo. Reset ou espera wins.');
+    return;
+  }
+  // value check leve: se odd muito baixa vs confiança, Zé reduz stake
+  if (odd < 1.20 && conf <= 3) stake = Math.max(0.5, Math.round(stake * 0.5 * 100) / 100);
+  if (odd >= 2.2 && conf >= 4) stake = Math.min(bank.ze, Math.round(stake * 1.15 * 100) / 100);
+
+  const bet = {
+    match: dueloAtual.m.home + ' vs ' + dueloAtual.m.away,
+    pick: dueloAtual.pick,
+    odd,
+    stake,
+    source: 'duelo-ze',
+    conf,
+    zeCompare: `Duelo · confiança ${conf}/5 · ${(pct*100).toFixed(1)}% banca`
+  };
+  if (!addBet(bet, 'ze')) return;
+  document.getElementById('dueloMsg').innerHTML =
+    `🤖 Mister Zé fechou: <strong>${bet.pick}</strong> @ ${odd} · <strong>${stake.toFixed(2)} €</strong><br>` +
+    `Banca Zé agora: ${loadBank().ze.toFixed(2)} €. Marca Win/Loss em Finanças quando acabar o jogo.<br>` +
+    `<em>“Mete a odd, eu meto a cabeça. Vamos a isto.”</em>`;
+  renderBanca();
+}
+
+function confirmarDueloHumano() {
+  const match = dueloAtual ? (dueloAtual.m.home + ' vs ' + dueloAtual.m.away) : 'Duelo';
+  const pick = document.getElementById('dueloPickYou').value.trim();
+  const odd = Number(document.getElementById('dueloOddYou').value);
+  const stake = Number(document.getElementById('dueloStakeYou').value);
+  if (!pick || !(odd > 1) || !(stake > 0)) {
+    alert('Preenche o teu pick, odd e valor.');
+    return;
+  }
+  let cmp = 'Aposta humana no duelo.';
+  if (dueloAtual && pick !== dueloAtual.pick) {
+    cmp = `Divergiste do Zé (ele: ${dueloAtual.pick}). Se falhares, prepara o roast.`;
+  } else if (dueloAtual) {
+    cmp = 'Mesmo pick que o Zé — duelam só na odd/stake.';
+  }
+  if (!addBet({ match, pick, odd, stake, source: 'duelo-humano', zeCompare: cmp }, 'you')) return;
+  document.getElementById('dueloMsg').innerHTML =
+    (document.getElementById('dueloMsg').innerHTML || '') +
+    `<br><br>👤 Registado: <strong>${pick}</strong> @ ${odd} · ${stake.toFixed(2)} € · Banca ${loadBank().you.toFixed(2)} €`;
+  renderBanca();
+}
+
+function loadBank() {
+  try {
+    const b = JSON.parse(localStorage.getItem(BANK_KEY) || 'null');
+    if (b && typeof b.you === 'number') return b;
+  } catch (e) {}
+  return { you: BANK_START, ze: BANK_START, bets: [], zeBets: [], start: BANK_START };
+}
+function saveBank(b) { localStorage.setItem(BANK_KEY, JSON.stringify(b)); }
+
+function toggleBanca() {
+  const el = document.getElementById('bancaBox');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if (el.style.display === 'block') renderBanca();
+}
+
+function resetBanca() {
+  saveBank({ you: BANK_START, ze: BANK_START, bets: [], zeBets: [], start: BANK_START });
+  renderBanca();
+}
+
+function addBet(bet, who) {
+  const b = loadBank();
+  const stake = Number(bet.stake);
+  if (!(stake > 0)) { alert('Indica o valor da aposta (€).'); return null; }
+  if (who === 'you' && stake > b.you + 1e-9) {
+    if (!confirm('Stake maior que a banca. Continuar na mesma?')) return null;
+  }
+  bet.id = Date.now() + Math.random().toString(36).slice(2, 6);
+  bet.status = 'open';
+  bet.who = who;
+  bet.at = new Date().toISOString();
+  if (who === 'you') {
+    b.you = Math.round((b.you - stake) * 100) / 100;
+    b.bets.unshift(bet);
+  } else {
+    b.ze = Math.round((b.ze - stake) * 100) / 100;
+    b.zeBets.unshift(bet);
+  }
+  saveBank(b);
+  return b;
+}
+
+function settleBet(id, result, who) {
+  // result: 'win' | 'loss' | 'void'
+  const b = loadBank();
+  const list = who === 'ze' ? b.zeBets : b.bets;
+  const bet = list.find(x => x.id === id);
+  if (!bet || bet.status !== 'open') return;
+  bet.status = result;
+  if (result === 'win') {
+    const ret = Math.round(bet.stake * bet.odd * 100) / 100;
+    if (who === 'ze') b.ze = Math.round((b.ze + ret) * 100) / 100;
+    else b.you = Math.round((b.you + ret) * 100) / 100;
+  } else if (result === 'void') {
+    if (who === 'ze') b.ze = Math.round((b.ze + bet.stake) * 100) / 100;
+    else b.you = Math.round((b.you + bet.stake) * 100) / 100;
+  }
+  // loss: stake already deducted
+  saveBank(b);
+  renderBanca();
+}
+
+function zeSuggestedPick(matchLabel) {
+  // alinhado com dossiê Benfica: casa vence prioritário, over 2.5 secundário — não o combo
+  if (/benfica/i.test(matchLabel)) {
+    return { pick: 'Casa vence (Benfica)', odd: 1.25, note: 'Pick conservador do dossiê — sem combo over' };
+  }
+  return { pick: 'Casa vence', odd: 1.40, note: 'Default dossiê' };
+}
+
+function registarBoletimPrint() {
+  const stake = Number(document.getElementById('betStake').value);
+  if (!(stake > 0)) {
+    alert('O boletim no print tinha 0 €.\nIndica o valor que queres arriscar (ex. 2).');
+    document.getElementById('betStake').focus();
+    return;
+  }
+  const bet = {
+    match: 'Benfica vs Alverca',
+    pick: 'SL Benfica e Mais 2.5',
+    odd: 1.45,
+    stake,
+    source: 'print-betclic',
+    zeCompare: 'Mister Zé preferia só Casa vence (sem obrigar over 2.5) — combo aumenta variância.'
+  };
+  if (!addBet(bet, 'you')) return;
+  // Zé shadow bet: unidade similar, pick mais seguro
+  const zs = Math.min(stake, loadBank().ze);
+  if (zs > 0) {
+    addBet({
+      match: 'Benfica vs Alverca',
+      pick: 'Casa vence (Benfica)',
+      odd: 1.25,
+      stake: zs,
+      source: 'ze-shadow',
+      zeCompare: 'Pick do dossiê'
+    }, 'ze');
+  }
+  document.getElementById('betStake').value = '';
+  renderBanca();
+  alert('Boletim registado.\nQuando souberes o resultado, marca W/L no histórico.\nO Mister Zé também colocou a sombra dele (casa vence).');
+}
+
+function registarApostaManual() {
+  const match = document.getElementById('betManualMatch').value.trim();
+  const pick = document.getElementById('betManualPick').value.trim();
+  const odd = Number(document.getElementById('betManualOdd').value);
+  const stake = Number(document.getElementById('betManualStake').value);
+  if (!match || !pick || !(odd > 1) || !(stake > 0)) {
+    alert('Preenche jogo, pick, odd (>1) e valor.');
+    return;
+  }
+  if (!addBet({ match, pick, odd, stake, source: 'manual' }, 'you')) return;
+  document.getElementById('betManualMatch').value = '';
+  document.getElementById('betManualPick').value = '';
+  document.getElementById('betManualOdd').value = '';
+  document.getElementById('betManualStake').value = '';
+  renderBanca();
+}
+
+function monthKey(iso) {
+  const d = new Date(iso);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+function renderBanca() {
+  const b = loadBank();
+  document.getElementById('bankYou').textContent = b.you.toFixed(2) + ' €';
+  document.getElementById('bankZe').textContent = b.ze.toFixed(2) + ' €';
+  const youClosed = b.bets.filter(x => x.status !== 'open');
+  const zeClosed = b.zeBets.filter(x => x.status !== 'open');
+  const youW = youClosed.filter(x => x.status === 'win').length;
+  const youL = youClosed.filter(x => x.status === 'loss').length;
+  const zeW = zeClosed.filter(x => x.status === 'win').length;
+  const zeL = zeClosed.filter(x => x.status === 'loss').length;
+  const youRoi = ((b.you - b.start) / b.start * 100).toFixed(1);
+  const zeRoi = ((b.ze - b.start) / b.start * 100).toFixed(1);
+  document.getElementById('bankYouMeta').textContent = `W${youW} / L${youL} · ROI ${youRoi}% · início ${b.start}€`;
+  document.getElementById('bankZeMeta').textContent = `W${zeW} / L${zeL} · ROI ${zeRoi}% · início ${b.start}€`;
+  const fy = document.getElementById('fmBankYou');
+  const fz = document.getElementById('fmBankZe');
+  const fr = document.getElementById('fmBankRoi');
+  const ft = document.getElementById('tileBank');
+  if (fy) fy.textContent = b.you.toFixed(2) + ' €';
+  if (fz) fz.textContent = b.ze.toFixed(2) + ' €';
+  if (fr) fr.textContent = 'ROI ' + youRoi + '%';
+  if (ft) ft.textContent = b.you.toFixed(0) + ' €';
+
+  // histórico user
+  const hist = document.getElementById('betHistory');
+  if (!b.bets.length) {
+    hist.innerHTML = '<div style="color:var(--muted);padding:8px;">Sem apostas ainda. Regista o boletim do print.</div>';
+  } else {
+    hist.innerHTML = b.bets.map(bet => {
+      const st = bet.status === 'open' ? '⏳ aberta' : bet.status === 'win' ? '✅ win' : bet.status === 'void' ? '↩️ void' : '❌ loss';
+      const actions = bet.status === 'open'
+        ? `<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
+            <button onclick="settleBet('${bet.id}','win','you')" style="padding:4px 8px;font-size:0.72rem;border-radius:6px;border:none;background:#166534;color:#fff;cursor:pointer;">Win</button>
+            <button onclick="settleBet('${bet.id}','loss','you')" style="padding:4px 8px;font-size:0.72rem;border-radius:6px;border:none;background:#7f1d1d;color:#fff;cursor:pointer;">Loss</button>
+            <button onclick="settleBet('${bet.id}','void','you')" style="padding:4px 8px;font-size:0.72rem;border-radius:6px;border:none;background:#334155;color:#fff;cursor:pointer;">Void</button>
+          </div>`
+        : '';
+      return `<div style="padding:10px;margin-bottom:8px;background:var(--bg);border-radius:8px;border:1px solid var(--border);">
+        <div style="font-weight:700;">${bet.match}</div>
+        <div style="color:var(--muted);font-size:0.8rem;">${bet.pick} @ ${bet.odd} · ${bet.stake}€ · ${st}</div>
+        ${bet.zeCompare ? `<div style="font-size:0.78rem;color:#c4b5fd;margin-top:4px;">🤖 ${bet.zeCompare}</div>` : ''}
+        ${actions}
+      </div>`;
+    }).join('');
+  }
+
+  // roast / feedback
+  const roast = document.getElementById('zeRoast');
+  let msg = '';
+  if (b.you > b.ze + 0.5) msg = `🤖 Mister Zé: “Ok, chef… vais à frente (${b.you.toFixed(2)}€ vs ${b.ze.toFixed(2)}€). Não te habitues. Eu jogo o dossiê, tu jogas emoção.”`;
+  else if (b.ze > b.you + 0.5) msg = `🤖 Mister Zé: “Estou à frente (${b.ze.toFixed(2)}€ vs ${b.you.toFixed(2)}€). Surreal? Não — disciplina. Combos à la Benfica+Over quando o dossiê diz só casa… clássico.”`;
+  else msg = `🤖 Mister Zé: “Empatados na banca. Aborrecido. Regista o boletim e vamos separar isto.”`;
+  if (b.bets[0] && /Mais 2\.5|e Mais/i.test(b.bets[0].pick)) {
+    msg += `<br><br>Sobre o teu <strong>Benfica e Mais 2.5 @ 1.45</strong>: o dossiê priorizava <em>casa vence</em>; o over é secundário. Se fechar 1-0 ou 2-0, o combo morre e eu fico a rir (com educação).`;
+  }
+  roast.innerHTML = msg;
+}
+
+/* ========== PWA Samsung — ecrã inicial ========== */
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const btn = document.getElementById('btnInstallApp');
+  if (btn) btn.style.display = 'inline-flex';
+});
+
+async function instalarApp() {
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    const btn = document.getElementById('btnInstallApp');
+    if (btn) btn.style.display = 'none';
+    return;
+  }
+  alert('No Samsung (Chrome):\n\n1) Abre o dossiê no Chrome\n2) Menu ⋮ → «Adicionar à página inicial» ou «Instalar aplicação»\n3) Confirma\n\nFica um ícone como uma app (ecrã cheio).');
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>

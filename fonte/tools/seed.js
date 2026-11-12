@@ -1,0 +1,25 @@
+window.__seed = function(){
+  localStorage.setItem('ze_user_v1', JSON.stringify({name:'Júlio',photo:''}));
+  const D=(d,h)=>new Date(Date.now()-d*864e5+(h||0)*3600e3).toISOString();
+  const b={you:0,ze:0,startYou:25,startZe:20,start:25,bets:[],zeBets:[],seasons:[],season:2,seasonStart:D(24),zePasses:3,zePeak:20};
+  const mk=(who,d,match,pick,odd,stake,status,extra)=>{ const x=Object.assign({id:'b'+Math.random().toString(36).slice(2,8),match,pick,odd,stake,status,who,at:D(d),settledAt:status==='open'?undefined:D(d-0.2),source:who==='ze'?'duelo-ze':'boletim'},extra||{}); (who==='ze'?b.zeBets:b.bets).unshift(x); };
+  mk('you',22,'Porto vs Arouca','Porto vence',1.30,2,'win',{zeEV:-0.02,align:'valor'});
+  mk('ze',22,'Porto vs Arouca','Mais de 1.5 golos',1.45,0.8,'win',{ev:0.05,pUsed:0.72});
+  mk('you',19,'Múltipla 5 seleções','Benfica + Lazio + Lyon + Como + HJK',6.4,2,'loss',{zeEV:-0.24,align:'rebelde',legs:[1,2,3,4,5].map(()=>({}))});
+  mk('ze',18,'Sporting vs Braga','Sporting ou empate (1X)',1.38,0.9,'win',{ev:0.04,pUsed:0.75});
+  mk('you',15,'Inter vs Roma','Ambas marcam — Sim',1.85,1.5,'loss',{zeEV:-0.07,align:'rebelde'});
+  mk('ze',14,'Inter vs Roma','Menos de 2.5 golos',2.05,0.7,'win',{ev:0.08,pUsed:0.52});
+  mk('you',12,'Bayern vs Mainz','Bayern vence',1.22,3,'win',{zeEV:0.01,align:'copiou'});
+  mk('ze',11,'Real Madrid vs Getafe','Real Madrid vence',1.28,1,'loss',{ev:0.03,pUsed:0.8});
+  mk('you',9,'Dupla 2 seleções (Zé)','Ambas marcam — Não + FC Copenhaga',2.33,1,'win',{zeEV:0.15,align:'valor',source:'proposta-ze',legs:[{},{}]});
+  mk('ze',8,'Ajax vs PSV','Empate',3.6,0.5,'void',{ev:0.06,pUsed:0.3});
+  mk('you',6,'Múltipla 7 seleções','SL Benfica + Atalanta + …',321.32,1,'loss',{zeEV:-0.26,align:'rebelde',legs:[1,2,3,4,5,6,7].map(()=>({}))});
+  mk('ze',5,'Benfica vs Alverca','Pavlidis marca',2.4,0.48,'win',{ev:0.13,pUsed:0.47,source:'chat-ze'});
+  mk('you',3,'Newcastle vs Everton','Newcastle vence',2.1,2,'loss',{zeEV:0.05,align:'valor'});
+  mk('ze',2,'Newcastle vs Everton','Newcastle vence',2.1,1,'loss',{ev:0.05,pUsed:0.5});
+  mk('you',0.5,'Atalanta vs Parma','Atalanta vence',1.53,2,'open',{zeEV:-0.04,align:'rebelde'});
+  mk('ze',0.4,'Lazio vs Cagliari','Lazio vence',1.41,0.6,'open',{ev:0.04,pUsed:0.74});
+  const cash=(L,s)=>L.reduce((v,x)=>Math.round((v-x.stake+(x.status==='win'?Math.round(x.stake*x.odd*100)/100:x.status==='void'?x.stake:0))*100)/100,s);
+  b.you=Math.round(cash(b.bets,25)*100)/100; b.ze=Math.round(cash(b.zeBets,20)*100)/100;
+  localStorage.setItem('dossie_bank_v1', JSON.stringify(b));
+};
