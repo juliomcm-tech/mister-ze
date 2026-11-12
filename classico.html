@@ -3861,7 +3861,7 @@ function legEval(leg) {
 }
 
 const ODD_RE = /(^|\s)(\d{1,3}[.,]\d{2})\s*$/;
-const MARKET_RE = /^(resultado final|total de golos|ambas (as equipas )?marcam|dupla hip[oó]tese|hip[oó]tese dupla|dupla chance|handicap|marcador|resultado ao intervalo|1x2|mais\/menos|resultado final \/ total|draw no bet|empate anula)/i;
+const MARKET_RE = /^(resultado final|total de golos|ambas (as equipas )?marcam|dupla hip[oó]tese|hip[oó]tese dupla|dupla chance|total de cantos|cantos|total de cart[oõ]es|cart[oõ]es|resultado corre[c]?to|resultado exato|intervalo\/final|vencedor do jogo|vencedor|golos da equipa|[ií]mpar\/par|handicap|marcador|resultado ao intervalo|1x2|mais\/menos|resultado final \/ total|draw no bet|empate anula)/i;
 const DATE_RE = /\d{1,2}\/\d{1,2}\/\d{2,4}.*$/;
 function cleanName(s) {
   let t = String(s || '').replace(DATE_RE, '').replace(ODD_RE, '').trim();
@@ -11494,7 +11494,7 @@ try { updateContinue(); } catch (e) {}
    - chat novo: classificação de qualquer liga, «transferências benfica», «mercado»
    - a app atualiza-se sozinha quando há versão nova
    ===================================================================== */
-const APP_VER = 'v69';
+const APP_VER = 'v70';
 
 /* ---------- 1) notícias e YouTube sem falhar ---------- */
 const FEED_LS = 'ze_feed_cache_v1';
@@ -17709,7 +17709,8 @@ stuckBox = (function (prev) {
       const sb = document.getElementById('stuckBox'); if (!sb) return r;
       // só as apostas da conta que está aberta (antes apareciam as tuas dentro da conta do Zé, e vice-versa)
       const mine = FIN.acc === 'ze' ? '🤖' : '👤'; let n = 0;
-      sb.querySelectorAll('.need').forEach(d => { const ok = FIN.acc !== 'auto' && (d.textContent || '').trim().startsWith(mine); d.hidden = !ok; if (ok) n++; });
+      // e só as que estão mesmo presas (com «Fecha à mão»); as que apenas esperam pelo jogo já estão nos cartões por baixo
+      sb.querySelectorAll('.need').forEach(d => { const ok = FIN.acc !== 'auto' && (d.textContent || '').trim().startsWith(mine) && !!d.querySelector('.acts'); d.hidden = !ok; if (ok) n++; });
       const t = sb.querySelector('b'); if (t) t.textContent = `✋ Apostas ${FIN.acc === 'ze' ? 'do Zé ' : ''}que precisam de ti (${n})`;
       sb.hidden = !n;
     } catch (e) {}
@@ -18309,6 +18310,77 @@ finHomeStrip = (function (prev) {
   };
 })(finHomeStrip);
 fmGo = (function (prev) { return function (view) { const r = prev.apply(this, arguments); try { if (view === 'banca') finNewsSeen(); } catch (e) {} return r; }; })(fmGo);
+
+/* ================= v70 · Mercados que estavam a ser corrigidos pelo resultado errado ================= */
+/* o tipo de mercado (1ª parte, cantos, golos de uma equipa, empate anula…) passa a contar na correção, não só o texto da seleção */
+function zeLegFull(l) {
+  try {
+    if (!l || !l.market || l._full) return l;
+    const mk = normTxt(l.market), sel = String(l.sel || ''), ns = normTxt(sel); let add = '';
+    if (/\b1.{0,3}parte|primeira parte|1st half|first half/.test(mk) && !/parte|half/.test(ns)) add = ' (primeira parte)';
+    else if (/\b2.{0,3}parte|segunda parte|2nd half/.test(mk) && !/parte|half/.test(ns)) add = ' (segunda parte)';
+    else if (/intervalo|half ?time/.test(mk) && !/intervalo/.test(ns)) add = ' (ao intervalo)';
+    else if (/canto|corner/.test(mk) && !/canto/.test(ns)) add = ' (cantos)';
+    else if (/cartao|cartoes|card/.test(mk) && !/cart/.test(ns)) add = ' (cartões)';
+    else if (/impar|par\b|odd\/even/.test(mk) && /impar|\bpar\b/.test(ns)) add = ' (ímpar/par — minuto)';   // «minuto» faz o validador deixá-la para ti
+    else if (/golos da equipa|team total|total da equipa/.test(mk) && !/da equipa/.test(ns)) add = ' golos da equipa ' + String(l.market).replace(/^.*?(equipa|team total)\s*[-–:]?\s*/i, '');
+    else if (/empate anula|draw no bet/.test(mk)) return /anula|draw no bet/.test(ns) ? l : Object.assign({}, l, { sel: 'Empate anula aposta: ' + sel, market: '', _full: 1 });   // a app já devolve no empate, mas só olhava para o texto da seleção
+    else if (/handicap/.test(mk) && !/handicap/.test(ns)) add = ' (handicap)';
+    else if (/resultado corre|resultado exato|correct score/.test(mk) && !/resultado/.test(ns)) add = ' (resultado correto)';
+    return add ? Object.assign({}, l, { sel: sel + add, _full: 1 }) : l;
+  } catch (e) { return l; }
+}
+selConds = (function (prev) {
+  return function (selRaw, m) {
+    const raw = String(selRaw || ''), s = normTxt(raw);
+    try {
+      const hs = n => teamScore(n, expandAliases(s)) > 0;
+      // resultado correto: «2-1»
+      let x = raw.match(/^\s*(\d{1,2})\s*[-:–]\s*(\d{1,2})\s*(\(resultado correto\))?\s*$/i); if (x) return [(i, j) => i === +x[1] && j === +x[2]];
+      // golos de uma só equipa
+      if (/golos da equipa/.test(s)) {
+        const ou = s.match(/(mais|menos)\s+(?:de\s+)?(\d+)[.,]5/); const tail = s.slice(s.indexOf('golos da equipa') + 15), th = teamScore(m.home, expandAliases(tail)) > 0, ta = teamScore(m.away, expandAliases(tail)) > 0;
+        if (!ou || th === ta) return null; const L = +ou[2] + .5, over = ou[1] === 'mais';
+        return [th ? ((i, j) => over ? i > L : i < L) : ((i, j) => over ? j > L : j < L)];
+      }
+      // handicap: só as linhas ,5 se decidem pelo resultado; as outras podem devolver dinheiro
+      if (/handicap/.test(s) && (!/[+-]\s?\d+[.,]5\b/.test(s) || /[.,](25|75)\b/.test(s))) return null;
+      // hipótese dupla «casa ou fora»
+      if (/ ou /.test(s) && !/empate|draw/.test(s) && hs(m.home) && hs(m.away) && !/mais|menos|ambas/.test(s)) return [(i, j) => i !== j];
+    } catch (e) {}
+    return prev.call(this, raw.replace(/\s*\((handicap|resultado correto)\)/gi, ''), m);
+  };
+})(selConds);
+resolveLeg = (function (prev) {
+  return function (l, fin, at) {
+    const L = zeLegFull(l), r = prev.call(this, L, fin, at);
+    return r;
+  };
+})(resolveLeg);
+legDiag = (function (prev) {
+  return function (l, bet, pool) {
+    const a = [].slice.call(arguments); let L = zeLegFull(l);
+    try {
+      // seleção gravada sem equipas («Bélgica ou Empate»): o nome está na própria seleção — procura o jogo por aí
+      if (L && !L.home && !L.away && L.sel) {
+        const atT = new Date((bet && bet.at) || Date.now()).getTime();
+        const evs = (pool || []).filter(x => evMatchesLeg(x, L)).map(x => ({ x, t: new Date(x.utcDate).getTime() }));
+        const ev = ((evs.filter(c => c.t >= atT - 12 * 3600e3).sort((p, q) => p.t - q.t)[0]) || (evs.filter(c => c.t >= atT - 6 * 864e5).sort((p, q) => q.t - p.t)[0]) || {}).x;
+        if (ev) L = Object.assign({}, L, { home: ev.homeTeam.shortName || ev.homeTeam.name, away: ev.awayTeam.shortName || ev.awayTeam.name });
+      }
+    } catch (e) {}
+    a[0] = L; return prev.apply(this, a);
+  };
+})(legDiag);
+legEval = (function (prev) { return function (leg) { return prev.call(this, zeLegFull(leg)); }; })(legEval);
+/* «golos» só se acrescenta quando o mercado é mesmo de golos (cantos e cartões também têm «Mais de 9.5») */
+parseSlip = (function (prev) {
+  return function () {
+    const out = prev.apply(this, arguments);
+    try { out.legs.forEach(l => { const mk = normTxt(l.market || ''); if (/ golos$/.test(l.sel || '') && mk && !/golos|mais\/menos/.test(mk)) l.sel = l.sel.replace(/ golos$/, ''); if (/canto|corner|cartao|cartoes/.test(mk) && / golos/.test(l.sel)) l.sel = l.sel.replace(/ golos/, ''); }); } catch (e) {}
+    return out;
+  };
+})(parseSlip);
 
 renderWallet(); renderUpdateInfo();
 
