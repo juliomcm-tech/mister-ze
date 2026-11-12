@@ -11494,7 +11494,7 @@ try { updateContinue(); } catch (e) {}
    - chat novo: classificação de qualquer liga, «transferências benfica», «mercado»
    - a app atualiza-se sozinha quando há versão nova
    ===================================================================== */
-const APP_VER = 'v66b';
+const APP_VER = 'v66c';
 
 /* ---------- 1) notícias e YouTube sem falhar ---------- */
 const FEED_LS = 'ze_feed_cache_v1';
@@ -15017,11 +15017,11 @@ function shareWhen(d) { if (!d) return ''; const wd = ['dom', 'seg', 'ter', 'qua
 async function shareImgOf(src) { return new Promise(res => { if (!src) return res(null); const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; }); }
 const SHARE_PER = 12;
 async function betCardImages(bet, who) {
-  const legs = betLegsOf(bet), info = legs.map(l => shareLegInfo(l, bet));
+  const legs = betLegsOf(bet), info = legs.map(l => l._inf || shareLegInfo(l, bet));
   const pages = []; for (let i = 0; i < legs.length; i += SHARE_PER) pages.push([i, Math.min(legs.length, i + SHARE_PER)]);
   if (!pages.length) pages.push([0, 0]);
-  const u = userProfile(), isZe = who === 'ze';
-  const name = isZe ? 'MISTER ZÉ' : (pname() === 'Tu' ? 'MIM' : pname().toUpperCase());
+  const u = userProfile(), isZe = who === 'ze' || who === 'auto';
+  const name = who === 'auto' ? 'PILOTO DO ZÉ' : isZe ? 'MISTER ZÉ' : (pname() === 'Tu' ? 'MIM' : pname().toUpperCase());
   const photo = !isZe && u.photo ? await shareImgOf(u.photo) : null;
   const face = await svgToImg(zeFace(isZe ? 'gozao' : 'feliz', 160));
   const F = (w, s) => `${w} ${s}px "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif`;
@@ -15043,12 +15043,12 @@ async function betCardImages(bet, who) {
     ctx.restore();
     ctx.strokeStyle = isZe ? '#c8f53c' : '#4c95f0'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(145, 140, 80, 0, Math.PI * 2); ctx.stroke();
     ctx.fillStyle = '#c8f53c'; ctx.font = F(800, 28); ctx.fillText('MISTER ZÉ FC · ANÁLISE DE FUTEBOL', 255, 95);
-    let fs = 66; const title = `APOSTA ${isZe ? 'DO' : 'DE'} ${name}`;
+    let fs = 66; const title = bet._title || `APOSTA ${isZe ? 'DO' : 'DE'} ${name}`;
     do { ctx.font = F(800, fs); fs -= 2; } while (ctx.measureText(title).width > W - 300 && fs > 34);
     ctx.fillStyle = '#ffffff'; ctx.fillText(title, 255, 160);
     ctx.fillStyle = '#a99ec4'; ctx.font = T(27);
-    const kind = legs.length > 1 ? `Múltipla · ${legs.length} seleções` : 'Simples';
-    ctx.fillText(`${kind} · registada ${dtFmt(bet.at || Date.now())}${pages.length > 1 ? ` · ${pg + 1}/${pages.length}` : ''}`, 255, 205);
+    const kind = bet._list || (legs.length > 1 ? `Múltipla · ${legs.length} seleções` : 'Simples');
+    ctx.fillText(`${kind} · ${bet._list ? '' : 'registada '}${dtFmt(bet.at || Date.now())}${pages.length > 1 ? ` · ${pg + 1}/${pages.length}` : ''}`, 255, 205);
     let y = 270;
     ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.strokeStyle = 'rgba(255,255,255,.14)'; ctx.lineWidth = 2;
     const ph = Math.max(rowH, nRows * rowH) + 30;
@@ -15066,7 +15066,7 @@ async function betCardImages(bet, who) {
       ctx.fillText(sel, 135, yy + (big ? 46 : 38));
       if (Number(l.odd) > 1) { ctx.textAlign = 'right'; ctx.fillStyle = '#c8f53c'; ctx.font = F(800, big ? 46 : 40); ctx.fillText(Number(l.odd).toFixed(2), W - 85, yy + (big ? 48 : 40)); ctx.textAlign = 'left'; }
       ctx.fillStyle = '#a99ec4'; ctx.font = T(big ? 27 : 24);
-      let sub = (l.home && l.away ? `${l.home} vs ${l.away}` : '') + (inf.when ? ` · ${shareWhen(inf.when)}` : '') + (st && st.score ? ` · ${st.score}` : st && st.off ? ' · adiado' : '');
+      let sub = (l.home && l.away ? `${l.home} vs ${l.away}` : '') + (inf.when ? ` · ${shareWhen(inf.when)}` : '') + (st && st.score ? ` · ${st.score}` : st && st.off ? ' · adiado' : '') + (l.extra ? ` · ${l.extra}` : '');
       while (ctx.measureText(sub).width > W - 230 && sub.length > 4) sub = sub.slice(0, -2);
       ctx.fillText(sub, 135, yy + (big ? 86 : 72));
       if (i < b - 1) { ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.beginPath(); ctx.moveTo(135, yy + rowH - 4); ctx.lineTo(W - 85, yy + rowH - 4); ctx.stroke(); }
@@ -15076,13 +15076,16 @@ async function betCardImages(bet, who) {
     if (last) {
       const box = (x, w, lab, val, colr) => { ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fillRect(x, y, w, 140); ctx.fillStyle = '#a99ec4'; ctx.font = T(25, 700); ctx.fillText(lab.toUpperCase(), x + 24, y + 44); ctx.fillStyle = colr || '#ffffff'; ctx.font = F(800, 56); ctx.fillText(val, x + 24, y + 112); };
       const bw = (W - 100 - 40) / 3;
+      if (bet._boxes) bet._boxes.forEach((q, i) => box(50 + i * (bw + 20), bw, q[0], q[1], q[2]));
+      else {
       box(50, bw, 'Odd', Number(bet.odd).toFixed(2), '#c8f53c');
       box(50 + bw + 20, bw, 'Aposta', eur(bet.stake));
       box(50 + 2 * (bw + 20), bw, bet.status === 'win' ? 'Ganhou' : 'Potencial', eur(bet.stake * bet.odd), bet.status === 'win' ? '#2fd27a' : '#ffffff');
+      }
       y += 200;
       const decided = info.filter(x => x.st && !x.st.off).length, won = info.filter(x => x.st && x.st.win).length;
       ctx.fillStyle = bet.status === 'win' ? '#2fd27a' : bet.status === 'loss' ? '#ff7a8f' : '#ffc233'; ctx.font = F(800, 44);
-      ctx.fillText(((ST_TXT[bet.status] || '').replace(/^\S+\s/, '').toUpperCase()) + (legs.length > 1 && decided ? `  ·  ${won}/${legs.length} certas` : (legs.length === 1 && bet.finalScores ? '  ·  ' + bet.finalScores : '')), 60, y);
+      if (bet._list) ctx.fillText(bet._foot || '', 60, y); else ctx.fillText(((ST_TXT[bet.status] || '').replace(/^\S+\s/, '').toUpperCase()) + (legs.length > 1 && decided ? `  ·  ${won}/${legs.length} certas` : (legs.length === 1 && bet.finalScores ? '  ·  ' + bet.finalScores : '')), 60, y);
       y += 60;
       const p = isZe ? bet.pUsed : bet.zeP;
       if (typeof p === 'number') { ctx.fillStyle = '#f2eefb'; ctx.font = T(30); y = wrapText(ctx, `🤖 O Zé dá-lhe ${pct(p)} de hipótese.`, 60, y, W - 120, 42, 2); }
@@ -17856,11 +17859,36 @@ function finShareText(acc, id) {
   const sum = done.length ? `\nAté agora: ${wins}/${done.length} certas · ${pr >= 0 ? '+' : ''}${eur(pr)}` : '';
   return `${who}${acc === 'auto' && FIN.w !== 'all' && AUTO_W[FIN.w] ? ' · ' + finWName(FIN.w) : ''}\n${title} (${L.length}):\n${L.map(line).join('\n')}${sum}\n— Mister Zé · dinheiro virtual`;
 }
+/* a mesma imagem bonita das apostas do duelo, agora para qualquer conta e também para a lista inteira */
+function finShareBet(acc, id) {
+  const all = finBets(acc), who = acc === 'auto' ? 'auto' : acc;
+  const name = acc === 'auto' ? 'PILOTO DO ZÉ' : acc === 'ze' ? 'MISTER ZÉ' : (pname() === 'Tu' ? 'MIM' : pname().toUpperCase());
+  const leg = e => { const [h, a] = String(e.match).split(/\s+[–-]\s+|\s+vs\s+/i); return { sel: e.pick, odd: e.odd, home: h || e.match, away: a || '', extra: eur(e.stake),
+    _inf: acc === 'auto' ? { when: e.ko ? new Date(e.ko) : null, st: e.st === 'win' || e.st === 'loss' ? { win: e.st === 'win', score: e.res || '' } : e.st === 'void' ? { off: true } : null } : null }; };
+  if (id) {
+    const e = all.find(x => x.id === id); if (!e) return null;
+    if (acc !== 'auto') return { native: true };
+    const l = leg(e); delete l.extra;
+    return { who, bet: { match: e.match, pick: e.pick, odd: e.odd, stake: e.stake, status: e.st, at: e.t, legs: [l], pUsed: e.p, finalScores: e.res || '' } };
+  }
+  const done = all.filter(e => e.st === 'win' || e.st === 'loss').sort((a, c) => c.td - a.td), open = all.filter(e => e.st === 'open').sort((a, c) => (a.ko || a.t) - (c.ko || c.t));
+  const dec = wlTab === 'decididas', L = dec ? done.slice(0, 12) : open; if (!L.length) return null;
+  const stake = r2(L.reduce((s, e) => s + e.stake, 0)), wins = done.filter(e => e.st === 'win').length, pr = r2(done.reduce((s, e) => s + finProfit(e), 0));
+  const legs = L.map(e => { const l = leg(e); if (acc !== 'auto') l._inf = { when: null, st: e.st === 'win' || e.st === 'loss' ? { win: e.st === 'win', score: '' } : null }; return l; });
+  return { who, bet: { match: '', pick: '', odd: 1, stake, status: 'open', at: Date.now(), legs,
+    _title: dec ? `ÚLTIMAS ${acc === 'you' ? 'DE' : 'DO'} ${name}` : `EM JOGO · ${name}`, _list: `${L.length} aposta${L.length > 1 ? 's' : ''}${acc === 'auto' && FIN.w !== 'all' && AUTO_W[FIN.w] ? ' · ' + finWName(FIN.w).replace(/^\S+\s/, '') : ''}`,
+    _boxes: dec ? [['Apostas', String(L.length)], ['Certas', `${L.filter(e => e.st === 'win').length}/${L.length}`, '#c8f53c'], ['Resultado', (L.reduce((s, e) => s + finProfit(e), 0) >= 0 ? '+' : '') + eur(r2(L.reduce((s, e) => s + finProfit(e), 0))), L.reduce((s, e) => s + finProfit(e), 0) >= 0 ? '#2fd27a' : '#ff7a8f']]
+      : [['Apostas', String(L.length)], ['Em jogo', eur(stake)], ['Pode dar', eur(r2(L.reduce((s, e) => s + e.stake * e.odd, 0))), '#c8f53c']],
+    _foot: done.length ? `ATÉ AGORA  ·  ${wins}/${done.length} CERTAS  ·  ${pr >= 0 ? '+' : ''}${eur(pr)}` : 'AINDA SEM APOSTAS DECIDIDAS' } };
+}
 async function finShare(id) {
-  const text = finShareText(FIN.acc, id);
-  if (!text) { toast(wlTab === 'decididas' ? 'Ainda não há apostas decididas para partilhar.' : 'Esta conta não tem apostas em jogo para partilhar.'); return; }
+  const acc = FIN.acc, text = finShareText(acc, id), S = finShareBet(acc, id);
+  if (!text || !S) { toast(wlTab === 'decididas' ? 'Ainda não há apostas decididas para partilhar.' : 'Esta conta não tem apostas em jogo para partilhar.'); return; }
+  if (S.native) { shareBet(id, acc); return; }
+  toast('🖼️ A preparar a imagem…');
+  try { const blobs = await betCardImages(S.bet, S.who); if (blobs && blobs.length) { await shareOutMany(text, blobs, `${acc === 'auto' ? 'piloto' : acc === 'ze' ? 'mister-ze' : 'apostas'}-${isoDay(new Date())}`); return; } } catch (e) { console.warn(e); }
   try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
-  try { shareSheet(text, null); } catch (e) { try { await navigator.clipboard.writeText(text); toast('📋 Copiado — cola no WhatsApp.'); } catch (e2) { toast('Não consegui partilhar neste browser.'); } }
+  try { shareSheet(text, null); } catch (e) { toast('Não consegui partilhar neste browser.'); }
 }
 
 renderWallet(); renderUpdateInfo();
