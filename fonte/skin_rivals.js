@@ -239,7 +239,7 @@ function rvDaySort() {
 }
 gerarDia = (function (prev) { return async function () { const r = await prev.apply(this, arguments); try { rvDaySort(); } catch (e) { console.warn(e); } return r; }; })(gerarDia);
 function rvSortList(list) {
-  if (rvSortMode() !== 'pct') return list;
+  if (rvSortMode() !== 'pct') return list.slice();   // cópia: quem chama esvazia a lista original a seguir
   const day = d => d.getFullYear() * 10000 + d.getMonth() * 100 + d.getDate();
   list.forEach(x => { if (x.__p == null) { try { const z = zeLogical(x.m); x.__p = z ? z.p : 0; } catch (e) { x.__p = 0; } } });
   return list.slice().sort((a, b) => (day(a.k) - day(b.k)) || (b.__p - a.__p) || (a.k - b.k));
