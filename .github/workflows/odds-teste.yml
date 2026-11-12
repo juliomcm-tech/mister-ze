@@ -29,7 +29,10 @@ jobs:
           console.log('jogos nos próximos 3 dias:', L.length, '| campos de um jogo:', Object.keys(L[0]).join(', '));
           const tor = {}; L.forEach(x => { const k = x.tournamentSlug || x.tournamentName || x.tournamentId; tor[k] = (tor[k] || 0) + 1; });
           console.log('competições (30 maiores):', Object.entries(tor).sort((a, b) => b[1] - a[1]).slice(0, 30).map(([k, n]) => k + ' ' + n).join(' | '));
-          const alvo = L.find(x => /nations|portugal|premier|laliga|serie-a|bundesliga/i.test(String(x.tournamentSlug || x.tournamentName || ''))) || L[0];
+          const C = L.filter(x => x.hasOdds && new Date(x.startTime) > new Date());
+          console.log('com odds e por jogar:', C.length, '| nations:', C.filter(x => /nations/i.test(x.tournamentSlug || '')).map(x => x.participant1Name + '-' + x.participant2Name + ' [' + x.tournamentSlug + '/' + x.categorySlug + ']').slice(0, 12).join(' ; '));
+          console.log('ligas nossas:', [...new Set(C.filter(x => /portugal|england|spain|italy|germany|france|netherlands|international|europe/i.test(x.categorySlug || '')).map(x => x.categorySlug + '/' + x.tournamentSlug))].slice(0, 60).join(' | '));
+          const alvo = C.find(x => /england/i.test(x.participant1Name + x.participant2Name) && /nations/i.test(x.tournamentSlug || '')) || C.find(x => /nations/i.test(x.tournamentSlug || '')) || C[0];
           console.log('jogo de teste:', JSON.stringify(alvo).slice(0, 400));
           const o = await get('/odds', { fixtureId: alvo.fixtureId || alvo.id });
           console.log('odds: estado', o.status, '| cabeçalhos de quota', JSON.stringify(o.lim));
@@ -37,7 +40,8 @@ jobs:
           if (!bo) { console.log('sem odds. Resposta:', o.t); process.exit(1); }
           const casas = Object.keys(bo);
           console.log('casas na resposta:', casas.length, '→', casas.join(', '));
-          for (const c of ['pinnacle', 'betano', 'betano.pt', 'bet365', 'betfair-ex', 'betclic', 'placard']) { if (bo[c]) { const mk = bo[c].markets || {}; console.log('==', c, '| mercados:', Object.keys(mk).length, '| exemplo:', JSON.stringify(Object.entries(mk)[0]).slice(0, 700)); } else console.log('==', c, 'NÃO VEM'); }
+          for (const c of ['pinnacle', 'betano', 'bet365', 'betfair-ex']) { if (bo[c]) { const mk = bo[c].markets || {}; console.log('==', c, '| mercados:', Object.keys(mk).length, '| ids:', Object.keys(mk).slice(0, 40).join(','), '| exemplo:', JSON.stringify(Object.entries(mk).slice(0, 2)).slice(0, 1500)); } else console.log('==', c, 'NÃO VEM'); }
+          console.log('chaves de topo da resposta:', Object.keys(o.j).join(', '));
           console.log('casas com «betano» ou «pt» no nome:', casas.filter(c => /betano|\.pt|portugal|solverde|placard|betclic/i.test(c)).join(', ') || 'nenhuma');
           JS
           node t.mjs
