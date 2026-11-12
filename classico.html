@@ -518,6 +518,8 @@ select.inp { appearance: auto; }
 .fin-head { flex-direction: row !important; align-items: flex-end !important; justify-content: space-between; flex-wrap: nowrap !important; gap: 10px; }
 .fin-head .btn-row { flex-shrink: 0; }
 .fin-find { border-top: none; padding-top: 0; margin: 0 0 12px; }
+/* 📸 Boletim: ecrã próprio — sem contas nem separadores por cima */
+body.fin-reg #view-banca .fin-accs, body.fin-reg #view-banca .wl-tabs, body.fin-reg #view-banca .upd-info, body.fin-reg #view-banca .btn-upd { display: none !important; }
 .fin-home { border: 1px solid var(--border); border-radius: 14px; background: var(--card); padding: 11px 12px 12px; margin: 10px 0; }
 .fh-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 9px; font: 800 .86rem var(--cond); letter-spacing: .05em; text-transform: uppercase; }
 .fh-h small { font: 600 .72rem var(--font, inherit); letter-spacing: 0; text-transform: none; color: var(--muted); white-space: nowrap; }
@@ -1244,8 +1246,8 @@ button.fin-kpi.on { border-color: var(--lime); box-shadow: 0 0 0 1px var(--lime)
   <section id="view-banca" class="fm-view">
     <div class="screen-head fin-head">
       <div>
-        <div class="eyebrow">Finanças</div>
-        <h1>Contas</h1>
+        <div class="eyebrow" id="finEyebrow">Finanças</div>
+        <h1 id="finTitle">Contas</h1>
       </div>
       <div class="btn-row" style="margin:0;">
         <button class="btn btn-primary btn-sm btn-upd" onclick="atualizarTudo()">🔄 Atualizar resultados</button>
@@ -11492,7 +11494,7 @@ try { updateContinue(); } catch (e) {}
    - chat novo: classificação de qualquer liga, «transferências benfica», «mercado»
    - a app atualiza-se sozinha quando há versão nova
    ===================================================================== */
-const APP_VER = 'v66';
+const APP_VER = 'v66b';
 
 /* ---------- 1) notícias e YouTube sem falhar ---------- */
 const FEED_LS = 'ze_feed_cache_v1';
@@ -17515,7 +17517,7 @@ function finToolsHTML() {
   } else {
     left = `<div class="seg fin-seg" role="group" aria-label="Período">${[['epoca', 'Época'], ['30d', '30 dias'], ['7d', '7 dias']].map(([k, l]) => `<button type="button" class="${wlPeriod === k ? 'active' : ''}" onclick="wlSet('period','${k}')">${l}</button>`).join('')}</div>`;
   }
-  return `${left}<div class="fin-io"><button class="btn btn-sm" onclick="finExport()" title="Guardar num ficheiro que abre no Excel">⬇️ Exportar</button><button class="btn btn-sm" onclick="finPrint()" title="Imprimir ou guardar em PDF">🖨️ Imprimir</button></div>`;
+  return `${left}<div class="fin-io"><button class="btn btn-sm" onclick="finShare()" title="Enviar por WhatsApp ou outra app">📤 Partilhar</button><button class="btn btn-sm" onclick="finExport()" title="Guardar num ficheiro que abre no Excel">⬇️ Exportar</button><button class="btn btn-sm" onclick="finPrint()" title="Imprimir ou guardar em PDF">🖨️ Imprimir</button></div>`;
 }
 
 /* ---------- Em jogo ---------- */
@@ -17548,7 +17550,7 @@ function finOpenCard(e, d) {
   const tags = e.acc === 'auto' ? e.parts.map(p => `<span class="fb-tag">${finWName(p.w)}${e.parts.length > 1 ? ' · ' + eur(p.stake) : ''}</span>`).join('') : (e.src ? `<span class="fb-tag">${esc(e.src)}</span>` : '');
   let more = '';
   if (e.acc === 'auto') {
-    more = `<details class="fin-more"><summary>Porquê esta aposta</summary><div class="fm-txt">O Zé dá-lhe <b>${Math.round(e.p * 100)}%</b> de probabilidade${e.est ? ' · odd calculada a partir das odds da casa (≈)' : ''}.${e.parts.map(p => `<br>${finWName(p.w)}: ${eur(p.stake)}${p.how ? ' · ' + esc(p.how) : ''}`).join('')}</div></details>`;
+    more = `<details class="fin-more"><summary>Porquê esta aposta</summary><div class="fm-txt">O Zé dá-lhe <b>${Math.round(e.p * 100)}%</b> de probabilidade${e.est ? ' · odd calculada a partir das odds da casa (≈)' : ''}.${e.parts.map(p => `<br>${finWName(p.w)}: ${eur(p.stake)}${p.how ? ' · ' + esc(p.how) : ''}`).join('')}</div><div class="acts"><button class="mini s" onclick="finShare('${id}')">📤 Partilhar esta aposta</button></div></details>`;
   } else {
     more = `<details class="fin-more"><summary>Fechar à mão ou partilhar</summary>${w.list ? `<div class="fm-txt">${w.list.map(esc).join('<br>')}</div>` : ''}${e.note ? `<div class="fm-txt">🤖 ${esc(e.note)}</div>` : ''}<div class="acts">
       <button class="mini w" onclick="settleBet('${id}','win','${who}')">Ganhou</button><button class="mini l" onclick="settleBet('${id}','loss','${who}')">Perdeu</button><button class="mini v" onclick="settleBet('${id}','void','${who}')">Nula</button>
@@ -17827,6 +17829,39 @@ async function diaryCatchUp(force) {
 setTimeout(() => diaryCatchUp().catch(() => {}), 60000);
 applyLive = (function (prev) { return function () { const r = prev.apply(this, arguments); setTimeout(() => diaryCatchUp().catch(() => {}), 40000); return r; }; })(applyLive);
 try { ZE_RULES.log.push({ ver: ZE_RULES.ver, d: '2026-11-12', txt: 'O piloto na nuvem passa a ser um só apostador com 1000 € virtuais ao todo, repartidos pelas 4 estratégias (250 € cada). As apostas já feitas foram reduzidas na mesma proporção; as regras e as percentagens apostadas não mudaram.' }); } catch (e) {}
+
+/* 📸 Boletim abre como ecrã próprio (título e botão de voltar), e sair dele repõe as Finanças normais */
+function finRegMode() {
+  try {
+    const on = currentView === 'banca' && wlTab === 'registar';
+    document.body.classList.toggle('fin-reg', on);
+    const e = document.getElementById('finEyebrow'), h = document.getElementById('finTitle');
+    if (e) e.textContent = on ? 'Boletim' : 'Finanças'; if (h) h.textContent = on ? 'Manda o print ou regista' : 'Contas';
+  } catch (e) {}
+}
+wlSetTab = (function (prev) { return function () { const r = prev.apply(this, arguments); finRegMode(); return r; }; })(wlSetTab);
+fmGo = (function (prev) { return function (view) { try { if (view === 'banca' && currentView !== 'banca' && wlTab === 'registar' && !window.__finKeepReg) wlTab = 'emjogo'; } catch (e) {} const r = prev.apply(this, arguments); finRegMode(); return r; }; })(fmGo);
+
+/* ---------- partilhar: as apostas de uma conta em texto (WhatsApp, etc.) — também as do piloto ---------- */
+function finShareText(acc, id) {
+  const who = acc === 'auto' ? '🛫 Piloto automático do Mister Zé' : acc === 'ze' ? '🤖 Mister Zé' : '⭐ ' + holderName('you');
+  const when = e => { if (!e.ko) return ''; const d = new Date(e.ko); return ' · ' + finDayLabel(e.ko) + ' ' + finHM(d); };
+  const line = e => `• ${e.match}${e.lg ? ' (' + e.lg + ')' : ''}${when(e)}\n   ${e.pick} @ ${Number(e.odd).toFixed(2)}${e.est ? '≈' : ''} · ${eur(e.stake)}${e.st === 'open' ? ' → pode dar ' + eur(r2(e.stake * e.odd)) : ' · ' + FIN_ST[e.st][0] + (e.res ? ' (' + e.res + ')' : '') + ' · ' + (finProfit(e) >= 0 ? '+' : '') + eur(finProfit(e))}`;
+  const all = finBets(acc);
+  if (id) { const e = all.find(x => x.id === id); return e ? `${who}\n${line(e)}\n— Mister Zé · dinheiro virtual` : ''; }
+  const open = all.filter(e => e.st === 'open').sort((a, c) => (a.ko || a.t) - (c.ko || c.t)), done = all.filter(e => e.st === 'win' || e.st === 'loss').sort((a, c) => c.td - a.td);
+  const L = wlTab === 'decididas' ? done.slice(0, 12) : open, title = wlTab === 'decididas' ? 'Últimas decididas' : 'Em jogo';
+  if (!L.length) return '';
+  const wins = done.filter(e => e.st === 'win').length, pr = r2(done.reduce((s, e) => s + finProfit(e), 0));
+  const sum = done.length ? `\nAté agora: ${wins}/${done.length} certas · ${pr >= 0 ? '+' : ''}${eur(pr)}` : '';
+  return `${who}${acc === 'auto' && FIN.w !== 'all' && AUTO_W[FIN.w] ? ' · ' + finWName(FIN.w) : ''}\n${title} (${L.length}):\n${L.map(line).join('\n')}${sum}\n— Mister Zé · dinheiro virtual`;
+}
+async function finShare(id) {
+  const text = finShareText(FIN.acc, id);
+  if (!text) { toast(wlTab === 'decididas' ? 'Ainda não há apostas decididas para partilhar.' : 'Esta conta não tem apostas em jogo para partilhar.'); return; }
+  try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+  try { shareSheet(text, null); } catch (e) { try { await navigator.clipboard.writeText(text); toast('📋 Copiado — cola no WhatsApp.'); } catch (e2) { toast('Não consegui partilhar neste browser.'); } }
+}
 
 renderWallet(); renderUpdateInfo();
 
