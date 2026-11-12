@@ -25,6 +25,21 @@ export async function valor({ DIR, payload, piloto, key, maxDia = 6, log = conso
     try { conta(); const r = await fetch(u, { signal: ac.signal }); if (!r.ok) throw new Error('estado ' + r.status); return await r.json(); } finally { clearTimeout(t); }
   };
   const M = (payload && payload.matches) || [];
+  // carteira «Preço justo» do piloto (dinheiro virtual): aposta 1% da banca quando a Betano paga pelo menos 3% acima do preço justo,
+  // só em odds entre 1,25 e 4,00 (acima disso a régua é menos fiável), uma aposta por jogo. Regra fixada a 12/11/2026.
+  const REGRA = { minVantagem: 0.03, minOdd: 1.25, maxOdd: 4, parte: 0.01 };
+  if (!V.carteira) V.carteira = { start: 250, bank: 250, bets: [], topups: [], perDay: 6, since: new Date().toISOString(), on: true, regra: REGRA };
+  const C = V.carteira, r2 = x => Math.round(x * 100) / 100;
+  const apostar = row => {
+    const ks = ['1', 'X', '2']; let best = -1;
+    row.valor.forEach((v, i) => { if (v >= REGRA.minVantagem && row.bet[i] >= REGRA.minOdd && row.bet[i] <= REGRA.maxOdd && (best < 0 || v > row.valor[best])) best = i; });
+    if (best < 0) return;
+    const stake = r2(Math.max(0.1, C.bank * REGRA.parte)); if (stake > C.bank) return;
+    C.bank = r2(C.bank - stake);
+    C.bets.push({ id: 'pj' + row.fx + ks[best], at: new Date().toISOString(), day: dia, ev: 'op' + row.fx, code: '', h: row.h, a: row.a, lg: row.lg, ko: row.ko, k: ks[best],
+      label: best === 0 ? row.h + ' vence' : best === 1 ? 'Empate' : row.a + ' vence', p: row.justo[best], o: row.bet[best], book: 'Betano', stake, how: '1% da banca', evp: row.valor[best], kind: 'justo', st: 'open', rv: 'PJ1', pin: row.pin[best] });
+    row.apostou = ks[best]; out.apostas = (out.apostas || 0) + 1;
+  };
 
   // 1) fechar os jogos já medidos que entretanto acabaram (sem pedidos: usa os resultados que o robô já tem)
   V.jogos.forEach(j => {
@@ -33,6 +48,7 @@ export async function valor({ DIR, payload, piloto, key, maxDia = 6, log = conso
     if (!e || !e.score || !e.score.fullTime || e.score.fullTime.home == null) return;
     const hg = e.score.fullTime.home, ag = e.score.fullTime.away;
     j.res = hg + '-' + ag; j.saiu = hg > ag ? '1' : hg === ag ? 'X' : '2'; out.fechados++;
+    C.bets.forEach(b => { if (b.st !== 'open' || b.ev !== 'op' + j.fx) return; b.st = b.k === j.saiu ? 'win' : 'loss'; b.res = j.res; b.settledAt = new Date().toISOString(); if (b.st === 'win') { b.ret = r2(b.stake * b.o); C.bank = r2(C.bank + b.ret); } else b.ret = 0; });
   });
 
   if (!key) { out.nota = 'sem chave'; save(); return out; }
@@ -70,7 +86,7 @@ export async function valor({ DIR, payload, piloto, key, maxDia = 6, log = conso
       const inv = P.reduce((s, x) => s + 1 / x, 0), justo = P.map(x => (1 / x) / inv);
       row.pin = P; row.bet = Bt; row.bf = F; row.margemPin = +(inv - 1).toFixed(4); row.margemBet = +(Bt.reduce((s, x) => s + 1 / x, 0) - 1).toFixed(4);
       row.justo = justo.map(x => +x.toFixed(4)); row.valor = Bt.map((x, i) => +(x * justo[i] - 1).toFixed(4));   // >0 = a Betano paga acima do preço justo
-      V.jogos.push(row); out.novos++;
+      apostar(row); V.jogos.push(row); out.novos++;
       log('valor', j.h, '-', j.a, '| Pinnacle', P.join('/'), '| Betano', Bt.join('/'), '| vantagem', row.valor.map(x => (x * 100).toFixed(1) + '%').join(' '));
     }
   } catch (e) { out.nota = 'falhou: ' + String(e && e.message).slice(0, 80); }

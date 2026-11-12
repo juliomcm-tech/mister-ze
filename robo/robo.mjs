@@ -198,6 +198,9 @@ if (liveOk) {
     const { valor } = await import('./valor.mjs');
     const rv = await valor({ DIR, payload: liveOk ? payload : rd('live.json', null), piloto: rd('piloto.json', null), key: process.env.ODDSPAPI_KEY || '', maxDia: Number(process.env.ROBO_VALOR_DIA) || 6 });
     console.log('valor', JSON.stringify(rv));
+    // a carteira «Preço justo» aparece na app como a quinta estratégia do piloto
+    const V = rd('valor.json', null), pj = rd('piloto.json', null);
+    if (V && V.carteira && pj && pj.carteiras) { pj.carteiras.justo = V.carteira; pj.nomes = Object.assign({}, pj.nomes, { justo: { name: '💎 Preço justo', desc: 'só quando a Betano paga 3% ou mais acima do preço justo da Pinnacle' } }); wr('piloto.json', pj); }
   } catch (e) { console.log('valor: ' + (e && e.message)); }
   // fecho de mês: no primeiro dia em que o mês anterior já acabou, o resumo do piloto por liga fica gravado e não volta a mudar
   try {

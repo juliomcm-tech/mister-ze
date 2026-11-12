@@ -11494,7 +11494,7 @@ try { updateContinue(); } catch (e) {}
    - chat novo: classificação de qualquer liga, «transferências benfica», «mercado»
    - a app atualiza-se sozinha quando há versão nova
    ===================================================================== */
-const APP_VER = 'v70';
+const APP_VER = 'v71';
 
 /* ---------- 1) notícias e YouTube sem falhar ---------- */
 const FEED_LS = 'ze_feed_cache_v1';
@@ -17441,7 +17441,7 @@ renderZeStats = (function (prev) {
 const FIN = { acc: 'you', w: 'all', filt: 'tudo', nDone: 40, nExt: 60 };
 const FIN_ST = { open: ['Em jogo', 'open', '⏳'], win: ['Ganha', 'win', '✅'], loss: ['Perdida', 'loss', '❌'], void: ['Devolvida', 'void', '↩️'] };
 function finOn() { return !!document.getElementById('finAccs'); }
-function finWallets() { return Object.keys(AUTO_W); }
+function finWallets() { return Object.keys(AUTO_W).filter(w => w !== 'justo' || (function () { try { return autoMode() === 'nuvem'; } catch (e) { return false; } })()); }
 function finAccName(acc) { return acc === 'auto' ? 'Piloto automático' : holderName(acc); }
 function finWName(w) { return AUTO_W[w] ? AUTO_W[w].name : w; }
 function finHM(t) { return new Date(t).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }); }
@@ -18381,6 +18381,57 @@ parseSlip = (function (prev) {
     return out;
   };
 })(parseSlip);
+
+/* ================= v71 · Segunda fonte de odds: a Betano contra o preço justo (Pinnacle) ================= */
+/* quinta estratégia do piloto — só existe na nuvem (é o robô que tem a chave da segunda fonte); no telemóvel nunca aposta */
+AUTO_W.justo = { key: 'ze_auto_justo_v1', name: '💎 Preço justo', desc: 'só quando a Betano paga 3% ou mais acima do preço justo da Pinnacle', perDay: 6, ok: () => false };
+let ZE_VALOR = null, ZE_VALOR_AT = 0;
+async function zeValorLoad(force) {
+  try {
+    if (typeof roboGet !== 'function' || !roboOn()) return null;
+    if (!force && ZE_VALOR && Date.now() - ZE_VALOR_AT < 10 * 60e3) return ZE_VALOR;
+    const j = await roboGet('valor.json'); if (j && Array.isArray(j.jogos)) { ZE_VALOR = j; ZE_VALOR_AT = Date.now(); const e = document.getElementById('valorBody'); if (e) e.innerHTML = zeValorBody(); }
+  } catch (e) {}
+  return ZE_VALOR;
+}
+function zeValorBody() {
+  const V = ZE_VALOR;
+  if (!V) return `<p class="muted" style="font-size:.84rem;">A carregar as medições do robô… Se não aparecer nada, liga o robô na nuvem em Definições.</p>`;
+  const J = V.jogos.filter(j => j.valor), ks = ['1', 'X', '2'], pc = x => (x >= 0 ? '+' : '−') + Math.abs(x * 100).toFixed(1).replace('.', ',') + '%';
+  if (!J.length) return `<p class="muted" style="font-size:.84rem;">Ainda sem jogos medidos. O robô mede até 6 por dia, nas 4 horas antes de cada jogo.</p>`;
+  const all = []; J.forEach(j => j.valor.forEach((v, i) => all.push({ j, i, v, o: j.bet[i], p: j.justo[i], hit: j.saiu ? (j.saiu === ks[i] ? 1 : 0) : null })));
+  const grp = (lab, f) => { const L = all.filter(f), D = L.filter(x => x.hit != null); const pr = D.reduce((s, x) => s + (x.hit ? x.o - 1 : -1), 0); return `<tr><td>${lab}</td><td class="num">${L.length}</td><td class="num">${D.length}</td><td class="num">${D.length ? stPct(D.reduce((s, x) => s + x.hit, 0), D.length) : '—'}</td><td class="num">${D.length ? stPct(D.reduce((s, x) => s + x.p, 0), D.length) : '—'}</td><td class="num ${pr >= 0 ? 'rx-pos pos' : 'rx-neg neg'}">${D.length ? pc(pr / D.length) : '—'}</td></tr>`; };
+  const mB = J.reduce((s, j) => s + j.margemBet, 0) / J.length, mP = J.reduce((s, j) => s + j.margemPin, 0) / J.length;
+  const best = j => { let b = 0; j.valor.forEach((v, i) => { if (v > j.valor[b]) b = i; }); return b; };
+  const lab = (j, i) => i === 0 ? esc(j.h) : i === 1 ? 'Empate' : esc(j.a);
+  const C = V.carteira, dec = C ? C.bets.filter(b => b.st === 'win' || b.st === 'loss') : [];
+  return `<div class="zst" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px;">
+      <div class="kv"><span>Jogos medidos</span><b>${J.length}</b></div>
+      <div class="kv"><span>Margem da Betano</span><b>${(mB * 100).toFixed(1).replace('.', ',')}%</b></div>
+      <div class="kv"><span>Margem da Pinnacle</span><b>${(mP * 100).toFixed(1).replace('.', ',')}%</b></div>
+      <div class="kv"><span>Vezes com 3% ou mais</span><b>${all.filter(x => x.v >= .03).length} em ${all.length}</b></div>
+      ${C ? `<div class="kv"><span>Carteira 💎 (250 €)</span><b>${eur(r2(C.bank + C.bets.filter(b => b.st === 'open').reduce((s, b) => s + b.stake, 0)))}</b></div><div class="kv"><span>Apostas dela</span><b>${C.bets.length}${dec.length ? ` · ${dec.filter(b => b.st === 'win').length}/${dec.length} certas` : ''}</b></div>` : ''}
+    </div>
+    <table class="rx-t zp-t"><thead><tr><th>Betano contra o preço justo</th><th class="num">Casos</th><th class="num">Decididos</th><th class="num">Saiu</th><th class="num">Era esperado</th><th class="num">Por €</th></tr></thead><tbody>
+      ${grp('Paga 3% ou mais acima', x => x.v >= .03)}${grp('Entre 0 e 3% acima', x => x.v >= 0 && x.v < .03)}${grp('Até 5% abaixo', x => x.v < 0 && x.v >= -.05)}${grp('Mais de 5% abaixo', x => x.v < -.05)}
+    </tbody></table>
+    <p class="muted" style="font-size:.74rem;">«Preço justo» é a odd da Pinnacle sem a margem. Se a régua for boa, a linha de cima deve acabar com «Por €» positivo e as de baixo negativo. Com poucos casos decididos não dá para concluir nada.</p>
+    <h3 style="font-size:.86rem;margin:12px 0 6px;">Últimos jogos medidos</h3>
+    <table class="rx-t zp-t"><thead><tr><th>Jogo</th><th>Melhor caso</th><th class="num">Betano</th><th class="num">Justo</th><th class="num">Vantagem</th><th>Saiu</th></tr></thead><tbody>
+      ${J.slice(-12).reverse().map(j => { const b = best(j); return `<tr><td>${esc(j.h)} – ${esc(j.a)}${j.apostou ? ' 💎' : ''}</td><td>${lab(j, b)}</td><td class="num">${j.bet[b].toFixed(2).replace('.', ',')}</td><td class="num">${(1 / j.justo[b]).toFixed(2).replace('.', ',')}</td><td class="num ${j.valor[b] >= 0 ? 'rx-pos pos' : 'rx-neg neg'}">${pc(j.valor[b])}</td><td>${j.res ? esc(j.res) + (j.saiu === ks[b] ? ' ✓' : ' ✗') : '⏳'}</td></tr>`; }).join('')}
+    </tbody></table>
+    <p class="muted" style="font-size:.74rem;">💎 = a carteira «Preço justo» do piloto apostou neste jogo (1% da banca, só com 3% ou mais de vantagem e odd entre 1,25 e 4,00). Última medição: ${V.at ? new Date(V.at).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}.</p>`;
+}
+function zeValorPanelHTML() { return `<div class="panel" id="valorPanel" style="margin-top:12px;"><div class="panel-h"><span>💎 Betano contra o preço justo</span><span class="muted">segunda fonte de odds · em teste</span></div><div class="panel-b" id="valorBody">${zeValorBody()}</div></div>`; }
+stDecorate = (function (prev) {
+  return function () {
+    try { const old = document.getElementById('valorPanel'); if (old) old.remove(); } catch (e) {}
+    const r = prev.apply(this, arguments);
+    try { const y = document.getElementById('yearPanel'); if (y) { y.insertAdjacentHTML('afterend', zeValorPanelHTML()); const p = document.getElementById('valorPanel'), h = p.querySelector('.panel-h'); if (h && !h.querySelector('.st-io')) h.insertAdjacentHTML('beforeend', `<span class="st-io"><button type="button" title="Partilhar esta janela" aria-label="Partilhar esta janela" onclick="event.stopPropagation(); stPanelShare(this)">📤</button><button type="button" title="Imprimir ou guardar em PDF" aria-label="Imprimir ou guardar em PDF" onclick="event.stopPropagation(); stPanelPrint(this)">🖨️</button></span>`); zeValorLoad(); } } catch (e) { console.warn(e); }
+    return r;
+  };
+})(stDecorate);
+try { ZE_RULES.log.push({ ver: ZE_RULES.ver, d: '2026-11-12', txt: 'Nova estratégia do piloto, à parte das outras: «💎 Preço justo» (250 € virtuais). Aposta 1% da banca no resultado final quando a Betano paga 3% ou mais acima do preço justo da Pinnacle, com odd entre 1,25 e 4,00. Regra fixada hoje; as regras do Zé não mudaram.' }); } catch (e) {}
 
 renderWallet(); renderUpdateInfo();
 
