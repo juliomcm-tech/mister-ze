@@ -17826,6 +17826,7 @@ async function diaryCatchUp(force) {
 }
 setTimeout(() => diaryCatchUp().catch(() => {}), 60000);
 applyLive = (function (prev) { return function () { const r = prev.apply(this, arguments); setTimeout(() => diaryCatchUp().catch(() => {}), 40000); return r; }; })(applyLive);
+try { ZE_RULES.log.push({ ver: ZE_RULES.ver, d: '2026-11-12', txt: 'O piloto na nuvem passa a ser um só apostador com 1000 € virtuais ao todo, repartidos pelas 4 estratégias (250 € cada). As apostas já feitas foram reduzidas na mesma proporção; as regras e as percentagens apostadas não mudaram.' }); } catch (e) {}
 
 renderWallet(); renderUpdateInfo();
 

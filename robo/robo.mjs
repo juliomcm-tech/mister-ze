@@ -16,7 +16,7 @@ const T0 = Date.now();
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DIR = process.env.ROBO_DADOS || 'dados';
 const APP = process.env.ROBO_APP || path.join(HERE, '..', 'classico.html');
-const START = Number(process.env.ROBO_BANCA) || 1000;              // capital inicial de cada carteira do piloto na nuvem
+const START = Number(process.env.ROBO_BANCA) || 250;               // capital de cada uma das 4 estratégias: o piloto é UM apostador com 1000 € ao todo
 const MAX_ODDS = Number(process.env.ROBO_MAX_ODDS) || 90;           // pedidos de odds por corrida, no máximo
 const MOCK = process.env.ROBO_MOCK ? (await import(process.env.ROBO_MOCK)).default : null;
 const UA = 'Mozilla/5.0 (compatible; MisterZeRobo/1.0; +https://github.com/juliomcm-tech/mister-ze)';
@@ -58,6 +58,18 @@ const dom = new JSDOM(fs.readFileSync(APP, 'utf8'), {
   beforeParse(w) {
     w.scrollTo = () => {}; w.fetch = roboFetch; w.alert = () => {}; w.confirm = () => true; w.__ROBO = true;
     for (const [k, v] of Object.entries(estado.ls || {})) { try { w.localStorage.setItem(k, v); } catch (e) {} }
+    // o piloto passou a ter 1000 € ao todo (4 × 250): carteiras antigas são reduzidas na mesma proporção, apostas incluídas
+    for (const k of ['ze_auto_v1', 'ze_auto_valor_v1', 'ze_auto_todos_v1', 'ze_auto_cai_v1']) {
+      try {
+        const a = JSON.parse(w.localStorage.getItem(k) || 'null'); if (!a || !a.start || a.start === START) continue;
+        const f = START / a.start, r = x => Math.round(x * f * 100) / 100;
+        a.bets.forEach(b => { b.stake = r(b.stake); if (b.ret != null) b.ret = r(b.ret); });
+        (a.topups || []).forEach(t => { t.amount = r(t.amount); });
+        const cap = START + (a.topups || []).reduce((s, t) => s + t.amount, 0);
+        a.bank = Math.round((cap - a.bets.reduce((s, b) => s + b.stake, 0) + a.bets.reduce((s, b) => s + (b.st === 'win' ? (b.ret != null ? b.ret : b.stake * b.o) : b.st === 'void' ? b.stake : 0), 0)) * 100) / 100;
+        a.start = START; w.localStorage.setItem(k, JSON.stringify(a)); console.log('carteira', k, 'reduzida ×', f);
+      } catch (e) { console.log('migração', k, e.message); }
+    }
     // carteiras do piloto na nuvem: nascem ligadas, todas com o mesmo capital
     if (!w.localStorage.getItem('ze_auto_v1')) {
       const base = () => ({ start: START, bank: START, bets: [], topups: [], since: new Date().toISOString() });
