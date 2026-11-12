@@ -3861,7 +3861,7 @@ function legEval(leg) {
 }
 
 const ODD_RE = /(^|\s)(\d{1,3}[.,]\d{2})\s*$/;
-const MARKET_RE = /^(resultado final|total de golos|ambas (as equipas )?marcam|dupla hip[oó]tese|handicap|marcador|resultado ao intervalo|1x2|mais\/menos|resultado final \/ total|draw no bet|empate anula)/i;
+const MARKET_RE = /^(resultado final|total de golos|ambas (as equipas )?marcam|dupla hip[oó]tese|hip[oó]tese dupla|dupla chance|handicap|marcador|resultado ao intervalo|1x2|mais\/menos|resultado final \/ total|draw no bet|empate anula)/i;
 const DATE_RE = /\d{1,2}\/\d{1,2}\/\d{2,4}.*$/;
 function cleanName(s) {
   let t = String(s || '').replace(DATE_RE, '').replace(ODD_RE, '').trim();
@@ -11494,7 +11494,7 @@ try { updateContinue(); } catch (e) {}
    - chat novo: classificação de qualquer liga, «transferências benfica», «mercado»
    - a app atualiza-se sozinha quando há versão nova
    ===================================================================== */
-const APP_VER = 'v68';
+const APP_VER = 'v69';
 
 /* ---------- 1) notícias e YouTube sem falhar ---------- */
 const FEED_LS = 'ze_feed_cache_v1';
@@ -17496,13 +17496,13 @@ function finBets(acc) {
 function finProfit(e) { return e.st === 'win' ? r2(e.ret - e.stake) : e.st === 'loss' ? -e.stake : 0; }
 
 /* ---------- mosaicos das três contas ---------- */
-function finTile(acc, name, face, value, result, open) {
+function finTile(acc, name, face, value, result, open, inplay) {
   const on = FIN.acc === acc, up = result >= 0;
   return `<button type="button" class="fin-acc ${acc}${on ? ' on' : ''}" role="tab" aria-selected="${on}" onclick="finAcc('${acc}')" aria-label="Conta ${esc(name)}">
     <span class="fa-top">${face}<span class="fa-name">${esc(name)}</span></span>
     <span class="fa-val num">${eur(value)}</span>
     <span class="fa-res ${Math.abs(result) < 0.005 ? 'muted' : up ? 'pos' : 'neg'}">${Math.abs(result) < 0.005 ? 'sem ganho nem perda' : (up ? '▲ ' : '▼ ') + eurS(result)}</span>
-    <span class="fa-open${open ? ' live' : ''}">${open ? `⏳ ${open} em jogo` : 'nada em jogo'}</span>
+    <span class="fa-open${open ? ' live' : ''}">${open ? `⏳ ${open} em jogo${inplay ? ' · ' + eur(inplay) : ''}` : 'nada em jogo'}</span>
   </button>`;
 }
 function finPilotIcon() { let m = 'local'; try { m = autoMode(); } catch (e) {} return m === 'nuvem' ? '☁️' : '📱'; }
@@ -17670,9 +17670,9 @@ function finRender() {
   const acc = FIN.acc, t = wlTab, b = loadBank();
   if (!['emjogo', 'decididas', 'extrato', 'resumo', 'registar'].includes(t)) { wlSetTab('emjogo'); return; }
   const sy = walletStats(b, 'you'), sz = walletStats(b, 'ze'), sp = finPilotStats('all');
-  setHTML('finAccs', finTile('you', holderName('you'), humanFace(24), sy.equity, sy.result, b.bets.filter(x => x.status === 'open').length)
-    + finTile('ze', 'Zé', zeFace(zeMood(b), 24), sz.equity, sz.result, b.zeBets.filter(x => x.status === 'open').length)
-    + finTile('auto', 'Piloto', `<span class="fa-ico">${finPilotIcon()}</span>`, sp.value, sp.result, finBetsOpenCount()));
+  setHTML('finAccs', finTile('you', holderName('you'), humanFace(24), b.you, sy.result, b.bets.filter(x => x.status === 'open').length, r2(b.bets.filter(x => x.status === 'open').reduce((t, x) => t + (Number(x.stake) || 0), 0)))
+    + finTile('ze', 'Zé', zeFace(zeMood(b), 24), b.ze, sz.result, b.zeBets.filter(x => x.status === 'open').length, r2(b.zeBets.filter(x => x.status === 'open').reduce((t, x) => t + (Number(x.stake) || 0), 0)))
+    + finTile('auto', 'Piloto', `<span class="fa-ico">${finPilotIcon()}</span>`, sp.cash, sp.result, finBetsOpenCount(), (function () { const k = FIN.w; FIN.w = 'all'; try { return finPilotStats('all').exposure; } finally { FIN.w = k; } })()));
   const nOpen = acc === 'auto' ? finBets('auto').filter(e => e.st === 'open').length : (acc === 'ze' ? b.zeBets : b.bets).filter(x => x.status === 'open').length;
   setText('wlOpenBadge', nOpen ? String(nOpen) : '');
   const show = (id, on) => { const el = document.getElementById(id); if (el) el.hidden = !on; };
@@ -17702,7 +17702,20 @@ wlSetTab = (function (prev) {
   };
 })(wlSetTab);
 try { if (finOn()) wlTab = 'emjogo'; } catch (e) {}
-stuckBox = (function (prev) { return function () { const r = prev.apply(this, arguments); try { const sb = document.getElementById('stuckBox'); if (sb) sb.hidden = FIN.acc === 'auto'; } catch (e) {} return r; }; })(stuckBox);
+stuckBox = (function (prev) {
+  return function () {
+    const r = prev.apply(this, arguments);
+    try {
+      const sb = document.getElementById('stuckBox'); if (!sb) return r;
+      // só as apostas da conta que está aberta (antes apareciam as tuas dentro da conta do Zé, e vice-versa)
+      const mine = FIN.acc === 'ze' ? '🤖' : '👤'; let n = 0;
+      sb.querySelectorAll('.need').forEach(d => { const ok = FIN.acc !== 'auto' && (d.textContent || '').trim().startsWith(mine); d.hidden = !ok; if (ok) n++; });
+      const t = sb.querySelector('b'); if (t) t.textContent = `✋ Apostas ${FIN.acc === 'ze' ? 'do Zé ' : ''}que precisam de ti (${n})`;
+      sb.hidden = !n;
+    } catch (e) {}
+    return r;
+  };
+})(stuckBox);
 /* o piloto mudou (nuvem ↔ telemóvel, apostas novas): se as Finanças estiverem abertas, redesenha */
 cloudRepaint = (function (prev) { return function () { const r = prev.apply(this, arguments); try { if (currentView === 'banca') renderWallet(); } catch (e) {} return r; }; })(cloudRepaint);
 
@@ -17837,7 +17850,7 @@ try { ZE_RULES.log.push({ ver: ZE_RULES.ver, d: '2026-11-12', txt: 'O piloto na 
 function finRegMode() {
   try {
     const on = currentView === 'banca' && wlTab === 'registar';
-    document.body.classList.toggle('fin-reg', on);
+    document.body.classList.toggle('fin-reg', on); document.body.classList.toggle('fin-dim', currentView === 'banca');
     const e = document.getElementById('finEyebrow'), h = document.getElementById('finTitle');
     if (e) e.textContent = on ? 'Boletim' : 'Finanças'; if (h) h.textContent = on ? 'Manda o print ou regista' : 'Contas';
   } catch (e) {}
@@ -18176,6 +18189,126 @@ function mMoreDress() {
   document.head.appendChild(css);
   mMoreDress(); document.addEventListener('DOMContentLoaded', mMoreDress); setTimeout(mMoreDress, 800); setTimeout(mMoreDress, 3000);
 })();
+
+/* ================= v69 · Boletins de seleções: nomes em português, lixo das bandeiras e jogos encontrados ================= */
+/* nome da ESPN (inglês) → como aparece nas casas portuguesas */
+const ZE_PAISES = { england: 'inglaterra', croatia: 'croacia', turkiye: 'turquia', turkey: 'turquia', belgium: 'belgica', czechia: 'chequia republica checa', spain: 'espanha', latvia: 'letonia', armenia: 'armenia', cyprus: 'chipre', 'san marino': 'sao marino', belarus: 'bielorrussia', france: 'franca', italy: 'italia', germany: 'alemanha', netherlands: 'paises baixos holanda', portugal: 'portugal', scotland: 'escocia', wales: 'pais de gales gales', 'northern ireland': 'irlanda do norte', 'republic of ireland': 'republica da irlanda irlanda', ireland: 'irlanda', switzerland: 'suica', austria: 'austria', denmark: 'dinamarca', sweden: 'suecia', norway: 'noruega', finland: 'finlandia', iceland: 'islandia', poland: 'polonia', ukraine: 'ucrania', hungary: 'hungria', romania: 'romenia', bulgaria: 'bulgaria', greece: 'grecia', serbia: 'servia', slovenia: 'eslovenia', slovakia: 'eslovaquia', albania: 'albania', kosovo: 'kosovo', 'north macedonia': 'macedonia do norte', 'bosnia-herzegovina': 'bosnia herzegovina', 'bosnia and herzegovina': 'bosnia herzegovina', georgia: 'georgia', azerbaijan: 'azerbaijao', kazakhstan: 'cazaquistao', moldova: 'moldavia', lithuania: 'lituania', estonia: 'estonia', luxembourg: 'luxemburgo', malta: 'malta', andorra: 'andorra', gibraltar: 'gibraltar', liechtenstein: 'liechtenstein', 'faroe islands': 'ilhas faroe faroe', israel: 'israel', montenegro: 'montenegro', russia: 'russia', brazil: 'brasil', argentina: 'argentina', uruguay: 'uruguai', colombia: 'colombia', mexico: 'mexico', 'united states': 'estados unidos eua', usa: 'estados unidos eua', canada: 'canada', japan: 'japao', 'south korea': 'coreia do sul', morocco: 'marrocos', senegal: 'senegal', nigeria: 'nigeria', egypt: 'egito', algeria: 'argelia', tunisia: 'tunisia', ghana: 'gana', cameroon: 'camaroes', 'ivory coast': 'costa do marfim', australia: 'australia', 'saudi arabia': 'arabia saudita', iran: 'irao', qatar: 'catar', ecuador: 'equador', chile: 'chile', peru: 'peru', paraguay: 'paraguai', 'cape verde': 'cabo verde', angola: 'angola', mozambique: 'mocambique', 'south africa': 'africa do sul' };
+try { Object.keys(ZE_PAISES).forEach(en => { const pt = ZE_PAISES[en]; if (!TEAM_ALIAS[en]) TEAM_ALIAS[en] = en + ' ' + pt; pt.split(' ').filter(w => w.length > 4 && !/^(republica|paises|ilhas|costa|estados|unidos|norte|arabia|africa|coreia|irlanda|baixos)$/.test(w)).forEach(w => { if (!TEAM_ALIAS[w] && w !== en) TEAM_ALIAS[w] = w + ' ' + en; }); }); } catch (e) {}
+const ZE_PAIS_PT = (function () { const L = []; Object.keys(ZE_PAISES).forEach(en => { const all = ZE_PAISES[en].split(' '); [ZE_PAISES[en]].concat(en === 'czechia' ? ['chequia', 'republica checa'] : en === 'netherlands' ? ['paises baixos', 'holanda'] : en === 'wales' ? ['pais de gales', 'gales'] : en === 'republic of ireland' ? ['republica da irlanda'] : en === 'faroe islands' ? ['ilhas faroe'] : en === 'united states' || en === 'usa' ? ['estados unidos', 'eua'] : []).forEach(n => { if (!L.includes(n)) L.push(n); }); }); return L.filter(n => !/ /.test(n) || /^(sao marino|irlanda do norte|macedonia do norte|bosnia herzegovina|republica checa|paises baixos|pais de gales|republica da irlanda|ilhas faroe|estados unidos|coreia do sul|costa do marfim|arabia saudita|cabo verde|africa do sul)$/.test(n)).sort((a, b) => b.length - a.length); })();
+/* equipas conhecidas neste momento (calendário + resultados) + seleções em português */
+function zeKnownTeams() {
+  const S = new Set(ZE_PAIS_PT);
+  try { matches.forEach(m => { [m.home, m.away].forEach(n => { n = normTxt(n || '').replace(/\./g, ''); if (n.length >= 4) S.add(n); }); }); } catch (e) {}
+  try { ((lsGet(LIVE_KEY, null) || {}).matches || []).forEach(x => { [x.homeTeam, x.awayTeam].forEach(t => { [t && t.shortName, t && t.name].forEach(n => { n = normTxt(n || '').replace(/\./g, ''); if (n.length >= 4) S.add(n); }); }); }); } catch (e) {}
+  return [...S].sort((a, b) => b.length - a.length);
+}
+function zeSnapTeam(raw, known) {
+  const n = ' ' + normTxt(String(raw || '')).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim() + ' ';
+  const hit = (known || zeKnownTeams()).find(k => n.includes(' ' + k + ' '));
+  if (hit) { const words = hit.split(' ').length, src = String(raw).replace(DATE_RE, '').trim().split(/\s+/); for (let i = 0; i + words <= src.length; i++) { const cand = src.slice(i, i + words).join(' '); if (normTxt(cand).replace(/[^a-z0-9 ]/g, ' ').trim() === hit) return cand.replace(/^./, c => c.toUpperCase()); } return hit.replace(/(^| )./g, c => c.toUpperCase()); }
+  // desconhecida: tira o lixo que as bandeiras deixam antes do nome («em», «ec», «mia», «x",»)
+  const t = String(raw || '').trim().split(/\s+/); while (t.length > 1 && (!/^[A-ZÀ-Ý]/.test(t[0]) || t[0].replace(/[^A-Za-zÀ-ÿ]/g, '').length <= 2)) t.shift();
+  while (t.length > 1 && !/^[A-Za-zÀ-ÿ.'-]{2,}$/.test(t[t.length - 1])) t.pop();
+  return t.join(' ');
+}
+const zeTeamOk = s => (normTxt(String(s || '')).match(/[a-z]{4,}/g) || []).length > 0;
+parseSlip = (function (prev) {
+  return function (text) {
+    const out = prev.apply(this, arguments);
+    try {
+      const known = zeKnownTeams();
+      out.legs.forEach(l => {
+        if (l.sport === 'nba') return;
+        ['home', 'away'].forEach(k => { if (l[k]) { const v = zeSnapTeam(l[k], known); l[k] = zeTeamOk(v) ? v : ''; } });
+        if (l.home && l.away && normTxt(l.home) === normTxt(l.away)) l.away = '';
+      });
+      // a mesma seleção lida duas vezes (o ponto de «2.5» perde-se: «25 golos»)
+      out.legs = out.legs.filter((l, i) => !(/\b(\d)(5) golos\b/.test(normTxt(l.sel)) && out.legs.some((o, j) => j !== i && normTxt(o.sel).replace(/[^a-z0-9]/g, '') === normTxt(l.sel).replace(/\b(\d)(5) golos\b/, '$1.$2 golos').replace(/[^a-z0-9]/g, ''))));
+      out.legs.forEach(l => {
+        let t = String(l.sel || '').replace(/\bMaisde\b/i, 'Mais de').trim().split(/\s+/);
+        while (t.length > 1 && !/^[A-ZÀ-Ý0-9][A-Za-zÀ-ÿ0-9.'-]*$/.test(t[0]) && !/^(mais|menos|ambas|empate|sim|n[aã]o|x|1x|x2|12|over|under)$/i.test(t[0])) t.shift();
+        l.sel = t.join(' ').replace(/\b(Mais|Menos)\s+(?:de\s+)?(\d)[.,]?5(?:\s+golos)?(?![\d.,])/gi, '$1 de $2.5 golos');
+      });
+    } catch (e) { console.warn(e); }
+    return out;
+  };
+})(parseSlip);
+/* a seleção em português («Bélgica ou Empate») tem de ser entendida contra o nome da ESPN («Belgium») */
+selConds = (function (prev) { return function (selRaw, m) { let s = String(selRaw || '').replace(/\b(mais|menos)\s+(?:de\s+)?(\d)[.,]?5(?![\d.,])/gi, '$1 de $2.5'); try { const x = expandAliases(normTxt(s).replace(/\./g, (c, i, str) => /\d\.\d/.test(str.slice(i - 1, i + 2)) ? '.' : ' ')); const extra = x.slice(normTxt(s).length); if (extra.trim()) s += ' ' + extra; } catch (e) {} return prev.call(this, s, m); }; })(selConds);
+/* encontrar o jogo mesmo quando o print só deixou ler uma das equipas (ou as trocou) */
+evMatchesLeg = (function (prev) {
+  return function (e, l) {
+    try { if (prev.apply(this, arguments)) return true; } catch (er) {}
+    try {
+      const hx = expandAliases(normTxt(e.homeTeam.name + ' ' + e.homeTeam.shortName)), ax = expandAliases(normTxt(e.awayTeam.name + ' ' + e.awayTeam.shortName));
+      const sc = n => zeTeamOk(n) ? [teamScore(n, hx) > 0, teamScore(n, ax) > 0] : null;
+      const H = sc(l.home), A = sc(l.away);
+      if (H && A) return (H[1] && A[0]);                                   // as duas lidas mas trocadas
+      const one = H || A; if (one) return one[0] || one[1];                 // só uma lida: basta que jogue neste jogo
+      const known = ZE_PAIS_PT.concat([]), s = ' ' + normTxt(l.sel || '') + ' ';   // nenhuma lida: a seleção diz a equipa («Bélgica ou Empate»)
+      const t = known.find(k => s.includes(' ' + k + ' ')); if (t) { const r = [teamScore(t, hx) > 0, teamScore(t, ax) > 0]; return r[0] || r[1]; }
+    } catch (er) {}
+    return false;
+  };
+})(evMatchesLeg);
+
+renderWallet = (function (prev) { return function () { const r = prev.apply(this, arguments); try { stuckBox(); } catch (e) {} return r; }; })(renderWallet);
+
+/* ---------- ícones próprios também nos mosaicos do início e na barra de baixo ---------- */
+(function () {
+  const w = d => `<svg viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const a = 'fill="var(--zi-a,#7c4dff)" fill-opacity=".45" stroke="none"';
+  Object.assign(ZI, {
+    duelo: w(`<path d="M6 5l13 13-3 3L4 9z" ${a}/><path d="M26 5L13 18l3 3L28 9z" ${a}/><path d="M5 5h4l12 12-3 3L5 9zM27 5h-4L11 17l3 3L27 9z"/><path d="M8 20l-3 3 4 4 3-3M24 20l3 3-4 4-3-3M9 23l2-2M23 23l-2-2"/>`),
+    raiox: w(`<rect x="6" y="4" width="20" height="24" rx="3" ${a}/><rect x="6" y="4" width="20" height="24" rx="3"/><path d="M16 8v16M11 11.5c2 1.3 8 1.3 10 0M10.5 15.5c2.2 1.5 8.8 1.5 11 0M11.5 19.5c2 1.2 7 1.2 9 0"/>`),
+    ze: w(`<rect x="6" y="11" width="20" height="15" rx="4" ${a}/><rect x="6" y="11" width="20" height="15" rx="4"/><path d="M16 11V6M3 17v4M29 17v4M12 22h8"/><circle cx="16" cy="5" r="1.6"/><circle cx="12" cy="17" r="1.7"/><circle cx="20" cy="17" r="1.7"/>`),
+    portal: w(`<path d="M5 15L16 5l11 10v11a1.5 1.5 0 01-1.5 1.5H6.5A1.5 1.5 0 015 26z" ${a}/><path d="M3.5 16L16 5l12.5 11M6.5 13.5V27h19V13.5M13 27v-8h6v8"/>`),
+    dia: w(`<circle cx="16" cy="16" r="11" ${a}/><circle cx="16" cy="16" r="11"/><path d="M16 11l4.6 3.3-1.8 5.4h-5.6l-1.8-5.4zM16 5v6M20.6 14.3l5.6-2M18.8 19.7l3.6 4.8M13.2 19.7l-3.6 4.8M11.4 14.3l-5.6-2"/>`),
+    mais: w(`<rect x="5" y="5" width="9" height="9" rx="2.5" ${a}/><rect x="18" y="18" width="9" height="9" rx="2.5" ${a}/><rect x="5" y="5" width="9" height="9" rx="2.5"/><rect x="18" y="5" width="9" height="9" rx="2.5"/><rect x="5" y="18" width="9" height="9" rx="2.5"/><rect x="18" y="18" width="9" height="9" rx="2.5"/>`)
+  });
+  ZI.jogos_tile = w(`<path d="M10 5h12v7a6 6 0 01-12 0z" ${a}/><path d="M10 5h12v7a6 6 0 01-12 0zM10 7H5.5c0 4 2 6 4.8 6.4M22 7h4.5c0 4-2 6-4.8 6.4M16 18v5M11 27h10M12.5 23h7"/>`);
+  const css = document.createElement('style');
+  css.textContent = `.rv-tile .rvic.zi{filter:none!important;top:12%!important;display:grid;place-items:center;font-size:0!important}
+    .rv-tile .rvic.zi svg{width:50px;height:50px;color:#c8f53c;padding:9px;box-sizing:content-box;border-radius:20px;background:radial-gradient(circle at 35% 25%,rgba(124,77,255,.55),rgba(18,10,36,.85) 75%);border:1px solid rgba(200,245,60,.3);box-shadow:0 8px 14px rgba(0,0,0,.5),inset 0 -6px 10px rgba(0,0,0,.35)}
+    .rv-tile .rvic.zi-banca svg,.rv-tile .rvic.zi-boletim svg{color:#ffd166;border-color:rgba(255,209,102,.32);--zi-a:#ff9f1c}
+    .rv-tile .rvic.zi-refresh svg,.rv-tile .rvic.zi-scout svg{color:#7fb2ff;border-color:rgba(127,178,255,.32);--zi-a:#2f7bff}
+    .rv-tile .rvic.zi-duelo svg{color:#ff7a8f;border-color:rgba(255,122,143,.32);--zi-a:#ff4d6a}
+    .rv-tile .rvic.zi-raiox svg,.rv-tile .rvic.zi-ze svg{color:#d7c8ff;border-color:rgba(215,200,255,.3)}
+    @media (max-width:420px){.rv-tile .rvic.zi svg{width:38px;height:38px;padding:8px;border-radius:16px}}
+    body.rv #mNav button .i.zi{font-size:0;display:grid;place-items:center;height:30px}
+    body.rv #mNav button .i.zi svg{width:27px;height:27px;color:#a99ec4;transition:color .15s,transform .15s}
+    body.rv #mNav button.on .i.zi svg{color:#c8f53c;transform:translateY(-1px) scale(1.08);filter:drop-shadow(0 0 6px rgba(200,245,60,.45))}`;
+  document.head.appendChild(css);
+  const nav = () => { try { document.querySelectorAll('#mNav button').forEach(b => { const k = b.dataset.m, i = b.querySelector('.i'); if (i && ZI[k] && !i.classList.contains('zi')) { i.innerHTML = ZI[k]; i.classList.add('zi'); } }); } catch (e) {} };
+  nav(); document.addEventListener('DOMContentLoaded', nav); setTimeout(nav, 800); setTimeout(nav, 3000);
+})();
+
+/* ---------- 🔔 Desde a última visita: o que se decidiu nas três contas (aviso dentro da app; some ao abrir as Finanças) ---------- */
+const FIN_SEEN_KEY = 'ze_fin_seen_v1';
+function finNews() {
+  let seen = lsGet(FIN_SEEN_KEY, 0) || 0;
+  if (!seen) { lsSet(FIN_SEEN_KEY, Date.now()); return null; }
+  const keep = FIN.w; FIN.w = 'all'; const out = [];
+  try {
+    [['you', holderName('you')], ['ze', 'Zé'], ['auto', 'Piloto']].forEach(([acc, name]) => {
+      const L = finBets(acc).filter(e => (e.st === 'win' || e.st === 'loss') && e.td > seen && e.td <= Date.now()); if (!L.length) return;
+      out.push({ acc, name, w: L.filter(e => e.st === 'win').length, l: L.filter(e => e.st === 'loss').length, pr: r2(L.reduce((s, e) => s + finProfit(e), 0)) });
+    });
+  } catch (e) {} finally { FIN.w = keep; }
+  return out.length ? out : null;
+}
+function finNewsSeen() { try { lsSet(FIN_SEEN_KEY, Date.now()); } catch (e) {} }
+finHomeStrip = (function (prev) {
+  return function () {
+    let h = ''; try {
+      const N = finNews();
+      if (N) h = `<div class="fin-home fin-news" aria-label="Resultados desde a última visita"><div class="fh-h"><span>🔔 Desde a última visita</span><small>${N.reduce((s, a) => s + a.w + a.l, 0)} decidida${N.reduce((s, a) => s + a.w + a.l, 0) > 1 ? 's' : ''}</small></div>
+        <div class="fh-accs">${N.map(a => `<button type="button" class="fh-a ${a.acc}" onclick="finOpenAcc('${a.acc}','decididas')"><span class="fh-n num" style="font-size:1.05rem;color:${a.pr >= 0 ? 'var(--green,#2fd27a)' : 'var(--red-light,#ff7a8f)'}">${a.pr >= 0 ? '▲' : '▼'}</span><span class="fh-who">${esc(a.name)}</span><span class="fh-v">${a.w}✓ ${a.l}✗ · ${a.pr >= 0 ? '+' : '−'}${eur(Math.abs(a.pr))}</span></button>`).join('')}</div></div>`;
+    } catch (e) {}
+    return h + prev.apply(this, arguments);
+  };
+})(finHomeStrip);
+fmGo = (function (prev) { return function (view) { const r = prev.apply(this, arguments); try { if (view === 'banca') finNewsSeen(); } catch (e) {} return r; }; })(fmGo);
 
 renderWallet(); renderUpdateInfo();
 
