@@ -193,6 +193,12 @@ if (liveOk) {
     const antes = rd('piloto.json', null);
     wr('piloto.json', { at: new Date().toISOString(), ver: VER, regras: piloto.regras, nomes: piloto.nomes, carteiras: piloto.wallets, desde: (antes && antes.desde) || new Date().toISOString() });
   } catch (e) { nota('piloto: ' + (e && e.message)); }
+  // segunda fonte de odds: só mede a Betano contra o preço justo da Pinnacle (não aposta)
+  try {
+    const { valor } = await import('./valor.mjs');
+    const rv = await valor({ DIR, payload: liveOk ? payload : rd('live.json', null), piloto: rd('piloto.json', null), key: process.env.ODDSPAPI_KEY || '', maxDia: Number(process.env.ROBO_VALOR_DIA) || 6 });
+    console.log('valor', JSON.stringify(rv));
+  } catch (e) { console.log('valor: ' + (e && e.message)); }
   // fecho de mês: no primeiro dia em que o mês anterior já acabou, o resumo do piloto por liga fica gravado e não volta a mudar
   try {
     const M = JSON.parse(await ev('typeof stAccMonths === "function" ? JSON.stringify(stAccMonths("auto")) : "{}"'));

@@ -36,6 +36,8 @@ jobs:
       - name: dados da corrida anterior
         run: git clone --quiet --depth 1 --branch "$RAMO" "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" dados || mkdir -p dados
       - name: correr o robô
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
         run: node robo/robo.mjs
       - name: publicar
         run: |
