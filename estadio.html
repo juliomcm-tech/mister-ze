@@ -11494,7 +11494,7 @@ try { updateContinue(); } catch (e) {}
    - chat novo: classificação de qualquer liga, «transferências benfica», «mercado»
    - a app atualiza-se sozinha quando há versão nova
    ===================================================================== */
-const APP_VER = 'v66d';
+const APP_VER = 'v67';
 
 /* ---------- 1) notícias e YouTube sem falhar ---------- */
 const FEED_LS = 'ze_feed_cache_v1';
@@ -17890,6 +17890,123 @@ async function finShare(id) {
   try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
   try { shareSheet(text, null); } catch (e) { toast('Não consegui partilhar neste browser.'); }
 }
+
+/* ================= v67 · Estatísticas: partilhar e imprimir cada janela + relatório do ano, mês a mês ================= */
+const ST_MES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const stMonthKey = t => { const d = new Date(t); return isNaN(d) ? '' : d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); };
+const stMonthName = k => { const [y, m] = k.split('-'); return ST_MES[+m - 1].replace(/^./, c => c.toUpperCase()) + ' ' + y; };
+const stPct = (a, n) => n ? Math.round(a / n * 100) + '%' : '—';
+const stSg = v => (v >= 0 ? '+' : '−') + eur(Math.abs(r2(v)));
+/* opiniões do Zé já corrigidas (a aposta mais segura de cada jogo): mês → liga → contas */
+function stDiaryMonths() {
+  const M = {};
+  Object.values(diaryLoad().items).forEach(x => {
+    if (!x.res || !x.g || !x.pick || x.g.pick == null) return;
+    const k = stMonthKey(x.kick); if (!k) return; const lg = x.league || x.code || 'Outras';
+    const m = M[k] = M[k] || { tot: { n: 0, hit: 0, exp: 0 }, lg: {} }, l = m.lg[lg] = m.lg[lg] || { n: 0, hit: 0, exp: 0 };
+    [m.tot, l].forEach(o => { o.n++; o.hit += x.g.pick ? 1 : 0; o.exp += x.pick.p || 0; });
+  });
+  return M;
+}
+/* apostas decididas de uma conta: mês → totais (e por liga, quando a aposta a traz) */
+function stAccMonths(acc) {
+  const keep = FIN.w; FIN.w = 'all'; let L = []; try { L = finBets(acc); } catch (e) {} FIN.w = keep;
+  const M = {};
+  L.filter(e => e.st === 'win' || e.st === 'loss').forEach(e => {
+    const k = stMonthKey(e.td); if (!k) return;
+    const m = M[k] = M[k] || { tot: { n: 0, win: 0, stake: 0, pr: 0 }, lg: {} };
+    const add = o => { o.n++; o.win += e.st === 'win' ? 1 : 0; o.stake += e.stake; o.pr += finProfit(e); };
+    add(m.tot); if (e.lg) add(m.lg[e.lg] = m.lg[e.lg] || { n: 0, win: 0, stake: 0, pr: 0 });
+  });
+  return M;
+}
+function stYearHTML(full) {
+  const D = stDiaryMonths(), dk = Object.keys(D).sort();
+  const A = { you: stAccMonths('you'), ze: stAccMonths('ze'), auto: stAccMonths('auto') };
+  const cls = v => v >= 0 ? 'rx-pos pos' : 'rx-neg neg';
+  const MN = k => full ? stMonthName(k) : stMonthName(k).slice(0, 3) + ' ' + k.slice(2, 4), X = s => full ? s : '';
+  let h = '';
+  // 1) o Zé a prever
+  if (dk.length) {
+    const T = { n: 0, hit: 0, exp: 0 };
+    h += `<h3>🔮 O Zé a prever — aposta mais segura de cada jogo</h3><table class="rx-t zp-t"><thead><tr><th>Mês</th><th>Liga</th><th class="num">Jogos</th><th class="num">Certas</th><th class="num">Falhadas</th><th class="num">Acerto</th><th class="num">Prometia</th></tr></thead><tbody>`;
+    dk.forEach(k => {
+      const m = D[k]; T.n += m.tot.n; T.hit += m.tot.hit; T.exp += m.tot.exp;
+      if (full) Object.entries(m.lg).sort((a, b) => b[1].n - a[1].n).forEach(([lg, o]) => { h += `<tr><td>${stMonthName(k)}</td><td>${esc(lg)}</td><td class="num">${o.n}</td><td class="num">${o.hit}</td><td class="num">${o.n - o.hit}</td><td class="num">${stPct(o.hit, o.n)}</td><td class="num">${stPct(o.exp, o.n)}</td></tr>`; });
+      h += `<tr class="st-tot"><td><b>${MN(k)}</b></td><td><b>${full ? 'Total do mês' : Object.keys(m.lg).length + ' ligas'}</b></td><td class="num"><b>${m.tot.n}</b></td><td class="num"><b>${m.tot.hit}</b></td><td class="num"><b>${m.tot.n - m.tot.hit}</b></td><td class="num"><b>${stPct(m.tot.hit, m.tot.n)}</b></td><td class="num">${stPct(m.tot.exp, m.tot.n)}</td></tr>`;
+    });
+    h += `<tr class="st-tot"><td><b>Época</b></td><td></td><td class="num"><b>${T.n}</b></td><td class="num"><b>${T.hit}</b></td><td class="num"><b>${T.n - T.hit}</b></td><td class="num"><b>${stPct(T.hit, T.n)}</b></td><td class="num">${stPct(T.exp, T.n)}</td></tr></tbody></table>
+      <p class="zp-note muted" style="font-size:.74rem;">«Prometia» é a média das probabilidades que o Zé deu antes dos jogos. Se o acerto ficar muito abaixo, o Zé estava confiante de mais nesse mês ou nessa liga.</p>`;
+  }
+  // 2) as três contas
+  [['you', '⭐ ' + holderName('you')], ['ze', '🤖 Mister Zé (duelo)'], ['auto', '🛫 Piloto automático']].forEach(([acc, name]) => {
+    const M = A[acc], ks = Object.keys(M).sort(); if (!ks.length) return;
+    const T = { n: 0, win: 0, stake: 0, pr: 0 };
+    h += `<h3>${esc(name)} — apostas decididas</h3><table class="rx-t zp-t"><thead><tr><th>Mês</th>${full && acc === 'auto' ? '<th>Liga</th>' : ''}<th class="num">Apostas</th><th class="num">Ganhas</th>${X('<th class="num">Perdidas</th>')}<th class="num">Acerto</th>${X('<th class="num">Apostado</th>')}<th class="num">Resultado</th><th class="num">${full ? 'Por € apostado' : 'Por €'}</th></tr></thead><tbody>`;
+    const row = (a, b, o, bold) => { const B = s => bold ? `<b>${s}</b>` : s; return `<tr${bold ? ' class="st-tot"' : ''}><td>${B(a)}</td>${full && acc === 'auto' ? `<td>${B(b)}</td>` : ''}<td class="num">${B(o.n)}</td><td class="num">${B(o.win)}</td>${X(`<td class="num">${B(o.n - o.win)}</td>`)}<td class="num">${B(stPct(o.win, o.n))}</td>${X(`<td class="num">${eur(r2(o.stake))}</td>`)}<td class="num ${cls(o.pr)}">${B(stSg(o.pr))}</td><td class="num ${cls(o.pr)}">${o.stake ? (o.pr >= 0 ? '+' : '−') + Math.abs(o.pr / o.stake * 100).toFixed(1) + '%' : '—'}</td></tr>`; };
+    ks.forEach(k => {
+      const m = M[k]; ['n', 'win', 'stake', 'pr'].forEach(f => T[f] += m.tot[f]);
+      if (full && acc === 'auto') Object.entries(m.lg).sort((a, b) => b[1].n - a[1].n).forEach(([lg, o]) => { h += row(stMonthName(k), esc(lg), o, false); });
+      h += row(MN(k), 'Total do mês', m.tot, true);
+    });
+    h += row('Época', '', T, true) + '</tbody></table>';
+  });
+  return h || '<p class="muted">Ainda não há jogos corrigidos nem apostas decididas. Este quadro enche-se sozinho à medida que os resultados entram.</p>';
+}
+function stYearPanelHTML() {
+  return `<div class="panel" id="yearPanel" style="margin-top:12px;"><div class="panel-h"><span>📅 A época, mês a mês</span><span class="muted">acertos, falhas e resultado por mês</span></div>
+    <div class="panel-b">${stYearHTML(false)}<div class="btn-row" style="margin-top:10px;"><button class="btn btn-lime btn-sm" onclick="stYearPrint()">🖨️ Relatório completo por mês e por liga (PDF)</button></div></div></div>`;
+}
+function stYearPrint() {
+  zePrintDoc('Mister Zé — relatório da época, mês a mês', `<p class="zp-note">Por cada mês: o que o Zé previu em cada liga (certas, falhadas, acerto) e o que cada conta apostou e ganhou ou perdeu. Regras ${typeof ZE_RULES !== 'undefined' ? ZE_RULES.ver : ''}. Dinheiro virtual.</p>${stYearHTML(true)}`);
+}
+/* cada janela das Estatísticas ganha 📤 e 🖨️ no cabeçalho */
+function stPanelOf(btn) { const p = btn.closest('.panel'); const t = p && p.querySelector('.panel-h span'); return p ? { p, title: (t ? t.textContent : 'Estatísticas').trim() } : null; }
+function stPanelClone(p) {
+  const c = (p.querySelector('.panel-b') || p).cloneNode(true);
+  c.querySelectorAll('details').forEach(d => d.setAttribute('open', ''));
+  c.querySelectorAll('button, input, select, textarea, .btn-row, .st-io, canvas, script').forEach(x => x.remove());
+  c.querySelectorAll('[hidden]').forEach(x => x.remove());
+  return c;
+}
+function stPanelPrint(btn) { const o = stPanelOf(btn); if (!o) return; zePrintDoc('Mister Zé — ' + o.title, `<div class="zp-panel">${stPanelClone(o.p).innerHTML}</div>`); }
+async function stPanelShare(btn) {
+  const o = stPanelOf(btn); if (!o) return;
+  const c = stPanelClone(o.p); c.querySelectorAll('tr').forEach(tr => { tr.querySelectorAll('th,td').forEach((td, i) => { if (i) td.insertAdjacentText('afterbegin', ' · '); }); tr.insertAdjacentText('beforeend', '\n'); });
+  c.querySelectorAll('span, b, small, strong, a').forEach(x => x.insertAdjacentText('afterend', ' '));
+  c.querySelectorAll('div, p, h3, h4, li, summary, br').forEach(x => x.insertAdjacentText(x.tagName === 'BR' ? 'afterend' : 'beforeend', '\n'));
+  let body = (c.textContent || '').replace(/[ \t]+/g, ' ').replace(/ ([,.;:)%])/g, '$1').replace(/ ?\n ?/g, '\n').replace(/\n{2,}/g, '\n').trim();
+  if (!body) { toast('Esta janela ainda não tem nada para partilhar.'); return; }
+  if (body.length > 3000) body = body.slice(0, 3000).replace(/\n[^\n]*$/, '') + '\n… (o resto está na app)';
+  const text = `📊 Mister Zé — ${o.title}\n${body}\n— Mister Zé · dinheiro virtual`;
+  try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+  try { shareSheet(text, null); } catch (e) { toast('Não consegui partilhar neste browser.'); }
+}
+function stAllPrint() {
+  const box = document.getElementById('zeStatsBox'); if (!box) return;
+  const parts = [...box.querySelectorAll('.panel')].filter(p => p.id !== 'yearPanel').map(p => { const t = p.querySelector('.panel-h span'); return `<h3>${esc(t ? t.textContent.trim() : '')}</h3><div class="zp-panel">${stPanelClone(p).innerHTML}</div>`; }).join('');
+  zePrintDoc('Mister Zé — estatísticas completas', parts + '<h3>📅 A época, mês a mês</h3>' + stYearHTML(true));
+}
+function stDecorate() {
+  const box = document.getElementById('zeStatsBox'); if (!box) return;
+  const old = document.getElementById('yearPanel'); if (old) old.remove();
+  const bar0 = document.getElementById('stTopBar'); if (bar0) bar0.remove();
+  box.insertAdjacentHTML('afterbegin', `<div class="fin-io st-top" id="stTopBar"><button class="btn btn-sm" onclick="stYearPrint()">📅 Época por mês (PDF)</button><button class="btn btn-sm" onclick="stAllPrint()">🖨️ Imprimir tudo</button></div>` + stYearPanelHTML());
+  box.querySelectorAll('.panel').forEach(p => {
+    const h = p.querySelector('.panel-h'); if (!h || h.querySelector('.st-io')) return;
+    h.insertAdjacentHTML('beforeend', `<span class="st-io"><button type="button" title="Partilhar esta janela" aria-label="Partilhar esta janela" onclick="event.stopPropagation(); stPanelShare(this)">📤</button><button type="button" title="Imprimir ou guardar em PDF" aria-label="Imprimir ou guardar em PDF" onclick="event.stopPropagation(); stPanelPrint(this)">🖨️</button></span>`);
+  });
+}
+renderZeStats = (function (prev) { return function () { const r = prev.apply(this, arguments); try { stDecorate(); } catch (e) { console.warn(e); } return r; }; })(renderZeStats);
+(function () {
+  const css = document.createElement('style');
+  css.textContent = `.st-io{display:inline-flex;gap:6px;margin-left:auto;flex:0 0 auto}.st-io button{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--tile);cursor:pointer;font-size:.95rem;line-height:1;padding:0}
+    .st-io button:active{transform:scale(.95)}#zeStatsBox .panel-h{gap:8px;align-items:center}#zeStatsBox .panel-h>.muted{margin-left:auto;text-align:right}#zeStatsBox .panel-h>.muted+.st-io{margin-left:0}
+    .st-top{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin:0 0 10px}#yearPanel table{width:100%}#yearPanel .st-tot td{border-top:1px solid var(--border)}#yearPanel h3{font-size:.86rem;margin:12px 0 6px}#yearPanel h3:first-child{margin-top:0}
+    @media (max-width:560px){#zeStatsBox .panel-h>.muted{display:none}#yearPanel table{font-size:.74rem}#yearPanel th,#yearPanel td{padding:5px 4px}}
+    @media print{#zePrint .zp-panel,#zePrint .zp-panel *{color:#111!important;background:transparent!important;border-color:#ccc!important;box-shadow:none!important}#zePrint .zp-panel{font-size:10.5px}#zePrint .zp-panel details>summary{font-weight:700;list-style:none}#zePrint .st-tot td{background:#f1f1f1!important;font-weight:700}#zePrint .zp-panel>div{break-inside:avoid}}`;
+  document.head.appendChild(css);
+})();
 
 renderWallet(); renderUpdateInfo();
 
