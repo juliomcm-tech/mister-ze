@@ -11494,7 +11494,7 @@ try { updateContinue(); } catch (e) {}
    - chat novo: classificação de qualquer liga, «transferências benfica», «mercado»
    - a app atualiza-se sozinha quando há versão nova
    ===================================================================== */
-const APP_VER = 'v67';
+const APP_VER = 'v68';
 
 /* ---------- 1) notícias e YouTube sem falhar ---------- */
 const FEED_LS = 'ze_feed_cache_v1';
@@ -17915,7 +17915,8 @@ function stAccMonths(acc) {
   L.filter(e => e.st === 'win' || e.st === 'loss').forEach(e => {
     const k = stMonthKey(e.td); if (!k) return;
     const m = M[k] = M[k] || { tot: { n: 0, win: 0, stake: 0, pr: 0 }, lg: {} };
-    const add = o => { o.n++; o.win += e.st === 'win' ? 1 : 0; o.stake += e.stake; o.pr += finProfit(e); };
+    const cv = acc === 'auto' && typeof autoClv === 'function' ? autoClv(e.raw) : null;
+    const add = o => { o.n++; o.win += e.st === 'win' ? 1 : 0; o.stake += e.stake; o.pr += finProfit(e); if (cv != null) { o.cn = (o.cn || 0) + 1; o.cs = (o.cs || 0) + cv; } };
     add(m.tot); if (e.lg) add(m.lg[e.lg] = m.lg[e.lg] || { n: 0, win: 0, stake: 0, pr: 0 });
   });
   return M;
@@ -17929,28 +17930,30 @@ function stYearHTML(full) {
   // 1) o Zé a prever
   if (dk.length) {
     const T = { n: 0, hit: 0, exp: 0 };
-    h += `<h3>🔮 O Zé a prever — aposta mais segura de cada jogo</h3><table class="rx-t zp-t"><thead><tr><th>Mês</th><th>Liga</th><th class="num">Jogos</th><th class="num">Certas</th><th class="num">Falhadas</th><th class="num">Acerto</th><th class="num">Prometia</th></tr></thead><tbody>`;
+    h += `<h3>🔮 O Zé a prever — aposta mais segura de cada jogo</h3><table class="rx-t zp-t"><thead><tr><th>Mês</th><th>Liga</th><th class="num">Jogos</th><th class="num">Certas</th>${X('<th class="num">Falhadas</th>')}<th class="num">Acerto</th><th class="num">Prometia</th><th>Sinal</th></tr></thead><tbody>`;
     dk.forEach(k => {
       const m = D[k]; T.n += m.tot.n; T.hit += m.tot.hit; T.exp += m.tot.exp;
-      if (full) Object.entries(m.lg).sort((a, b) => b[1].n - a[1].n).forEach(([lg, o]) => { h += `<tr><td>${stMonthName(k)}</td><td>${esc(lg)}</td><td class="num">${o.n}</td><td class="num">${o.hit}</td><td class="num">${o.n - o.hit}</td><td class="num">${stPct(o.hit, o.n)}</td><td class="num">${stPct(o.exp, o.n)}</td></tr>`; });
-      h += `<tr class="st-tot"><td><b>${MN(k)}</b></td><td><b>${full ? 'Total do mês' : Object.keys(m.lg).length + ' ligas'}</b></td><td class="num"><b>${m.tot.n}</b></td><td class="num"><b>${m.tot.hit}</b></td><td class="num"><b>${m.tot.n - m.tot.hit}</b></td><td class="num"><b>${stPct(m.tot.hit, m.tot.n)}</b></td><td class="num">${stPct(m.tot.exp, m.tot.n)}</td></tr>`;
+      if (full) Object.entries(m.lg).sort((a, b) => b[1].n - a[1].n).forEach(([lg, o]) => { h += `<tr><td>${stMonthName(k)}</td><td>${esc(lg)}</td><td class="num">${o.n}</td><td class="num">${o.hit}</td>${X(`<td class="num">${o.n - o.hit}</td>`)}<td class="num">${stPct(o.hit, o.n)}</td><td class="num">${stPct(o.exp, o.n)}</td><td>${stSignal(o.hit, o.n, o.exp, full)}</td></tr>`; });
+      h += `<tr class="st-tot"><td><b>${MN(k)}</b></td><td><b>${full ? 'Total do mês' : Object.keys(m.lg).length + ' ligas'}</b></td><td class="num"><b>${m.tot.n}</b></td><td class="num"><b>${m.tot.hit}</b></td>${X(`<td class="num"><b>${m.tot.n - m.tot.hit}</b></td>`)}<td class="num"><b>${stPct(m.tot.hit, m.tot.n)}</b></td><td class="num">${stPct(m.tot.exp, m.tot.n)}</td><td>${stSignal(m.tot.hit, m.tot.n, m.tot.exp, full)}</td></tr>`;
     });
-    h += `<tr class="st-tot"><td><b>Época</b></td><td></td><td class="num"><b>${T.n}</b></td><td class="num"><b>${T.hit}</b></td><td class="num"><b>${T.n - T.hit}</b></td><td class="num"><b>${stPct(T.hit, T.n)}</b></td><td class="num">${stPct(T.exp, T.n)}</td></tr></tbody></table>
-      <p class="zp-note muted" style="font-size:.74rem;">«Prometia» é a média das probabilidades que o Zé deu antes dos jogos. Se o acerto ficar muito abaixo, o Zé estava confiante de mais nesse mês ou nessa liga.</p>`;
+    h += `<tr class="st-tot"><td><b>Época</b></td><td></td><td class="num"><b>${T.n}</b></td><td class="num"><b>${T.hit}</b></td>${X(`<td class="num"><b>${T.n - T.hit}</b></td>`)}<td class="num"><b>${stPct(T.hit, T.n)}</b></td><td class="num">${stPct(T.exp, T.n)}</td><td>${stSignal(T.hit, T.n, T.exp, full)}</td></tr></tbody></table>
+      <p class="zp-note muted" style="font-size:.74rem;">«Prometia» é a média das probabilidades que o Zé deu antes dos jogos. O sinal compara o acerto com o prometido tendo em conta quantos jogos foram: ⚪ poucos jogos para concluir · 🟢 dentro do normal · 🟡 a vigiar · 🔴 pior do que a sorte explica · 🔵 melhor do que o esperado.</p>`;
   }
   // 2) as três contas
   [['you', '⭐ ' + holderName('you')], ['ze', '🤖 Mister Zé (duelo)'], ['auto', '🛫 Piloto automático']].forEach(([acc, name]) => {
     const M = A[acc], ks = Object.keys(M).sort(); if (!ks.length) return;
-    const T = { n: 0, win: 0, stake: 0, pr: 0 };
-    h += `<h3>${esc(name)} — apostas decididas</h3><table class="rx-t zp-t"><thead><tr><th>Mês</th>${full && acc === 'auto' ? '<th>Liga</th>' : ''}<th class="num">Apostas</th><th class="num">Ganhas</th>${X('<th class="num">Perdidas</th>')}<th class="num">Acerto</th>${X('<th class="num">Apostado</th>')}<th class="num">Resultado</th><th class="num">${full ? 'Por € apostado' : 'Por €'}</th></tr></thead><tbody>`;
-    const row = (a, b, o, bold) => { const B = s => bold ? `<b>${s}</b>` : s; return `<tr${bold ? ' class="st-tot"' : ''}><td>${B(a)}</td>${full && acc === 'auto' ? `<td>${B(b)}</td>` : ''}<td class="num">${B(o.n)}</td><td class="num">${B(o.win)}</td>${X(`<td class="num">${B(o.n - o.win)}</td>`)}<td class="num">${B(stPct(o.win, o.n))}</td>${X(`<td class="num">${eur(r2(o.stake))}</td>`)}<td class="num ${cls(o.pr)}">${B(stSg(o.pr))}</td><td class="num ${cls(o.pr)}">${o.stake ? (o.pr >= 0 ? '+' : '−') + Math.abs(o.pr / o.stake * 100).toFixed(1) + '%' : '—'}</td></tr>`; };
+    const T = { n: 0, win: 0, stake: 0, pr: 0, cn: 0, cs: 0 };
+    h += `<h3>${esc(name)} — apostas decididas</h3><table class="rx-t zp-t"><thead><tr><th>Mês</th>${full && acc === 'auto' ? '<th>Liga</th>' : ''}<th class="num">Apostas</th><th class="num">Ganhas</th>${X('<th class="num">Perdidas</th>')}<th class="num">Acerto</th>${X('<th class="num">Apostado</th>')}<th class="num">Resultado</th><th class="num">${full ? 'Por € apostado' : 'Por €'}</th>${acc === 'auto' ? `<th class="num">${full ? 'Odd apanhada vs fecho' : 'vs fecho'}</th>` : ''}</tr></thead><tbody>`;
+    const row = (a, b, o, bold) => { const B = s => bold ? `<b>${s}</b>` : s; return `<tr${bold ? ' class="st-tot"' : ''}><td>${B(a)}</td>${full && acc === 'auto' ? `<td>${B(b)}</td>` : ''}<td class="num">${B(o.n)}</td><td class="num">${B(o.win)}</td>${X(`<td class="num">${B(o.n - o.win)}</td>`)}<td class="num">${B(stPct(o.win, o.n))}</td>${X(`<td class="num">${eur(r2(o.stake))}</td>`)}<td class="num ${cls(o.pr)}">${B(stSg(o.pr))}</td><td class="num ${cls(o.pr)}">${o.stake ? (o.pr >= 0 ? '+' : '−') + Math.abs(o.pr / o.stake * 100).toFixed(1) + '%' : '—'}</td>${acc === 'auto' ? `<td class="num ${o.cn ? cls(o.cs) : ''}">${o.cn ? (o.cs >= 0 ? '+' : '−') + Math.abs(o.cs / o.cn * 100).toFixed(1) + '%' + (full ? ` (${o.cn})` : '') : '—'}</td>` : ''}</tr>`; };
     ks.forEach(k => {
-      const m = M[k]; ['n', 'win', 'stake', 'pr'].forEach(f => T[f] += m.tot[f]);
+      const m = M[k]; ['n', 'win', 'stake', 'pr', 'cn', 'cs'].forEach(f => T[f] += m.tot[f] || 0);
       if (full && acc === 'auto') Object.entries(m.lg).sort((a, b) => b[1].n - a[1].n).forEach(([lg, o]) => { h += row(stMonthName(k), esc(lg), o, false); });
       h += row(MN(k), 'Total do mês', m.tot, true);
     });
     h += row('Época', '', T, true) + '</tbody></table>';
+    if (acc === 'auto') h += `<p class="zp-note muted" style="font-size:.74rem;">«vs fecho» compara a odd que o piloto apanhou com a odd no início do jogo. Positivo, mês após mês, é o melhor sinal de que o modelo vê coisas antes do mercado — mesmo antes de haver lucro.</p>`;
   });
+  try { h += stExtraHTML(full); } catch (e) { console.warn(e); }
   return h || '<p class="muted">Ainda não há jogos corrigidos nem apostas decididas. Este quadro enche-se sozinho à medida que os resultados entram.</p>';
 }
 function stYearPanelHTML() {
@@ -18006,6 +18009,172 @@ renderZeStats = (function (prev) { return function () { const r = prev.apply(thi
     @media (max-width:560px){#zeStatsBox .panel-h>.muted{display:none}#yearPanel table{font-size:.74rem}#yearPanel th,#yearPanel td{padding:5px 4px}}
     @media print{#zePrint .zp-panel,#zePrint .zp-panel *{color:#111!important;background:transparent!important;border-color:#ccc!important;box-shadow:none!important}#zePrint .zp-panel{font-size:10.5px}#zePrint .zp-panel details>summary{font-weight:700;list-style:none}#zePrint .st-tot td{background:#f1f1f1!important;font-weight:700}#zePrint .zp-panel>div{break-inside:avoid}}`;
   document.head.appendChild(css);
+})();
+
+/* ---------- auditoria contínua: sinal, tu contra o Zé, tipo de aposta e faixa de odd ---------- */
+function stSignal(hit, n, exp, full) {
+  if (!n) return '';
+  const p = Math.min(.98, Math.max(.02, exp / n)), z = (hit - exp) / Math.sqrt(n * p * (1 - p));
+  const t = n < 12 ? ['⚪', 'poucos jogos'] : z <= -2.5 ? ['🔴', 'pior que a sorte'] : z <= -1.5 ? ['🟡', 'a vigiar'] : z >= 2 ? ['🔵', 'acima do esperado'] : ['🟢', 'normal'];
+  return `<span title="${t[1]}">${t[0]}${full ? ' ' + t[1] : ''}</span>`;
+}
+const ST_BANDS = [['até 1,29', 0, 1.30], ['1,30 a 1,49', 1.30, 1.50], ['1,50 a 1,99', 1.50, 2], ['2,00 ou mais', 2, 1e9]];
+function stHeadToHead() {
+  const b = loadBank(), dec = x => x.status === 'win' || x.status === 'loss', one = x => !Array.isArray(x.legs) || x.legs.length <= 1, key = x => normTxt(String(x.match || '')).replace(/\b(vs|x)\b|[–-]/g, ' ').replace(/\s+/g, ' ').trim();
+  const Z = {}; b.zeBets.filter(x => dec(x) && one(x)).forEach(x => { Z[key(x)] = x; });
+  const R = { n: 0, you: 0, ze: 0, both: 0, none: 0, same: 0, list: [] };
+  b.bets.filter(x => dec(x) && one(x)).forEach(x => {
+    const z = Z[key(x)]; if (!z || !key(x)) return;
+    const a = x.status === 'win', c = z.status === 'win'; R.n++; if (a) R.you++; if (c) R.ze++; if (a && c) R.both++; if (!a && !c) R.none++;
+    if (normTxt(String(x.pick || '')) === normTxt(String(z.pick || ''))) R.same++;
+    R.list.push({ m: x.match, you: x.pick, ze: z.pick, a, c, t: Date.parse(x.settledAt || x.at) || 0 });
+  });
+  return R;
+}
+function stExtraHTML(full) {
+  let h = '';
+  // tu contra o Zé no mesmo jogo
+  const H = stHeadToHead();
+  h += `<h3>⚔️ Tu contra o Zé, no mesmo jogo</h3>`;
+  if (!H.n) h += `<p class="muted" style="font-size:.8rem;">Ainda não há jogos em que os dois tenham apostado e que já estejam decididos. É a medida mais justa do duelo: mesmo jogo, cada um com a sua aposta.</p>`;
+  else {
+    h += `<table class="rx-t zp-t"><thead><tr><th>Jogos em comum</th><th class="num">Tu acertaste</th><th class="num">O Zé acertou</th><th class="num">Os dois</th><th class="num">Nenhum</th>${full ? '<th class="num">Mesma aposta</th>' : ''}</tr></thead><tbody><tr class="st-tot"><td><b>${H.n}</b></td><td class="num"><b>${H.you}</b> (${stPct(H.you, H.n)})</td><td class="num"><b>${H.ze}</b> (${stPct(H.ze, H.n)})</td><td class="num">${H.both}</td><td class="num">${H.none}</td>${full ? `<td class="num">${H.same}</td>` : ''}</tr></tbody></table>`;
+    if (H.n < 20) h += `<p class="zp-note muted" style="font-size:.74rem;">Com ${H.n} jogo${H.n > 1 ? 's' : ''} ainda não dá para dizer quem é melhor — a partir de uns 30 começa a contar.</p>`;
+    if (full) h += `<table class="zp-t"><thead><tr><th>Jogo</th><th>A tua aposta</th><th>A do Zé</th></tr></thead><tbody>${H.list.sort((a, c) => c.t - a.t).slice(0, 40).map(r => `<tr><td>${esc(r.m)}</td><td>${r.a ? '✓' : '✗'} ${esc(r.you)}</td><td>${r.c ? '✓' : '✗'} ${esc(r.ze)}</td></tr>`).join('')}</tbody></table>`;
+  }
+  // o Zé por tipo de aposta
+  const F = {}, FM = {};
+  Object.values(diaryLoad().items).forEach(x => {
+    if (!x.res || !x.g || !x.pick || x.g.pick == null) return; let f = 'outras'; try { f = PICK_FAMILY(x.pick.k); } catch (e) {}
+    const k = stMonthKey(x.kick); [F[f] = F[f] || { n: 0, hit: 0, exp: 0 }, (FM[k] = FM[k] || {})[f] = FM[k][f] || { n: 0, hit: 0, exp: 0 }].forEach(o => { o.n++; o.hit += x.g.pick ? 1 : 0; o.exp += x.pick.p || 0; });
+  });
+  if (Object.keys(F).length) {
+    h += `<h3>🧩 O Zé por tipo de aposta</h3><table class="rx-t zp-t"><thead><tr>${full ? '<th>Mês</th>' : ''}<th>Tipo</th><th class="num">Jogos</th><th class="num">Certas</th><th class="num">Acerto</th><th class="num">Prometia</th><th>Sinal</th></tr></thead><tbody>`;
+    const fr = (m, f, o, bold) => `<tr${bold ? ' class="st-tot"' : ''}>${full ? `<td>${m}</td>` : ''}<td>${bold ? '<b>' + esc(f) + '</b>' : esc(f)}</td><td class="num">${o.n}</td><td class="num">${o.hit}</td><td class="num">${stPct(o.hit, o.n)}</td><td class="num">${stPct(o.exp, o.n)}</td><td>${stSignal(o.hit, o.n, o.exp, full)}</td></tr>`;
+    if (full) Object.keys(FM).sort().forEach(k => Object.entries(FM[k]).sort((a, c) => c[1].n - a[1].n).forEach(([f, o]) => { h += fr(stMonthName(k), f, o, false); }));
+    Object.entries(F).sort((a, c) => c[1].n - a[1].n).forEach(([f, o]) => { h += fr('Época', f, o, true); });
+    h += '</tbody></table>';
+  }
+  // contas por faixa de odd
+  const accs = full ? [['you', '⭐ ' + holderName('you')], ['ze', '🤖 Mister Zé (duelo)'], ['auto', '🛫 Piloto']] : [['you', holderName('you')], ['ze', 'Zé'], ['auto', 'Piloto']];
+  let any = false, hb = `<h3>🎚️ Por faixa de odd</h3><table class="rx-t zp-t"><thead><tr><th>Conta</th>${full ? '<th>Mês</th>' : ''}<th>Odd</th><th class="num">Apostas</th><th class="num">Acerto</th>${full ? '<th class="num">Precisava</th>' : ''}<th class="num">Resultado</th><th class="num">Por €</th></tr></thead><tbody>`;
+  accs.forEach(([acc, name]) => {
+    const keep = FIN.w; FIN.w = 'all'; let L = []; try { L = finBets(acc).filter(e => e.st === 'win' || e.st === 'loss'); } catch (e) {} FIN.w = keep;
+    const B = {}, BM = {};
+    L.forEach(e => { const bd = ST_BANDS.find(b => e.odd >= b[1] && e.odd < b[2]); if (!bd) return; const k = stMonthKey(e.td);
+      [B[bd[0]] = B[bd[0]] || { n: 0, win: 0, stake: 0, pr: 0, need: 0 }, (BM[k] = BM[k] || {})[bd[0]] = BM[k][bd[0]] || { n: 0, win: 0, stake: 0, pr: 0, need: 0 }].forEach(o => { o.n++; o.win += e.st === 'win' ? 1 : 0; o.stake += e.stake; o.pr += finProfit(e); o.need += 1 / e.odd; }); });
+    const br = (m, bn, o, bold) => { any = true; return `<tr${bold ? ' class="st-tot"' : ''}><td>${esc(name)}</td>${full ? `<td>${m}</td>` : ''}<td>${bn}</td><td class="num">${o.n}</td><td class="num">${stPct(o.win, o.n)}</td>${full ? `<td class="num">${stPct(o.need, o.n)}</td>` : ''}<td class="num ${o.pr >= 0 ? 'rx-pos pos' : 'rx-neg neg'}">${stSg(o.pr)}</td><td class="num ${o.pr >= 0 ? 'rx-pos pos' : 'rx-neg neg'}">${o.stake ? (o.pr >= 0 ? '+' : '−') + Math.abs(o.pr / o.stake * 100).toFixed(1) + '%' : '—'}</td></tr>`; };
+    if (full) Object.keys(BM).sort().forEach(k => ST_BANDS.forEach(b => { if (BM[k][b[0]]) hb += br(stMonthName(k), b[0], BM[k][b[0]], false); }));
+    ST_BANDS.forEach(b => { if (B[b[0]]) hb += br('Época', b[0], B[b[0]], true); });
+  });
+  if (any) h += hb + `</tbody></table><p class="zp-note muted" style="font-size:.74rem;">A auditoria de novembro deixou uma pista: o Zé perde mais nas odds mais altas. Este quadro mostra, mês a mês, se a pista se mantém.${full ? ' «Precisava» é o acerto necessário para não perder dinheiro a essas odds.' : ''}</p>`;
+  // arquivo do robô
+  h += `<h3>🗄️ Arquivo mensal do robô</h3><p class="muted" style="font-size:.8rem;">No início de cada mês o robô guarda na nuvem o fecho do mês anterior do piloto (por liga, com a odd de fecho). Fica gravado mesmo que limpes o telemóvel. <span id="stFechos">${stFechosHTML()}</span></p>`;
+  return h;
+}
+let ST_FECHOS = null;
+function stFechosHTML() { if (!ST_FECHOS) return 'Ainda sem meses fechados.'; const L = ST_FECHOS.meses || []; return L.length ? 'Meses fechados: ' + L.map(m => `<a href="${ROBO_BASE}fecho/${m}.csv" target="_blank" rel="noopener">${stMonthName(m)}</a>`).join(' · ') : 'Ainda sem meses fechados (o primeiro sai no dia 1 do próximo mês).'; }
+async function stFechosLoad() { try { if (ST_FECHOS || typeof roboGet !== 'function' || !roboOn()) return; const j = await roboGet('fecho/indice.json'); if (j && j.meses) { ST_FECHOS = j; const e = document.getElementById('stFechos'); if (e) e.innerHTML = stFechosHTML(); } } catch (e) {} }
+renderZeStats = (function (prev) { return function () { const r = prev.apply(this, arguments); try { stFechosLoad(); } catch (e) {} return r; }; })(renderZeStats);
+
+/* ---------- 📒 Diário: jogos adiados ou remarcados saem logo da lista (não esperam 10 dias) ---------- */
+function diaryMarkGhosts(all, scope) {
+  // all = jogos normalizados acabados de ler; scope = {'code|AAAAMM': 1} dos meses lidos por inteiro (se o jogo não está lá, não se jogou nessa data)
+  try {
+    const D = diaryLoad(), now = Date.now(), byId = {}; let n = 0;
+    (all || []).forEach(e => { byId[String(e.id)] = e; });
+    Object.values(D.items).forEach(x => {
+      if (x.res || x.lost) return; const t = Date.parse(x.kick) || 0; if (now - t < 4 * 3600e3) return;
+      const e = byId[String(x.ev)];
+      if (e) { if (/POSTPONED|CANCEL|SUSPENDED|ABANDON/i.test(e.status || '') || (e.status !== 'FINISHED' && Date.parse(e.utcDate) - t > 20 * 3600e3)) { x.lost = true; x.why = 'adiado'; n++; } return; }
+      const d = new Date(t), k = (x.code || '') + '|' + d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, '0');
+      if (scope && scope[k] && now - t > 1.5 * 864e5) { x.lost = true; x.why = 'sem jogo nessa data'; n++; }
+    });
+    if (n) diarySave(D);
+    return n;
+  } catch (e) { return 0; }
+}
+diaryCatchUp = async function (force) {
+  if (/jsdom/i.test(navigator.userAgent || '') || window.__ZE_LAB || navigator.onLine === false) return 0;
+  if (!force && Date.now() - DIARY_CATCH_AT < 20 * 60e3) return 0;
+  if (typeof espnCooling === 'function' && espnCooling()) return 0;
+  const now = Date.now(), want = {};
+  Object.values(diaryLoad().items).forEach(x => {
+    const t = Date.parse(x.kick) || 0; if (x.res || x.lost || !x.code || now - t < 1.5 * 864e5 || now - t > 45 * 864e5) return;
+    const d = new Date(t); want[x.code + '|' + d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, '0')] = 1;
+  });
+  const keys = Object.keys(want).slice(0, 4); if (!keys.length) return 0;
+  DIARY_CATCH_AT = Date.now();
+  const all = [], read = {};
+  for (const kk of keys) {
+    const [code, ym] = kk.split('|');
+    try {
+      const j = await fetchJSON(`https://site.api.espn.com/apis/site/v2/sports/soccer/${code}/scoreboard?dates=${ym}&limit=1000`);
+      if (j && Array.isArray(j.events) && j.events.length) { read[kk] = 1; j.events.forEach(ev => { const n = normalizeEspn(ev, code, (typeof ESPN_LEAGUES !== 'undefined' && ESPN_LEAGUES[code]) || code); if (n) all.push(n); }); }
+    } catch (e) {}
+    if (typeof espnCooling === 'function' && espnCooling()) break;
+  }
+  const n = all.length ? diaryGrade({ matches: all }) : 0, g = diaryMarkGhosts(all, read);
+  try { if ((n || g) && currentView === 'ze') renderDiary(); } catch (e) {}
+  if (g) { try { toast(`🧹 ${g} jogo${g > 1 ? 's' : ''} adiado${g > 1 ? 's' : ''} saí${g > 1 ? 'ram' : 'u'} das opiniões à espera — não chega${g > 1 ? 'ram' : 'ou'} a jogar-se nessa data.`); } catch (e) {} }
+  return n + g;
+};
+/* os resultados normais também trazem «adiado»: aproveita */
+applyLive = (function (prev) { return function (payload) { const r = prev.apply(this, arguments); try { if (diaryMarkGhosts((payload && payload.matches) || [], null) && currentView === 'ze') renderDiary(); } catch (e) {} return r; }; })(applyLive);
+renderDiary = (function (prev) { return function () { const r = prev.apply(this, arguments); try { if (diaryPendSplit().wait.some(x => Date.now() - Date.parse(x.kick) > 1.5 * 864e5)) diaryCatchUp().catch(() => {}); } catch (e) {} return r; }; })(renderDiary);
+
+/* ================= Menu «Mais»: folha com ícones próprios ================= */
+const ZI = (function () {
+  const w = (d, extra) => `<svg viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}${extra || ''}</svg>`;
+  const a = 'fill="var(--zi-a,#7c4dff)" fill-opacity=".45" stroke="none"';
+  return {
+    stats: w(`<rect x="5" y="17" width="5" height="10" rx="1.2" ${a}/><rect x="13.5" y="10" width="5" height="17" rx="1.2" ${a}/><rect x="22" y="5" width="5" height="22" rx="1.2" ${a}/><path d="M5 17h5v10H5zM13.5 10h5v17h-5zM22 5h5v22h-5z"/>`),
+    jogos: w(`<rect x="5" y="7" width="22" height="20" rx="3" ${a}/><rect x="5" y="7" width="22" height="20" rx="3"/><path d="M5 13h22M11 4v6M21 4v6"/><circle cx="16" cy="20" r="3.2"/>`),
+    scout: w(`<circle cx="14" cy="14" r="9" ${a}/><circle cx="14" cy="14" r="9"/><path d="M14 9v10M9 14h10M21 21l6 6"/>`),
+    banca: w(`<ellipse cx="13" cy="10" rx="8" ry="3.6" ${a}/><ellipse cx="13" cy="10" rx="8" ry="3.6"/><path d="M5 10v5c0 2 3.6 3.6 8 3.6M5 15v5c0 2 3.6 3.6 8 3.6"/><circle cx="22" cy="21" r="6" ${a}/><circle cx="22" cy="21" r="6"/><path d="M22 18.2v5.6M20.3 19.6h2.6a1.2 1.2 0 010 2.4h-1.8"/>`),
+    boletim: w(`<path d="M8 4h16v24l-3-2-2.5 2-2.5-2-2.5 2-2.5-2-3 2z" ${a}/><path d="M8 4h16v24l-3-2-2.5 2-2.5-2-2.5 2-2.5-2-3 2z"/><path d="M12 10h8M12 15h8M12 20l2 2 4-4.5"/>`),
+    refresh: w(`<circle cx="16" cy="16" r="10" ${a}/><path d="M26 16a10 10 0 01-17.6 6.5M6 16A10 10 0 0123.6 9.5"/><path d="M24 4v6h-6M8 28v-6h6"/>`),
+    search: w(`<circle cx="14" cy="14" r="8.5" ${a}/><circle cx="14" cy="14" r="8.5"/><path d="M20.5 20.5L27 27"/>`),
+    config: w(`<path d="M6 9h20M6 16h20M6 23h20"/><circle cx="12" cy="9" r="3.2" fill="#160d27"/><circle cx="21" cy="16" r="3.2" fill="#160d27"/><circle cx="10" cy="23" r="3.2" fill="#160d27"/><circle cx="12" cy="9" r="3.2" ${a}/><circle cx="21" cy="16" r="3.2" ${a}/><circle cx="10" cy="23" r="3.2" ${a}/>`),
+    install: w(`<rect x="9" y="3" width="14" height="26" rx="3" ${a}/><rect x="9" y="3" width="14" height="26" rx="3"/><path d="M16 9v9M12.5 14.5L16 18l3.5-3.5M13 23h6"/>`),
+    close: w(`<path d="M9 9l14 14M23 9L9 23"/>`)
+  };
+})();
+function mMoreDress() {
+  try {
+    const more = document.getElementById('mMore'), sheet = more && more.querySelector('.sheet'), grid = more && more.querySelector('.grid'); if (!grid) return;
+    if (!sheet.querySelector('.mm-head')) sheet.insertAdjacentHTML('afterbegin', `<div class="mm-grab"></div><div class="mm-head"><b>Menu</b><span>${typeof APP_VER !== 'undefined' ? 'Mister Zé · ' + APP_VER : ''}</span></div>`);
+    grid.querySelectorAll('button').forEach(b => {
+      const k = b.hasAttribute('data-zst') ? 'stats' : (b.dataset.g || b.dataset.a), i = b.querySelector('.i');
+      if (i && ZI[k] && !i.dataset.zi) { i.innerHTML = ZI[k]; i.dataset.zi = '1'; b.classList.add('mm-' + k); }
+    });
+  } catch (e) {}
+}
+(function () {
+  const css = document.createElement('style');
+  css.textContent = `@media (max-width: 900px){
+    #mMore.open{background:rgba(6,3,14,.72)!important;animation:mmFade .16s ease-out}
+    #mMore .sheet{background:linear-gradient(180deg,#24154a 0%,#150c2b 60%,#0f0820 100%)!important;border-radius:22px 22px 0 0!important;border-top:2px solid rgba(200,245,60,.55)!important;box-shadow:0 -14px 40px rgba(0,0,0,.6);padding:8px 14px calc(18px + env(safe-area-inset-bottom))!important;animation:mmUp .22s cubic-bezier(.2,.9,.3,1)}
+    #mMore .mm-grab{width:44px;height:5px;border-radius:3px;background:rgba(255,255,255,.22);margin:2px auto 10px}
+    #mMore .mm-head{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 12px}
+    #mMore .mm-head b{font:800 1.5rem/1 var(--cond);letter-spacing:.06em;text-transform:uppercase;color:#fff}
+    #mMore .mm-head span{font:600 .72rem var(--cond);letter-spacing:.08em;text-transform:uppercase;color:#a99ec4}
+    #mMore .grid{gap:10px!important}
+    #mMore .grid button{--zi-a:#7c4dff;position:relative;overflow:hidden;background:linear-gradient(180deg,#33235c 0%,#1d1238 100%)!important;border:1px solid #4b3a74!important;border-bottom:3px solid #120a24!important;border-radius:16px!important;padding:14px 4px 11px!important;gap:8px!important;font:800 .8rem var(--cond)!important;letter-spacing:.06em;text-transform:uppercase;color:#f2eefb!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 4px 10px rgba(0,0,0,.35);cursor:pointer;transition:transform .08s}
+    #mMore .grid button:active{transform:translateY(2px) scale(.98)}
+    #mMore .grid button::before{content:"";position:absolute;inset:0 0 55% 0;background:linear-gradient(180deg,rgba(255,255,255,.07),transparent);pointer-events:none}
+    #mMore .grid button .i{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;color:#c8f53c;background:radial-gradient(circle at 35% 25%,#3d2a70,#170e2e 75%);border:1px solid rgba(200,245,60,.28);box-shadow:0 0 0 3px rgba(124,77,255,.10),inset 0 -6px 10px rgba(0,0,0,.35);font-size:1.4rem}
+    #mMore .grid button.mm-banca .i,#mMore .grid button.mm-boletim .i{color:#ffd166;border-color:rgba(255,209,102,.3)} #mMore .grid button.mm-banca,#mMore .grid button.mm-boletim{--zi-a:#ff9f1c}
+    #mMore .grid button.mm-refresh .i,#mMore .grid button.mm-search .i{color:#7fb2ff;border-color:rgba(127,178,255,.3)} #mMore .grid button.mm-refresh,#mMore .grid button.mm-search{--zi-a:#2f7bff}
+    #mMore .grid button.mm-config .i,#mMore .grid button.mm-install .i{color:#d7c8ff;border-color:rgba(215,200,255,.28)}
+    #mMore .grid button.mm-close{background:transparent!important;border:1px dashed #4b3a74!important;box-shadow:none;color:#a99ec4!important}
+    #mMore .grid button.mm-close .i{background:transparent;border-color:transparent;box-shadow:none;color:#a99ec4}
+    #mMore .grid button.mm-close::before{display:none}
+    @keyframes mmUp{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}} @keyframes mmFade{from{opacity:0}to{opacity:1}}
+    @media (prefers-reduced-motion: reduce){#mMore.open,#mMore .sheet{animation:none}}
+  }`;
+  document.head.appendChild(css);
+  mMoreDress(); document.addEventListener('DOMContentLoaded', mMoreDress); setTimeout(mMoreDress, 800); setTimeout(mMoreDress, 3000);
 })();
 
 renderWallet(); renderUpdateInfo();

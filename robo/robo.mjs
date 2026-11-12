@@ -193,6 +193,23 @@ if (liveOk) {
     const antes = rd('piloto.json', null);
     wr('piloto.json', { at: new Date().toISOString(), ver: VER, regras: piloto.regras, nomes: piloto.nomes, carteiras: piloto.wallets, desde: (antes && antes.desde) || new Date().toISOString() });
   } catch (e) { nota('piloto: ' + (e && e.message)); }
+  // fecho de mês: no primeiro dia em que o mês anterior já acabou, o resumo do piloto por liga fica gravado e não volta a mudar
+  try {
+    const M = JSON.parse(await ev('typeof stAccMonths === "function" ? JSON.stringify(stAccMonths("auto")) : "{}"'));
+    const agoraMes = new Date().toISOString().slice(0, 7), idx = rd('fecho/indice.json', { v: 1, meses: [] });
+    for (const mes of Object.keys(M).sort()) {
+      if (mes >= agoraMes || idx.meses.includes(mes)) continue;
+      const n = v => (Math.round(v * 100) / 100).toFixed(2).replace('.', ','), pc = (a, b) => b ? (a / b * 100).toFixed(1).replace('.', ',') : '';
+      const lin = (lg, o) => [mes, lg, o.n, o.win, o.n - o.win, pc(o.win, o.n), n(o.stake), n(o.pr), pc(o.pr, o.stake), o.cn ? pc(o.cs, o.cn) : '', o.cn || 0].join(';');
+      const linhas = ['mês;liga;apostas;ganhas;perdidas;acerto %;apostado €;resultado €;por € apostado %;odd apanhada vs fecho %;apostas com odd de fecho']
+        .concat(Object.entries(M[mes].lg).sort((a, b) => b[1].n - a[1].n).map(([lg, o]) => lin(lg, o)), [lin('TOTAL', M[mes].tot)]);
+      fs.mkdirSync(path.join(DIR, 'fecho'), { recursive: true });
+      fs.writeFileSync(path.join(DIR, 'fecho', mes + '.csv'), '\ufeff' + linhas.join('\r\n'));
+      wr(`fecho/${mes}.json`, { v: 1, mes, fechado: new Date().toISOString(), ver: VER, piloto: M[mes] });
+      idx.meses.push(mes); console.log('fecho de mês gravado:', mes);
+    }
+    idx.meses.sort(); wr('fecho/indice.json', idx);
+  } catch (e) { nota('fecho: ' + (e && e.message)); }
 }
 console.log('piloto', piloto ? JSON.stringify(piloto.out) : 'não correu');
 
