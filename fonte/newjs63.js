@@ -1111,3 +1111,61 @@ function zeWarm(delay) {
 try { zeWarm(2500); } catch (e) {}
 atualizarTudo = (function (prev) { return async function () { const r = await prev.apply(this, arguments); try { zeWarm(1200); } catch (e) {} return r; }; })(atualizarTudo);
 fmGo = (function (prev) { return function (v) { const r = prev.apply(this, arguments); try { if (v === 'portal' && !(CH_MEM && Date.now() - CH_MEM.t < 4 * 60e3)) zeWarm(900); } catch (e) {} return r; }; })(fmGo);
+
+/* ================= v75 · Boletim seguro: só jogos do próprio dia + percentagem numa bolinha ================= */
+/* A escolha é a mesma de sempre (mesmos mercados, mesmos 85%/70%); só muda a janela: em vez de «próximas 36 horas»
+   entram apenas os jogos que começam HOJE. Os de amanhã ficam para amanhã (dá para espreitar, sem os guardar). */
+let SAFE_DAY = null;
+function safeDayOf(d) { return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
+safeCandidates = (function (prev) {
+  return function (hours) {
+    if (!SAFE_DAY) return prev.apply(this, arguments);
+    const alvo = new Date(); if (SAFE_DAY === 'amanha') alvo.setDate(alvo.getDate() + 1);
+    const dia = safeDayOf(alvo);
+    return (prev.call(this, 48) || []).filter(c => c.k && safeDayOf(c.k) === dia);
+  };
+})(safeCandidates);
+safeLogSave = (function (prev) { return function () { if (SAFE_DAY === 'amanha') return; return prev.apply(this, arguments); }; })(safeLogSave);   // espreitar amanhã não conta para as estatísticas
+zeSafeSlip = (function (prev) {
+  return function (quando) {
+    const am = quando === 'amanha';
+    SAFE_DAY = am ? 'amanha' : 'hoje';
+    let r; try { r = prev.call(this); } finally { SAFE_DAY = null; }
+    try { safeDress(am); } catch (e) { console.warn(e); }
+    return r;
+  };
+})(zeSafeSlip);
+function safeDress(am) {
+  const box = document.getElementById('dayResult'); if (!box) return;
+  const legs = box.querySelectorAll('#ssLegs .ss-leg');
+  const outro = am ? `<button class="mini" onclick="zeSafeSlip()">↩ Voltar aos de hoje</button>` : `<button class="mini" onclick="zeSafeSlip('amanha')">👀 Espreitar os de amanhã</button>`;
+  if (!legs.length) {
+    const m = box.querySelector('.muted');
+    if (m) m.innerHTML = (am ? 'Para amanhã ainda não há nenhuma seleção com 80% ou mais.' : 'Hoje já não há nenhuma seleção com 80% ou mais por jogar. Os jogos de amanhã entram no boletim de amanhã.') + `<div class="acts" style="margin-top:8px;">${outro}</div>`;
+    return;
+  }
+  const meta = box.querySelector('.day-meta');
+  if (meta) {
+    meta.innerHTML = meta.innerHTML.replace('das próximas 36 horas', am ? 'de <b>amanhã</b> (só para espreitar — as odds e as contas ainda podem mudar)' : 'dos jogos de <b>hoje</b>');
+    meta.insertAdjacentHTML('beforeend', `<div class="acts" style="margin-top:8px;">${outro}</div>`);
+  }
+  const h = box.querySelector('h3'); if (h && am) h.textContent = '🛡️ Boletim seguro do Zé · amanhã';
+  // a percentagem sai da linha de texto e passa para uma bolinha ao lado da odd
+  legs.forEach(row => {
+    if (row.querySelector('.ss-pct')) return;
+    const b = [...row.querySelectorAll('b')].find(x => /^\d{1,3}%$/.test(x.textContent.trim())); if (!b) return;
+    const line = b.parentNode, v = b.textContent.trim();
+    b.remove(); line.innerHTML = line.innerHTML.replace(/^\s*Zé:\s*·?\s*/, '').replace(/^\s*·\s*/, '');
+    const ball = document.createElement('span'); ball.className = 'ss-pct'; ball.title = 'probabilidade que o Zé dá a esta seleção'; ball.textContent = v;
+    const od = row.querySelector('.od'); if (od) row.insertBefore(ball, od); else row.appendChild(ball);
+    row.classList.add('ss4');
+  });
+}
+(function () {
+  const st = document.createElement('style');
+  st.textContent = `.ss-leg.ss4{grid-template-columns:26px 1fr auto auto;}
+.ss-pct{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;flex:none;
+  font:800 .86rem var(--cond, inherit);letter-spacing:-.01em;color:var(--lime);background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.10),rgba(0,0,0,.28));
+  border:2px solid var(--lime);box-shadow:0 0 0 3px rgba(0,0,0,.25),0 2px 6px rgba(0,0,0,.45),inset 0 1px 2px rgba(255,255,255,.12);}`;
+  document.head.appendChild(st);
+})();
