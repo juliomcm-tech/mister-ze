@@ -1169,3 +1169,11 @@ function safeDress(am) {
   border:2px solid var(--lime);box-shadow:0 0 0 3px rgba(0,0,0,.25),0 2px 6px rgba(0,0,0,.45),inset 0 1px 2px rgba(255,255,255,.12);}`;
   document.head.appendChild(st);
 })();
+
+/* ================= v76 · O piloto passa a conferir «Mais/Menos de 4,5 golos» ================= */
+/* O piloto podia apostar em «Menos de 4,5 golos» (vem dos desafios), mas a lista que confere os resultados só ia até
+   3,5: a aposta ficava em aberto para sempre (Bayern – Colónia, 20/11). Junta-se a regra que faltava e o piloto
+   passa a apostar só em mercados que sabe conferir. As regras do Zé (ZE_RULES) não mudam. */
+MARKET_CONDS['O4.5'] = (i, j) => i + j > 4.5;
+MARKET_CONDS['U4.5'] = (i, j) => i + j < 4.5;
+autoCands = (function (prev) { return function () { return prev.apply(this, arguments).filter(c => c && MARKET_CONDS[c.k2]); }; })(autoCands);
